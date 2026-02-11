@@ -35,6 +35,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist/report-via-mobile/browser
+          overwrite: true
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
