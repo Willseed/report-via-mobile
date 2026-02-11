@@ -109,6 +109,44 @@ describe('SmsForm', () => {
     });
   });
 
+  describe('violation select', () => {
+    it('should populate message when violation is selected', () => {
+      component['smsForm'].controls.violation.setValue('紅線停車');
+      component['onViolationChange']();
+      expect(component['smsForm'].controls.message.value).toBe('紅線停車');
+    });
+
+    it('should overwrite existing message when violation changes', () => {
+      component['smsForm'].controls.message.setValue('舊內容');
+      component['smsForm'].controls.violation.setValue('並排停車');
+      component['onViolationChange']();
+      expect(component['smsForm'].controls.message.value).toBe('並排停車');
+    });
+  });
+
+  describe('sms preview', () => {
+    it('should show preview when message has value', () => {
+      component['smsForm'].controls.message.setValue('測試預覽');
+      fixture.detectChanges();
+      const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
+      expect(preview).toBeTruthy();
+    });
+
+    it('should hide preview when message is empty', () => {
+      component['smsForm'].controls.message.setValue('');
+      fixture.detectChanges();
+      const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
+      expect(preview).toBeNull();
+    });
+
+    it('should display message content in bubble', () => {
+      component['smsForm'].controls.message.setValue('簡訊內容測試');
+      fixture.detectChanges();
+      const bubble = (fixture.nativeElement as HTMLElement).querySelector('.sms-bubble');
+      expect(bubble?.textContent?.trim()).toBe('簡訊內容測試');
+    });
+  });
+
   describe('locateUser', () => {
     it('should fill address and auto-select district on success', async () => {
       const mockPosition = {

@@ -52,6 +52,16 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
+      <mat-label>違規事實</mat-label>
+      <mat-select formControlName="violation" (selectionChange)="onViolationChange()">
+        @for (type of violationTypes; track type) {
+          <mat-option [value]="type">{{ type }}</mat-option>
+        }
+      </mat-select>
+      <mat-icon matPrefix>report</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
       <mat-label>報案內容</mat-label>
       <textarea
         matInput
@@ -64,6 +74,13 @@
         <mat-error>請輸入報案內容。</mat-error>
       }
     </mat-form-field>
+
+    @if (smsForm.controls.message.value) {
+      <div class="sms-preview">
+        <div class="sms-preview-header">簡訊預覽</div>
+        <div class="sms-bubble">{{ smsForm.controls.message.value }}</div>
+      </div>
+    }
 
     <button mat-flat-button type="submit" [disabled]="isDesktop()">
       <mat-icon>send</mat-icon>

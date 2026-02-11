@@ -80,6 +80,33 @@ mat-form-field {
   }
 }
 
+.sms-preview {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background-color: var(--mat-sys-surface-container-low);
+}
+
+.sms-preview-header {
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.sms-bubble {
+  background-color: #34c759;
+  color: #fff;
+  padding: 0.625rem 0.875rem;
+  border-radius: 18px 18px 4px 18px;
+  max-width: 85%;
+  margin-left: auto;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
 button[mat-flat-button] {
   margin-top: 0.5rem;
   height: 48px;
