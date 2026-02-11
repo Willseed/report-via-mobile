@@ -107,6 +107,19 @@ mat-form-field {
   white-space: pre-wrap;
 }
 
+.locating-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 button[mat-flat-button] {
   margin-top: 0.5rem;
   height: 48px;

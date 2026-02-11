@@ -22,7 +22,7 @@
       <mat-icon matPrefix>edit_location_alt</mat-icon>
       <button mat-icon-button matSuffix type="button"
         (click)="locateUser()" [disabled]="isLocating()">
-        <mat-icon>{{ isLocating() ? 'hourglass_top' : 'my_location' }}</mat-icon>
+        <mat-icon [class.locating-spin]="isLocating()">my_location</mat-icon>
       </button>
       <mat-hint>輸入地址或按右側按鈕定位，將自動帶入行政區。</mat-hint>
       @if (smsForm.controls.address.hasError('required')) {
