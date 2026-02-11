@@ -30,12 +30,11 @@ jobs:
       - name: Install Dependencies
         run: npm ci
       - name: Build
-        run: npx ng build --configuration production --base-href "/"
+        run: npx ng build --configuration production --base-href "/report-via-mobile/"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist/report-via-mobile/browser
-          overwrite: true
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
