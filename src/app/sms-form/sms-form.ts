@@ -67,6 +67,17 @@ export class SmsForm {
 
   private addressValue = toSignal(this.smsForm.controls.address.valueChanges, { initialValue: '' });
   private violationValue = toSignal(this.smsForm.controls.violation.valueChanges, { initialValue: '' });
+  private districtValue = toSignal(this.smsForm.controls.district.valueChanges, {
+    initialValue: null as PoliceStation | null,
+  });
+
+  protected districtMismatch = computed(() => {
+    const address = this.addressValue() ?? '';
+    const selected = this.districtValue();
+    const stationFromAddress = findStationByAddress(address);
+    if (!stationFromAddress || !selected) return false;
+    return stationFromAddress.district !== selected.district;
+  });
 
   protected composedMessage = computed(() => {
     const address = this.addressValue() ?? '';

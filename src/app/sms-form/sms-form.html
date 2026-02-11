@@ -77,7 +77,14 @@
       </div>
     }
 
-    <button mat-flat-button type="submit" [disabled]="isDesktop()">
+    @if (districtMismatch()) {
+      <div class="district-mismatch-warning">
+        <mat-icon>warning</mat-icon>
+        <span>輸入地址與報案行政區不一致，請確認後再發送。</span>
+      </div>
+    }
+
+    <button mat-flat-button type="submit" [disabled]="isDesktop() || districtMismatch()">
       <mat-icon>send</mat-icon>
       發送簡訊
     </button>

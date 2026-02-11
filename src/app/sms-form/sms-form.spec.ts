@@ -114,6 +114,64 @@ describe('SmsForm', () => {
     });
   });
 
+  describe('districtMismatch', () => {
+    it('should detect mismatch when address district differs from selected district', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
+      component['smsForm'].controls.district.setValue(kaohsiungStation);
+      expect(component['districtMismatch']()).toBe(true);
+    });
+
+    it('should not detect mismatch when address and district match', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      component['smsForm'].controls.district.setValue(POLICE_STATIONS[0]);
+      expect(component['districtMismatch']()).toBe(false);
+    });
+
+    it('should not detect mismatch when address has no recognizable district', () => {
+      component['smsForm'].controls.address.setValue('某個不存在的地方');
+      component['smsForm'].controls.district.setValue(POLICE_STATIONS[0]);
+      expect(component['districtMismatch']()).toBe(false);
+    });
+
+    it('should not detect mismatch when no district is selected', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      expect(component['districtMismatch']()).toBe(false);
+    });
+
+    it('should disable submit button when district mismatches', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
+      component['smsForm'].controls.district.setValue(kaohsiungStation);
+      fixture.detectChanges();
+      const button = (fixture.nativeElement as HTMLElement).querySelector(
+        'button[mat-flat-button]',
+      ) as HTMLButtonElement;
+      expect(button.disabled).toBe(true);
+    });
+
+    it('should show warning message when district mismatches', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
+      component['smsForm'].controls.district.setValue(kaohsiungStation);
+      fixture.detectChanges();
+      const warning = (fixture.nativeElement as HTMLElement).querySelector(
+        '.district-mismatch-warning',
+      );
+      expect(warning).toBeTruthy();
+    });
+
+    it('should not show warning when district matches', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      component['smsForm'].controls.district.setValue(POLICE_STATIONS[0]);
+      fixture.detectChanges();
+      const warning = (fixture.nativeElement as HTMLElement).querySelector(
+        '.district-mismatch-warning',
+      );
+      expect(warning).toBeNull();
+    });
+  });
+
   describe('composedMessage', () => {
     it('should compose message from address and violation', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
