@@ -23,15 +23,14 @@ h1 {
   font-size: 0.875rem;
 }
 
-.desktop-warning {
+@mixin banner($bg, $fg) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem;
   border-radius: 8px;
-  background-color: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
+  background-color: $bg;
+  color: $fg;
   font-size: 0.875rem;
 
   mat-icon {
@@ -39,20 +38,14 @@ h1 {
   }
 }
 
-.info-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+.desktop-warning {
+  @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
   margin-bottom: 1.5rem;
-  border-radius: 8px;
-  background-color: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
-  font-size: 0.875rem;
+}
 
-  mat-icon {
-    flex-shrink: 0;
-  }
+.info-banner {
+  @include banner(var(--mat-sys-secondary-container), var(--mat-sys-on-secondary-container));
+  margin-bottom: 1.5rem;
 }
 
 form {
@@ -66,18 +59,7 @@ mat-form-field {
 }
 
 .location-error {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  background-color: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
-  font-size: 0.875rem;
-
-  mat-icon {
-    flex-shrink: 0;
-  }
+  @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
 }
 
 .sms-preview {
@@ -121,18 +103,7 @@ mat-form-field {
 }
 
 .district-mismatch-warning {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  background-color: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
-  font-size: 0.875rem;
-
-  mat-icon {
-    flex-shrink: 0;
-  }
+  @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
 }
 
 button[mat-flat-button] {
