@@ -58,7 +58,7 @@ describe('SmsForm', () => {
   it('should accept valid form values with all required fields', () => {
     component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
     component['smsForm'].controls.district.setValue(POLICE_STATIONS[0]);
-    component['smsForm'].controls.violation.setValue('紅線停車');
+    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
     expect(component['smsForm'].valid).toBe(true);
   });
 
@@ -73,7 +73,7 @@ describe('SmsForm', () => {
     const station = POLICE_STATIONS[0];
     component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
     component['smsForm'].controls.district.setValue(station);
-    component['smsForm'].controls.violation.setValue('紅線停車');
+    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
 
     Object.defineProperty(window, 'location', {
       value: { href: '' },
@@ -84,7 +84,7 @@ describe('SmsForm', () => {
     component['sendSms']();
     expect(smsServiceSpy.generateSmsLink).toHaveBeenCalledWith(
       station.phoneNumber,
-      '臺北市信義區信義路五段7號紅線停車，請派員處理',
+      '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
     );
   });
 
@@ -117,12 +117,14 @@ describe('SmsForm', () => {
   describe('composedMessage', () => {
     it('should compose message from address and violation', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      component['smsForm'].controls.violation.setValue('紅線停車');
-      expect(component['composedMessage']).toBe('臺北市信義區信義路五段7號紅線停車，請派員處理');
+      component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+      expect(component['composedMessage']).toBe(
+        '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
+      );
     });
 
     it('should return empty string when address is missing', () => {
-      component['smsForm'].controls.violation.setValue('紅線停車');
+      component['smsForm'].controls.violation.setValue('汽車於紅線停車');
       expect(component['composedMessage']).toBe('');
     });
 
@@ -135,14 +137,14 @@ describe('SmsForm', () => {
   describe('sms preview', () => {
     it('should show preview when address and violation are filled', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      component['smsForm'].controls.violation.setValue('紅線停車');
+      component['smsForm'].controls.violation.setValue('汽車於紅線停車');
       fixture.detectChanges();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeTruthy();
     });
 
     it('should hide preview when address is empty', () => {
-      component['smsForm'].controls.violation.setValue('紅線停車');
+      component['smsForm'].controls.violation.setValue('汽車於紅線停車');
       fixture.detectChanges();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeNull();
@@ -157,10 +159,34 @@ describe('SmsForm', () => {
 
     it('should display composed message in bubble', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      component['smsForm'].controls.violation.setValue('紅線停車');
+      component['smsForm'].controls.violation.setValue('汽車於紅線停車');
       fixture.detectChanges();
       const bubble = (fixture.nativeElement as HTMLElement).querySelector('.sms-bubble');
-      expect(bubble?.textContent?.trim()).toBe('臺北市信義區信義路五段7號紅線停車，請派員處理');
+      expect(bubble?.textContent?.trim()).toBe(
+        '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
+      );
+    });
+  });
+
+  describe('filteredViolations', () => {
+    it('should return all violations when filter is empty', () => {
+      expect(component['filteredViolations']().length).toBe(10);
+    });
+
+    it('should filter violations by keyword', () => {
+      component['violationFilter'].set('紅線');
+      expect(component['filteredViolations']()).toEqual(['汽車於紅線停車', '機車於紅線停車']);
+    });
+
+    it('should filter by vehicle type', () => {
+      component['violationFilter'].set('機車');
+      expect(component['filteredViolations']().length).toBe(5);
+      expect(component['filteredViolations']().every((v) => v.startsWith('機車'))).toBe(true);
+    });
+
+    it('should return all violations when filter matches an exact option', () => {
+      component['violationFilter'].set('汽車於紅線停車');
+      expect(component['filteredViolations']().length).toBe(10);
     });
   });
 

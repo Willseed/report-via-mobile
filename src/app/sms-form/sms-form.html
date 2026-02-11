@@ -56,11 +56,13 @@
 
     <mat-form-field appearance="outline">
       <mat-label>違規事實</mat-label>
-      <mat-select formControlName="violation">
-        @for (type of violationTypes; track type) {
+      <input matInput formControlName="violation" placeholder="輸入或選擇違規事實..."
+        [matAutocomplete]="autoViolation" (input)="onViolationInput()" />
+      <mat-autocomplete #autoViolation="matAutocomplete" requireSelection>
+        @for (type of filteredViolations(); track type) {
           <mat-option [value]="type">{{ type }}</mat-option>
         }
-      </mat-select>
+      </mat-autocomplete>
       <mat-icon matPrefix>report</mat-icon>
       @if (smsForm.controls.violation.hasError('required')) {
         <mat-error>請選擇違規事實。</mat-error>
