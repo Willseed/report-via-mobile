@@ -1,0 +1,43 @@
+<div class="sms-form-container">
+  <h1>SMS Dispatcher</h1>
+  <p class="subtitle">Fill in the form and send via your device's native SMS app.</p>
+
+  @if (isDesktop()) {
+    <div class="desktop-warning">
+      <mat-icon>warning</mat-icon>
+      <span>SMS links may not work on desktop browsers. Please use a mobile device.</span>
+    </div>
+  }
+
+  <form [formGroup]="smsForm" (ngSubmit)="sendSms()">
+    <mat-form-field appearance="outline">
+      <mat-label>Recipient Phone Number</mat-label>
+      <input matInput formControlName="recipient" type="tel" placeholder="+886912345678" />
+      <mat-icon matPrefix>phone</mat-icon>
+      @if (smsForm.controls.recipient.hasError('required')) {
+        <mat-error>Phone number is required.</mat-error>
+      } @else if (smsForm.controls.recipient.hasError('pattern')) {
+        <mat-error>Only numbers and + are allowed.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Message</mat-label>
+      <textarea
+        matInput
+        formControlName="message"
+        rows="5"
+        placeholder="Enter your message..."
+      ></textarea>
+      <mat-icon matPrefix>message</mat-icon>
+      @if (smsForm.controls.message.hasError('required')) {
+        <mat-error>Message is required.</mat-error>
+      }
+    </mat-form-field>
+
+    <button mat-flat-button type="submit" [disabled]="isDesktop()">
+      <mat-icon>send</mat-icon>
+      Send Message
+    </button>
+  </form>
+</div>
