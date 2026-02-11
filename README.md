@@ -1,6 +1,15 @@
 # Report via Mobile
 
-A pure frontend web application that allows users to fill out message templates and trigger the native SMS app on mobile devices via the `sms:` URI scheme.
+行動裝置簡訊報案應用程式。使用者填寫事發地址、選擇行政區與違規事實後，自動組合簡訊內容並透過裝置原生簡訊功能（`sms:` URI scheme）發送至對應警局。
+
+## 功能特色
+
+- **GPS 定位** — 一鍵取得目前位置，自動填入地址並帶入對應行政區
+- **行政區自動對應** — 根據地址自動選擇承辦警局與簡訊號碼
+- **違規事實篩選** — 以 autocomplete 輸入框快速篩選違規類型（汽車/機車 × 各類違規）
+- **簡訊自動組合** — 依據地址與違規事實自動產生語句通順的簡訊內容（如：「○○路100號，有機車於紅線停車，請派員處理」）
+- **即時預覽** — 填寫完成後即時顯示簡訊氣泡預覽
+- **Mobile-first** — 針對行動裝置最佳化的 UI 設計
 
 ## Tech Stack
 
@@ -10,7 +19,6 @@ A pure frontend web application that allows users to fill out message templates 
 - **Routing:** HashLocationStrategy (GitHub Pages compatible)
 - **Testing:** Vitest + jsdom
 - **Hosting:** GitHub Pages (static)
-- **Edge/Security:** Cloudflare (DNS, SSL, Headers)
 
 ## Development
 
@@ -38,29 +46,3 @@ ng test
 ## Deployment
 
 Deployment is automated via GitHub Actions on push to `main`. See `.github/workflows/deploy.yml`.
-
-## Cloudflare Configuration
-
-Since GitHub Pages does not support server-side header configuration, **Cloudflare Transform Rules** must be used to inject security headers for the domain `pylot.dev`.
-
-### Rule: Response Header Modification
-
-**Expression:** `(http.host eq "pylot.dev")`
-
-Set the following **static response headers**:
-
-| Header | Value |
-|--------|-------|
-| `X-Frame-Options` | `DENY` |
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
-| `X-Content-Type-Options` | `nosniff` |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
-| `Content-Security-Policy` | `default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self';` |
-
-### CSP Notes
-
-- `style-src 'unsafe-inline'` is required because Angular uses inline styles for component bindings.
-- `script-src 'self'` — no `unsafe-inline` or `unsafe-eval` allowed.
-- `frame-ancestors 'none'` — anti-clickjacking (also covered by `X-Frame-Options: DENY`).
-- `form-action 'self'` — restricts form submissions.
