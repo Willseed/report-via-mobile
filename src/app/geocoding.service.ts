@@ -29,7 +29,7 @@ export class GeocodingService {
   async reverseGeocode(lat: number, lng: number): Promise<string> {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=zh-TW&addressdetails=1`;
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'report-via-mobile' },
+      headers: { 'User-Agent': 'ReportViaMobileApp/1.0 (https://github.com/Willseed/report-via-mobile)' },
     });
     if (!response.ok) {
       throw new Error('反向地理編碼失敗。');
