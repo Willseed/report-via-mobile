@@ -117,12 +117,13 @@ export class SmsForm {
   }
 
   protected sendSms(): void {
-    if (this.smsForm.invalid) {
+    if (this.smsForm.invalid || this.districtMismatch()) {
       this.smsForm.markAllAsTouched();
       return;
     }
 
-    const station = this.smsForm.controls.district.value!;
+    const station = this.smsForm.controls.district.value;
+    if (!station) return;
     const link = this.smsService.generateSmsLink(station.phoneNumber, this.composedMessage());
     window.location.href = link;
   }

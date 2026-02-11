@@ -93,6 +93,16 @@ describe('SmsForm', () => {
     expect(smsServiceSpy.generateSmsLink).not.toHaveBeenCalled();
   });
 
+  it('should not submit when district mismatches even if form is valid', () => {
+    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+    const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
+    component['smsForm'].controls.district.setValue(kaohsiungStation);
+
+    component['sendSms']();
+    expect(smsServiceSpy.generateSmsLink).not.toHaveBeenCalled();
+  });
+
   describe('address input and auto-select district', () => {
     it('should auto-select district when address contains district name', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
