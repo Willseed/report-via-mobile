@@ -99,8 +99,16 @@ describe('GeocodingService', () => {
       vi.restoreAllMocks();
     });
 
-    it('should return display_name on success', async () => {
-      const mockResponse = { display_name: '臺北市信義區信義路五段7號' };
+    it('should return formatted address from address fields', async () => {
+      const mockResponse = {
+        display_name: '7號, 信義路五段, 信義區, 臺北市, 110, 臺灣',
+        address: {
+          house_number: '7號',
+          road: '信義路五段',
+          suburb: '信義區',
+          city: '臺北市',
+        },
+      };
       vi.spyOn(globalThis, 'fetch').mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockResponse),
@@ -109,9 +117,42 @@ describe('GeocodingService', () => {
       const result = await service.reverseGeocode(25.033, 121.565);
       expect(result).toBe('臺北市信義區信義路五段7號');
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('lat=25.033'),
+        expect.stringContaining('addressdetails=1'),
         expect.any(Object),
       );
+    });
+
+    it('should use county and town as fallback for city and district', async () => {
+      const mockResponse = {
+        display_name: '中正路100號, 頭城鎮, 宜蘭縣, 臺灣',
+        address: {
+          house_number: '100號',
+          road: '中正路',
+          town: '頭城鎮',
+          county: '宜蘭縣',
+        },
+      };
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const result = await service.reverseGeocode(24.859, 121.823);
+      expect(result).toBe('宜蘭縣頭城鎮中正路100號');
+    });
+
+    it('should fallback to display_name when address fields are insufficient', async () => {
+      const mockResponse = {
+        display_name: '某個地方, 臺灣',
+        address: {},
+      };
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      } as Response);
+
+      const result = await service.reverseGeocode(25.033, 121.565);
+      expect(result).toBe('某個地方, 臺灣');
     });
 
     it('should throw on non-ok response', async () => {
@@ -122,7 +163,7 @@ describe('GeocodingService', () => {
       await expect(service.reverseGeocode(25.033, 121.565)).rejects.toThrow('反向地理編碼失敗');
     });
 
-    it('should return empty string when display_name is missing', async () => {
+    it('should return empty string when no address and no display_name', async () => {
       vi.spyOn(globalThis, 'fetch').mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({}),

@@ -27,7 +27,7 @@ export class GeocodingService {
   }
 
   async reverseGeocode(lat: number, lng: number): Promise<string> {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=zh-TW`;
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=zh-TW&addressdetails=1`;
     const response = await fetch(url, {
       headers: { 'User-Agent': 'report-via-mobile' },
     });
@@ -35,6 +35,15 @@ export class GeocodingService {
       throw new Error('反向地理編碼失敗。');
     }
     const data = await response.json();
+    const a = data.address;
+    if (a) {
+      const city = a.city ?? a.county ?? '';
+      const district = a.suburb ?? a.city_district ?? a.town ?? a.village ?? '';
+      const road = a.road ?? '';
+      const number = a.house_number ?? '';
+      const formatted = `${city}${district}${road}${number}`;
+      if (formatted) return formatted;
+    }
     return data.display_name ?? '';
   }
 }
