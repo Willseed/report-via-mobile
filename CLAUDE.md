@@ -28,3 +28,4 @@ Angular 21 mobile-first application using standalone component architecture, Ang
 - Prettier: 100 char width, single quotes, angular HTML parser
 - 2-space indentation (editorconfig)
 - Production bundle budgets: 500kB warning, 1MB error
+- All user-facing UI text must be in Traditional Chinese (zh_TW)

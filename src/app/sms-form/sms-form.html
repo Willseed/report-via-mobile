@@ -1,43 +1,54 @@
 <div class="sms-form-container">
-  <h1>SMS Dispatcher</h1>
-  <p class="subtitle">Fill in the form and send via your device's native SMS app.</p>
+  <h1>簡訊報案</h1>
+  <p class="subtitle">填寫以下表單，透過您裝置的簡訊功能傳送報案訊息。</p>
 
   @if (isDesktop()) {
     <div class="desktop-warning">
       <mat-icon>warning</mat-icon>
-      <span>SMS links may not work on desktop browsers. Please use a mobile device.</span>
+      <span>簡訊連結可能無法在桌面瀏覽器上使用，請使用行動裝置開啟。</span>
     </div>
   }
 
+  <div class="info-banner">
+    <mat-icon>info</mat-icon>
+    <span>發送此簡訊是免費的。</span>
+  </div>
+
   <form [formGroup]="smsForm" (ngSubmit)="sendSms()">
     <mat-form-field appearance="outline">
-      <mat-label>Recipient Phone Number</mat-label>
-      <input matInput formControlName="recipient" type="tel" placeholder="+886912345678" />
-      <mat-icon matPrefix>phone</mat-icon>
-      @if (smsForm.controls.recipient.hasError('required')) {
-        <mat-error>Phone number is required.</mat-error>
-      } @else if (smsForm.controls.recipient.hasError('pattern')) {
-        <mat-error>Only numbers and + are allowed.</mat-error>
+      <mat-label>報案行政區</mat-label>
+      <mat-select formControlName="district" [compareWith]="compareStations">
+        <mat-select-trigger>{{ selectedStation?.district }}</mat-select-trigger>
+        @for (station of stations; track station.district) {
+          <mat-option [value]="station">{{ station.district }}</mat-option>
+        }
+      </mat-select>
+      <mat-icon matPrefix>location_on</mat-icon>
+      @if (selectedStation) {
+        <mat-hint>承辦單位：{{ selectedStation.stationName }}</mat-hint>
+      }
+      @if (smsForm.controls.district.hasError('required')) {
+        <mat-error>請選擇報案行政區。</mat-error>
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Message</mat-label>
+      <mat-label>報案內容</mat-label>
       <textarea
         matInput
         formControlName="message"
         rows="5"
-        placeholder="Enter your message..."
+        placeholder="請輸入報案內容..."
       ></textarea>
       <mat-icon matPrefix>message</mat-icon>
       @if (smsForm.controls.message.hasError('required')) {
-        <mat-error>Message is required.</mat-error>
+        <mat-error>請輸入報案內容。</mat-error>
       }
     </mat-form-field>
 
     <button mat-flat-button type="submit" [disabled]="isDesktop()">
       <mat-icon>send</mat-icon>
-      Send Message
+      發送簡訊
     </button>
   </form>
 </div>
