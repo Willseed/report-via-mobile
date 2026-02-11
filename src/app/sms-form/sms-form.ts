@@ -6,7 +6,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { SmsService } from '../sms.service';
-import { POLICE_STATIONS, PoliceStation } from '../police-stations';
+import { POLICE_STATIONS, PoliceStation, findStationByAddress } from '../police-stations';
+import { GeocodingService } from '../geocoding.service';
 
 @Component({
   selector: 'app-sms-form',
@@ -24,11 +25,15 @@ import { POLICE_STATIONS, PoliceStation } from '../police-stations';
 export class SmsForm {
   private fb = inject(FormBuilder);
   private smsService = inject(SmsService);
+  private geocodingService = inject(GeocodingService);
 
   protected isDesktop = signal(this.smsService.isDesktop());
+  protected isLocating = signal(false);
+  protected locationError = signal('');
   protected stations = POLICE_STATIONS;
 
   protected smsForm = this.fb.group({
+    address: [''],
     district: [null as PoliceStation | null, [Validators.required]],
     message: ['', [Validators.required]],
   });
@@ -41,6 +46,27 @@ export class SmsForm {
     return a?.district === b?.district;
   }
 
+  protected onAddressInput(): void {
+    const address = this.smsForm.controls.address.value ?? '';
+    this.autoSelectDistrict(address);
+  }
+
+  protected async locateUser(): Promise<void> {
+    this.isLocating.set(true);
+    this.locationError.set('');
+    try {
+      const position = await this.geocodingService.getCurrentPosition();
+      const { latitude, longitude } = position.coords;
+      const displayName = await this.geocodingService.reverseGeocode(latitude, longitude);
+      this.smsForm.controls.address.setValue(displayName);
+      this.autoSelectDistrict(displayName);
+    } catch (e) {
+      this.locationError.set(e instanceof Error ? e.message : '定位失敗，請稍後再試。');
+    } finally {
+      this.isLocating.set(false);
+    }
+  }
+
   protected sendSms(): void {
     if (this.smsForm.invalid) {
       this.smsForm.markAllAsTouched();
@@ -51,5 +77,12 @@ export class SmsForm {
     const message = this.smsForm.controls.message.value!;
     const link = this.smsService.generateSmsLink(station.phoneNumber, message);
     window.location.href = link;
+  }
+
+  private autoSelectDistrict(address: string): void {
+    const station = findStationByAddress(address);
+    if (station) {
+      this.smsForm.controls.district.setValue(station);
+    }
   }
 }

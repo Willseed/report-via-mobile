@@ -53,3 +53,8 @@ export const POLICE_STATIONS: readonly PoliceStation[] = [
   { district: District.Kinmen, stationName: '金門縣警察局', phoneNumber: '0911510931' },
   { district: District.Lienchiang, stationName: '連江縣警察局', phoneNumber: '0911510932' },
 ];
+
+export function findStationByAddress(address: string): PoliceStation | null {
+  const normalized = address.replace(/台/g, '臺');
+  return POLICE_STATIONS.find((s) => normalized.includes(s.district)) ?? null;
+}

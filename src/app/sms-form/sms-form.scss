@@ -65,6 +65,21 @@ mat-form-field {
   width: 100%;
 }
 
+.location-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background-color: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.875rem;
+
+  mat-icon {
+    flex-shrink: 0;
+  }
+}
+
 button[mat-flat-button] {
   margin-top: 0.5rem;
   height: 48px;
