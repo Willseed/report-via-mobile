@@ -158,12 +158,72 @@ describe('GeocodingService', () => {
       expect(result).toBe('某個地方, 臺灣');
     });
 
-    it('should throw on HTTP error', async () => {
+    it('should throw on HTTP error after retries', async () => {
+      vi.useFakeTimers();
       const promise = service.reverseGeocode(25.033, 121.565);
-      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+
+      // Initial attempt
+      let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush('Error', { status: 500, statusText: 'Server Error' });
+
+      // Retry 1 after 1s delay
+      await vi.advanceTimersByTimeAsync(1000);
+      req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush('Error', { status: 500, statusText: 'Server Error' });
+
+      // Retry 2 after 1s delay
+      await vi.advanceTimersByTimeAsync(1000);
+      req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
       req.flush('Error', { status: 500, statusText: 'Server Error' });
 
       await expect(promise).rejects.toThrow('地址查詢失敗，請稍後再試。');
+      vi.useRealTimers();
+    });
+
+    it('should succeed on retry after initial failure', async () => {
+      vi.useFakeTimers();
+      const promise = service.reverseGeocode(25.033, 121.565);
+
+      // Initial attempt fails
+      let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush('Error', { status: 500, statusText: 'Server Error' });
+
+      // Retry 1 after 1s delay succeeds
+      await vi.advanceTimersByTimeAsync(1000);
+      req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush({
+        display_name: '臺北市',
+        address: { city: '臺北市' },
+      });
+
+      const result = await promise;
+      expect(result).toBe('臺北市');
+      vi.useRealTimers();
+    });
+
+    it('should throw on request timeout', async () => {
+      vi.useFakeTimers();
+      const promise = service.reverseGeocode(25.033, 121.565);
+
+      // Attach rejection handler early to prevent unhandled rejection warning
+      const rejection = expect(promise).rejects.toThrow('地址查詢失敗，請稍後再試。');
+
+      // Initial attempt times out (request gets cancelled by timeout)
+      httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      await vi.advanceTimersByTimeAsync(15000);
+
+      // Retry 1 after 1s delay also times out
+      await vi.advanceTimersByTimeAsync(1000);
+      httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      await vi.advanceTimersByTimeAsync(15000);
+
+      // Retry 2 after 1s delay also times out
+      await vi.advanceTimersByTimeAsync(1000);
+      httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      await vi.advanceTimersByTimeAsync(15000);
+
+      await rejection;
+      vi.useRealTimers();
     });
 
     it('should return empty string when no address and no display_name', async () => {
@@ -173,6 +233,28 @@ describe('GeocodingService', () => {
 
       const result = await promise;
       expect(result).toBe('');
+    });
+
+    it('should throw on invalid latitude', async () => {
+      await expect(service.reverseGeocode(91, 121)).rejects.toThrow('無效的座標資訊。');
+      await expect(service.reverseGeocode(-91, 121)).rejects.toThrow('無效的座標資訊。');
+      await expect(service.reverseGeocode(NaN, 121)).rejects.toThrow('無效的座標資訊。');
+    });
+
+    it('should throw on invalid longitude', async () => {
+      await expect(service.reverseGeocode(25, 181)).rejects.toThrow('無效的座標資訊。');
+      await expect(service.reverseGeocode(25, -181)).rejects.toThrow('無效的座標資訊。');
+      await expect(service.reverseGeocode(25, Infinity)).rejects.toThrow('無效的座標資訊。');
+    });
+
+    it('should include User-Agent header in request', async () => {
+      const promise = service.reverseGeocode(25.033, 121.565);
+      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      expect(req.request.headers.get('User-Agent')).toBe(
+        'ReportViaMobileApp/1.0 (https://github.com/Willseed/report-via-mobile)',
+      );
+      req.flush({ display_name: 'test' });
+      await promise;
     });
   });
 });

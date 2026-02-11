@@ -32,7 +32,7 @@
     </mat-form-field>
 
     @if (locationError()) {
-      <div class="location-error">
+      <div class="location-error" role="alert">
         <mat-icon>error_outline</mat-icon>
         <span>{{ locationError() }}</span>
       </div>
@@ -57,7 +57,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>違規事實</mat-label>
-      <input matInput formControlName="violation" placeholder="輸入或選擇違規事實..."
+      <input matInput formControlName="violation" placeholder="請選擇違規事實..."
         [matAutocomplete]="autoViolation" (input)="onViolationInput($event)" />
       <mat-autocomplete #autoViolation="matAutocomplete" requireSelection>
         @for (type of filteredViolations(); track type) {
@@ -78,7 +78,7 @@
     }
 
     @if (districtMismatch()) {
-      <div class="district-mismatch-warning">
+      <div class="district-mismatch-warning" role="alert">
         <mat-icon>warning</mat-icon>
         <span>輸入地址與報案行政區不一致，請確認後再發送。</span>
       </div>

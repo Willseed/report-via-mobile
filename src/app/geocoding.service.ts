@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout, retry } from 'rxjs';
 
 interface NominatimAddress {
   city?: string;
@@ -47,11 +47,27 @@ export class GeocodingService {
   }
 
   async reverseGeocode(lat: number, lng: number): Promise<string> {
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      throw new Error('無效的座標資訊。');
+    }
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+      throw new Error('無效的座標資訊。');
+    }
+
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=zh-TW&addressdetails=1`;
     let data: NominatimResponse;
     try {
-      data = await firstValueFrom(this.http.get<NominatimResponse>(url));
-    } catch {
+      data = await firstValueFrom(
+        this.http
+          .get<NominatimResponse>(url, {
+            headers: {
+              'User-Agent': 'ReportViaMobileApp/1.0 (https://github.com/Willseed/report-via-mobile)',
+            },
+          })
+          .pipe(timeout(15000), retry({ count: 2, delay: 1000 }))
+      );
+    } catch (error) {
+      console.error('Geocoding error:', error);
       throw new Error('地址查詢失敗，請稍後再試。');
     }
     const a = data.address;
