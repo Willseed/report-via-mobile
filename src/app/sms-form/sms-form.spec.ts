@@ -55,9 +55,10 @@ describe('SmsForm', () => {
     expect(districtControl.hasError('required')).toBe(true);
   });
 
-  it('should accept valid form values with district selected', () => {
+  it('should accept valid form values with all required fields', () => {
+    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
     component['smsForm'].controls.district.setValue(POLICE_STATIONS[0]);
-    component['smsForm'].controls.message.setValue('測試訊息');
+    component['smsForm'].controls.violation.setValue('紅線停車');
     expect(component['smsForm'].valid).toBe(true);
   });
 
@@ -68,10 +69,11 @@ describe('SmsForm', () => {
     expect(component['selectedStation']).toBe(POLICE_STATIONS[0]);
   });
 
-  it('should call generateSmsLink with correct phone number on valid submit', () => {
+  it('should call generateSmsLink with composed message on valid submit', () => {
     const station = POLICE_STATIONS[0];
+    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
     component['smsForm'].controls.district.setValue(station);
-    component['smsForm'].controls.message.setValue('報案內容');
+    component['smsForm'].controls.violation.setValue('紅線停車');
 
     Object.defineProperty(window, 'location', {
       value: { href: '' },
@@ -80,7 +82,10 @@ describe('SmsForm', () => {
     });
 
     component['sendSms']();
-    expect(smsServiceSpy.generateSmsLink).toHaveBeenCalledWith(station.phoneNumber, '報案內容');
+    expect(smsServiceSpy.generateSmsLink).toHaveBeenCalledWith(
+      station.phoneNumber,
+      '臺北市信義區信義路五段7號紅線停車，請派員處理',
+    );
   });
 
   it('should not submit when form is invalid', () => {
@@ -109,41 +114,53 @@ describe('SmsForm', () => {
     });
   });
 
-  describe('violation select', () => {
-    it('should populate message when violation is selected', () => {
+  describe('composedMessage', () => {
+    it('should compose message from address and violation', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
       component['smsForm'].controls.violation.setValue('紅線停車');
-      component['onViolationChange']();
-      expect(component['smsForm'].controls.message.value).toBe('紅線停車');
+      expect(component['composedMessage']).toBe('臺北市信義區信義路五段7號紅線停車，請派員處理');
     });
 
-    it('should overwrite existing message when violation changes', () => {
-      component['smsForm'].controls.message.setValue('舊內容');
-      component['smsForm'].controls.violation.setValue('並排停車');
-      component['onViolationChange']();
-      expect(component['smsForm'].controls.message.value).toBe('並排停車');
+    it('should return empty string when address is missing', () => {
+      component['smsForm'].controls.violation.setValue('紅線停車');
+      expect(component['composedMessage']).toBe('');
+    });
+
+    it('should return empty string when violation is missing', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      expect(component['composedMessage']).toBe('');
     });
   });
 
   describe('sms preview', () => {
-    it('should show preview when message has value', () => {
-      component['smsForm'].controls.message.setValue('測試預覽');
+    it('should show preview when address and violation are filled', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      component['smsForm'].controls.violation.setValue('紅線停車');
       fixture.detectChanges();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeTruthy();
     });
 
-    it('should hide preview when message is empty', () => {
-      component['smsForm'].controls.message.setValue('');
+    it('should hide preview when address is empty', () => {
+      component['smsForm'].controls.violation.setValue('紅線停車');
       fixture.detectChanges();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeNull();
     });
 
-    it('should display message content in bubble', () => {
-      component['smsForm'].controls.message.setValue('簡訊內容測試');
+    it('should hide preview when violation is empty', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      fixture.detectChanges();
+      const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
+      expect(preview).toBeNull();
+    });
+
+    it('should display composed message in bubble', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      component['smsForm'].controls.violation.setValue('紅線停車');
       fixture.detectChanges();
       const bubble = (fixture.nativeElement as HTMLElement).querySelector('.sms-bubble');
-      expect(bubble?.textContent?.trim()).toBe('簡訊內容測試');
+      expect(bubble?.textContent?.trim()).toBe('臺北市信義區信義路五段7號紅線停車，請派員處理');
     });
   });
 

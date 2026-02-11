@@ -25,6 +25,9 @@
         <mat-icon>{{ isLocating() ? 'hourglass_top' : 'my_location' }}</mat-icon>
       </button>
       <mat-hint>輸入地址或按右側按鈕定位，將自動帶入行政區。</mat-hint>
+      @if (smsForm.controls.address.hasError('required')) {
+        <mat-error>請輸入事發地址。</mat-error>
+      }
     </mat-form-field>
 
     @if (locationError()) {
@@ -53,32 +56,21 @@
 
     <mat-form-field appearance="outline">
       <mat-label>違規事實</mat-label>
-      <mat-select formControlName="violation" (selectionChange)="onViolationChange()">
+      <mat-select formControlName="violation">
         @for (type of violationTypes; track type) {
           <mat-option [value]="type">{{ type }}</mat-option>
         }
       </mat-select>
       <mat-icon matPrefix>report</mat-icon>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>報案內容</mat-label>
-      <textarea
-        matInput
-        formControlName="message"
-        rows="5"
-        placeholder="請輸入報案內容..."
-      ></textarea>
-      <mat-icon matPrefix>message</mat-icon>
-      @if (smsForm.controls.message.hasError('required')) {
-        <mat-error>請輸入報案內容。</mat-error>
+      @if (smsForm.controls.violation.hasError('required')) {
+        <mat-error>請選擇違規事實。</mat-error>
       }
     </mat-form-field>
 
-    @if (smsForm.controls.message.value) {
+    @if (composedMessage) {
       <div class="sms-preview">
         <div class="sms-preview-header">簡訊預覽</div>
-        <div class="sms-bubble">{{ smsForm.controls.message.value }}</div>
+        <div class="sms-bubble">{{ composedMessage }}</div>
       </div>
     }
 

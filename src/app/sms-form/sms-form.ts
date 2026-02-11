@@ -36,25 +36,24 @@ export class SmsForm {
   protected violationTypes = VIOLATION_TYPES;
 
   protected smsForm = this.fb.group({
-    address: [''],
+    address: ['', [Validators.required]],
     district: [null as PoliceStation | null, [Validators.required]],
-    violation: [''],
-    message: ['', [Validators.required]],
+    violation: ['', [Validators.required]],
   });
 
   protected get selectedStation(): PoliceStation | null {
     return this.smsForm.controls.district.value;
   }
 
-  protected compareStations(a: PoliceStation | null, b: PoliceStation | null): boolean {
-    return a?.district === b?.district;
+  protected get composedMessage(): string {
+    const address = this.smsForm.controls.address.value ?? '';
+    const violation = this.smsForm.controls.violation.value ?? '';
+    if (!address || !violation) return '';
+    return `${address}${violation}，請派員處理`;
   }
 
-  protected onViolationChange(): void {
-    const violation = this.smsForm.controls.violation.value;
-    if (violation) {
-      this.smsForm.controls.message.setValue(violation);
-    }
+  protected compareStations(a: PoliceStation | null, b: PoliceStation | null): boolean {
+    return a?.district === b?.district;
   }
 
   protected onAddressInput(): void {
@@ -85,8 +84,7 @@ export class SmsForm {
     }
 
     const station = this.smsForm.controls.district.value!;
-    const message = this.smsForm.controls.message.value!;
-    const link = this.smsService.generateSmsLink(station.phoneNumber, message);
+    const link = this.smsService.generateSmsLink(station.phoneNumber, this.composedMessage);
     window.location.href = link;
   }
 
