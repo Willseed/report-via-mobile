@@ -36,7 +36,6 @@
           },
           "configurations": {
             "production": {
-              "baseHref": "/report-via-mobile/",
               "budgets": [
                 {
                   "type": "initial",
