@@ -2,6 +2,22 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
+interface NominatimAddress {
+  city?: string;
+  county?: string;
+  suburb?: string;
+  city_district?: string;
+  town?: string;
+  village?: string;
+  road?: string;
+  house_number?: string;
+}
+
+interface NominatimResponse {
+  display_name?: string;
+  address?: NominatimAddress;
+}
+
 @Injectable({ providedIn: 'root' })
 export class GeocodingService {
   private http = inject(HttpClient);
@@ -32,11 +48,12 @@ export class GeocodingService {
 
   async reverseGeocode(lat: number, lng: number): Promise<string> {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=zh-TW&addressdetails=1`;
-    const data: any = await firstValueFrom(
-      this.http.get(url, {
-        headers: { 'User-Agent': 'ReportViaMobileApp/1.0 (https://github.com/pony/report-via-mobile)' },
-      })
-    );
+    let data: NominatimResponse;
+    try {
+      data = await firstValueFrom(this.http.get<NominatimResponse>(url));
+    } catch {
+      throw new Error('地址查詢失敗，請稍後再試。');
+    }
     const a = data.address;
     if (a) {
       const city = a.city ?? a.county ?? '';

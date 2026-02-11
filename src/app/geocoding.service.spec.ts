@@ -163,7 +163,7 @@ describe('GeocodingService', () => {
       const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
       req.flush('Error', { status: 500, statusText: 'Server Error' });
 
-      await expect(promise).rejects.toThrow();
+      await expect(promise).rejects.toThrow('地址查詢失敗，請稍後再試。');
     });
 
     it('should return empty string when no address and no display_name', async () => {
