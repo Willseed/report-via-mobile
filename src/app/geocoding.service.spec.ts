@@ -1,13 +1,23 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GeocodingService } from './geocoding.service';
 
 describe('GeocodingService', () => {
   let service: GeocodingService;
+  let httpTesting: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     service = TestBed.inject(GeocodingService);
+    httpTesting = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpTesting.verify();
   });
 
   describe('getCurrentPosition', () => {
@@ -95,10 +105,6 @@ describe('GeocodingService', () => {
   });
 
   describe('reverseGeocode', () => {
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
     it('should return formatted address from address fields', async () => {
       const mockResponse = {
         display_name: '7號, 信義路五段, 信義區, 臺北市, 110, 臺灣',
@@ -109,17 +115,14 @@ describe('GeocodingService', () => {
           city: '臺北市',
         },
       };
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      } as Response);
 
-      const result = await service.reverseGeocode(25.033, 121.565);
+      const promise = service.reverseGeocode(25.033, 121.565);
+      const req = httpTesting.expectOne((r) => r.url.includes('addressdetails=1'));
+      expect(req.request.method).toBe('GET');
+      req.flush(mockResponse);
+
+      const result = await promise;
       expect(result).toBe('臺北市信義區信義路五段7號');
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('addressdetails=1'),
-        expect.any(Object),
-      );
     });
 
     it('should use county and town as fallback for city and district', async () => {
@@ -132,12 +135,12 @@ describe('GeocodingService', () => {
           county: '宜蘭縣',
         },
       };
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      } as Response);
 
-      const result = await service.reverseGeocode(24.859, 121.823);
+      const promise = service.reverseGeocode(24.859, 121.823);
+      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush(mockResponse);
+
+      const result = await promise;
       expect(result).toBe('宜蘭縣頭城鎮中正路100號');
     });
 
@@ -146,30 +149,29 @@ describe('GeocodingService', () => {
         display_name: '某個地方, 臺灣',
         address: {},
       };
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      } as Response);
 
-      const result = await service.reverseGeocode(25.033, 121.565);
+      const promise = service.reverseGeocode(25.033, 121.565);
+      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush(mockResponse);
+
+      const result = await promise;
       expect(result).toBe('某個地方, 臺灣');
     });
 
-    it('should throw on non-ok response', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-        ok: false,
-      } as Response);
+    it('should throw on HTTP error', async () => {
+      const promise = service.reverseGeocode(25.033, 121.565);
+      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush('Error', { status: 500, statusText: 'Server Error' });
 
-      await expect(service.reverseGeocode(25.033, 121.565)).rejects.toThrow('反向地理編碼失敗');
+      await expect(promise).rejects.toThrow();
     });
 
     it('should return empty string when no address and no display_name', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({}),
-      } as Response);
+      const promise = service.reverseGeocode(25.033, 121.565);
+      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush({});
 
-      const result = await service.reverseGeocode(25.033, 121.565);
+      const result = await promise;
       expect(result).toBe('');
     });
   });

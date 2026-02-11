@@ -1,7 +1,11 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class GeocodingService {
+  private http = inject(HttpClient);
+
   getCurrentPosition(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -28,13 +32,11 @@ export class GeocodingService {
 
   async reverseGeocode(lat: number, lng: number): Promise<string> {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=zh-TW&addressdetails=1`;
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'ReportViaMobileApp/1.0 (https://github.com/Willseed/report-via-mobile)' },
-    });
-    if (!response.ok) {
-      throw new Error('反向地理編碼失敗。');
-    }
-    const data = await response.json();
+    const data: any = await firstValueFrom(
+      this.http.get(url, {
+        headers: { 'User-Agent': 'ReportViaMobileApp/1.0 (https://github.com/pony/report-via-mobile)' },
+      })
+    );
     const a = data.address;
     if (a) {
       const city = a.city ?? a.county ?? '';

@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -55,24 +56,28 @@ export class SmsForm {
   });
 
   protected smsForm = this.fb.group({
-    address: ['', [Validators.required]],
+    address: ['', [Validators.required, Validators.maxLength(100)]],
     district: [null as PoliceStation | null, [Validators.required]],
-    violation: ['', [Validators.required]],
+    violation: ['', [Validators.required, Validators.maxLength(50)]],
   });
 
   protected get selectedStation(): PoliceStation | null {
     return this.smsForm.controls.district.value;
   }
 
-  protected get composedMessage(): string {
-    const address = this.smsForm.controls.address.value ?? '';
-    const violation = this.smsForm.controls.violation.value ?? '';
+  private addressValue = toSignal(this.smsForm.controls.address.valueChanges, { initialValue: '' });
+  private violationValue = toSignal(this.smsForm.controls.violation.valueChanges, { initialValue: '' });
+
+  protected composedMessage = computed(() => {
+    const address = this.addressValue() ?? '';
+    const violation = this.violationValue() ?? '';
     if (!address || !violation) return '';
     return `${address}，有${violation}，請派員處理`;
-  }
+  });
 
   protected compareStations(a: PoliceStation | null, b: PoliceStation | null): boolean {
-    return a?.district === b?.district;
+    if (!a || !b) return a === b;
+    return a.district === b.district && a.phoneNumber === b.phoneNumber;
   }
 
   protected onViolationInput(event: Event): void {
@@ -107,7 +112,7 @@ export class SmsForm {
     }
 
     const station = this.smsForm.controls.district.value!;
-    const link = this.smsService.generateSmsLink(station.phoneNumber, this.composedMessage);
+    const link = this.smsService.generateSmsLink(station.phoneNumber, this.composedMessage());
     window.location.href = link;
   }
 

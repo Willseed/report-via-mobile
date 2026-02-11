@@ -21,7 +21,8 @@
         (input)="onAddressInput()" />
       <mat-icon matPrefix>edit_location_alt</mat-icon>
       <button mat-icon-button matSuffix type="button"
-        (click)="locateUser()" [disabled]="isLocating()">
+        (click)="locateUser()" [disabled]="isLocating()"
+        aria-label="使用目前位置">
         <mat-icon [class.locating-spin]="isLocating()">my_location</mat-icon>
       </button>
       <mat-hint>輸入地址或按右側按鈕定位，將自動帶入行政區。</mat-hint>
@@ -69,10 +70,10 @@
       }
     </mat-form-field>
 
-    @if (composedMessage) {
+    @if (composedMessage()) {
       <div class="sms-preview">
         <div class="sms-preview-header">簡訊預覽</div>
-        <div class="sms-bubble">{{ composedMessage }}</div>
+        <div class="sms-bubble">{{ composedMessage() }}</div>
       </div>
     }
 

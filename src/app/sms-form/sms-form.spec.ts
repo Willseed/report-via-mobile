@@ -118,19 +118,19 @@ describe('SmsForm', () => {
     it('should compose message from address and violation', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
       component['smsForm'].controls.violation.setValue('汽車於紅線停車');
-      expect(component['composedMessage']).toBe(
+      expect(component['composedMessage']()).toBe(
         '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
       );
     });
 
     it('should return empty string when address is missing', () => {
       component['smsForm'].controls.violation.setValue('汽車於紅線停車');
-      expect(component['composedMessage']).toBe('');
+      expect(component['composedMessage']()).toBe('');
     });
 
     it('should return empty string when violation is missing', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      expect(component['composedMessage']).toBe('');
+      expect(component['composedMessage']()).toBe('');
     });
   });
 
