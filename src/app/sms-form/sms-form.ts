@@ -75,8 +75,8 @@ export class SmsForm {
     return a?.district === b?.district;
   }
 
-  protected onViolationInput(): void {
-    this.violationFilter.set(this.smsForm.controls.violation.value ?? '');
+  protected onViolationInput(event: Event): void {
+    this.violationFilter.set((event.target as HTMLInputElement).value);
   }
 
   protected onAddressInput(): void {

@@ -57,7 +57,7 @@
     <mat-form-field appearance="outline">
       <mat-label>違規事實</mat-label>
       <input matInput formControlName="violation" placeholder="輸入或選擇違規事實..."
-        [matAutocomplete]="autoViolation" (input)="onViolationInput()" />
+        [matAutocomplete]="autoViolation" (input)="onViolationInput($event)" />
       <mat-autocomplete #autoViolation="matAutocomplete" requireSelection>
         @for (type of filteredViolations(); track type) {
           <mat-option [value]="type">{{ type }}</mat-option>
