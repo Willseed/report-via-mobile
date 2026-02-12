@@ -19,6 +19,7 @@ const VIOLATION_DESCRIPTIONS = [
   '於人行道停車',
   '並排停車',
   '於轉彎處停車',
+  '佔用車道影響交通',
 ];
 
 const VIOLATION_TYPES = VEHICLE_TYPES.flatMap((v) => VIOLATION_DESCRIPTIONS.map((d) => `${v}${d}`));
