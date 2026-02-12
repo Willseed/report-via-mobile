@@ -42,7 +42,7 @@ export class GeocodingService {
           default:
             reject(new Error('定位失敗，請稍後再試。'));
         }
-      }, { timeout: 10000 });
+      }, { enableHighAccuracy: true, timeout: 10000 });
     });
   }
 
@@ -59,12 +59,8 @@ export class GeocodingService {
     try {
       data = await firstValueFrom(
         this.http
-          .get<NominatimResponse>(url, {
-            headers: {
-              'User-Agent': 'ReportViaMobileApp/1.0 (https://github.com/Willseed/report-via-mobile)',
-            },
-          })
-          .pipe(timeout(15000), retry({ count: 2, delay: 1000 }))
+          .get<NominatimResponse>(url)
+          .pipe(timeout(8000), retry({ count: 1, delay: 1000 }))
       );
     } catch (error) {
       console.error('Geocoding error:', error);
@@ -79,6 +75,7 @@ export class GeocodingService {
       const formatted = `${city}${district}${road}${number}`;
       if (formatted) return formatted;
     }
-    return data.display_name ?? '';
+    if (data.display_name) return data.display_name;
+    throw new Error('無法解析地址，請手動輸入。');
   }
 }

@@ -56,5 +56,5 @@ export const POLICE_STATIONS: readonly PoliceStation[] = [
 
 export function findStationByAddress(address: string): PoliceStation | null {
   const normalized = address.replace(/台/g, '臺');
-  return POLICE_STATIONS.find((s) => normalized.includes(s.district)) ?? null;
+  return POLICE_STATIONS.find((s) => normalized.startsWith(s.district)) ?? null;
 }

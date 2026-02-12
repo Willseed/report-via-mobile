@@ -89,6 +89,21 @@ mat-form-field {
   white-space: pre-wrap;
 }
 
+.sms-char-count {
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: right;
+  margin-top: 0.5rem;
+
+  &.over-limit {
+    color: var(--mat-sys-error);
+  }
+}
+
+.sms-length-warning {
+  @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
+}
+
 .locating-spin {
   animation: spin 1s linear infinite;
 }

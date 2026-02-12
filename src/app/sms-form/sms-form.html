@@ -3,7 +3,7 @@
   <p class="subtitle">填寫以下表單，透過您裝置的簡訊功能傳送報案訊息。</p>
 
   @if (isDesktop()) {
-    <div class="desktop-warning" animate.enter="fade-in" animate.leave="fade-out">
+    <div class="desktop-warning">
       <mat-icon>warning</mat-icon>
       <span>簡訊連結可能無法在桌面瀏覽器上使用，請使用行動裝置開啟。</span>
     </div>
@@ -28,11 +28,13 @@
       <mat-hint>輸入地址或按右側按鈕定位，將自動帶入行政區。</mat-hint>
       @if (smsForm.controls.address.hasError('required')) {
         <mat-error>請輸入事發地址。</mat-error>
+      } @else if (smsForm.controls.address.hasError('maxlength')) {
+        <mat-error>地址不可超過 100 字。</mat-error>
       }
     </mat-form-field>
 
     @if (locationError()) {
-      <div class="location-error" role="alert" animate.enter="fade-in" animate.leave="fade-out">
+      <div class="location-error" role="alert">
         <mat-icon>error_outline</mat-icon>
         <span>{{ locationError() }}</span>
       </div>
@@ -67,18 +69,29 @@
       <mat-icon matPrefix>report</mat-icon>
       @if (smsForm.controls.violation.hasError('required')) {
         <mat-error>請選擇違規事實。</mat-error>
+      } @else if (smsForm.controls.violation.hasError('maxlength')) {
+        <mat-error>違規事實不可超過 50 字。</mat-error>
       }
     </mat-form-field>
 
     @if (composedMessage()) {
-      <div class="sms-preview" animate.enter="fade-in" animate.leave="fade-out">
+      <div class="sms-preview">
         <div class="sms-preview-header">簡訊預覽</div>
         <div class="sms-bubble">{{ composedMessage() }}</div>
+        <div class="sms-char-count" [class.over-limit]="smsOverLimit()">
+          {{ composedMessage().length }} / {{ SMS_CHAR_LIMIT }} 字
+        </div>
       </div>
+      @if (smsOverLimit()) {
+        <div class="sms-length-warning" role="alert">
+          <mat-icon>warning</mat-icon>
+          <span>簡訊內容超過 {{ SMS_CHAR_LIMIT }} 字，可能被拆為多則傳送。</span>
+        </div>
+      }
     }
 
     @if (districtMismatch()) {
-      <div class="district-mismatch-warning" role="alert" animate.enter="fade-in" animate.leave="fade-out">
+      <div class="district-mismatch-warning" role="alert">
         <mat-icon>warning</mat-icon>
         <span>輸入地址與報案行政區不一致，請確認後再發送。</span>
       </div>

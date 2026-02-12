@@ -87,11 +87,18 @@ export class SmsForm {
     return stationFromAddress.district !== selected.district;
   });
 
+  protected readonly SMS_CHAR_LIMIT = 70;
+
   protected composedMessage = computed(() => {
     const address = this.addressValue() ?? '';
     const violation = this.violationValue() ?? '';
     if (!address || !violation) return '';
     return `${address}，有${violation}，請派員處理`;
+  });
+
+  protected smsOverLimit = computed(() => {
+    const msg = this.composedMessage();
+    return msg.length > this.SMS_CHAR_LIMIT;
   });
 
   protected compareStations(a: PoliceStation | null, b: PoliceStation | null): boolean {
@@ -109,6 +116,7 @@ export class SmsForm {
   }
 
   protected async locateUser(): Promise<void> {
+    if (this.isLocating()) return;
     this.isLocating.set(true);
     this.locationError.set('');
     try {
@@ -132,8 +140,7 @@ export class SmsForm {
 
     const station = this.smsForm.controls.district.value;
     if (!station) return;
-    const link = this.smsService.generateSmsLink(station.phoneNumber, this.composedMessage());
-    window.location.href = link;
+    this.smsService.sendSms(station.phoneNumber, this.composedMessage());
   }
 
   private autoSelectDistrict(address: string): void {

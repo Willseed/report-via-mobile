@@ -171,11 +171,6 @@ describe('GeocodingService', () => {
       req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
       req.flush('Error', { status: 500, statusText: 'Server Error' });
 
-      // Retry 2 after 1s delay
-      await vi.advanceTimersByTimeAsync(1000);
-      req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      req.flush('Error', { status: 500, statusText: 'Server Error' });
-
       await expect(promise).rejects.toThrow('地址查詢失敗，請稍後再試。');
       vi.useRealTimers();
     });
@@ -210,29 +205,23 @@ describe('GeocodingService', () => {
 
       // Initial attempt times out (request gets cancelled by timeout)
       httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      await vi.advanceTimersByTimeAsync(15000);
+      await vi.advanceTimersByTimeAsync(8000);
 
       // Retry 1 after 1s delay also times out
       await vi.advanceTimersByTimeAsync(1000);
       httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      await vi.advanceTimersByTimeAsync(15000);
-
-      // Retry 2 after 1s delay also times out
-      await vi.advanceTimersByTimeAsync(1000);
-      httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      await vi.advanceTimersByTimeAsync(15000);
+      await vi.advanceTimersByTimeAsync(8000);
 
       await rejection;
       vi.useRealTimers();
     });
 
-    it('should return empty string when no address and no display_name', async () => {
+    it('should throw when no address and no display_name', async () => {
       const promise = service.reverseGeocode(25.033, 121.565);
       const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
       req.flush({});
 
-      const result = await promise;
-      expect(result).toBe('');
+      await expect(promise).rejects.toThrow('無法解析地址，請手動輸入。');
     });
 
     it('should throw on invalid latitude', async () => {
@@ -247,12 +236,10 @@ describe('GeocodingService', () => {
       await expect(service.reverseGeocode(25, Infinity)).rejects.toThrow('無效的座標資訊。');
     });
 
-    it('should include User-Agent header in request', async () => {
+    it('should not include User-Agent header in request', async () => {
       const promise = service.reverseGeocode(25.033, 121.565);
       const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      expect(req.request.headers.get('User-Agent')).toBe(
-        'ReportViaMobileApp/1.0 (https://github.com/Willseed/report-via-mobile)',
-      );
+      expect(req.request.headers.has('User-Agent')).toBe(false);
       req.flush({ display_name: 'test' });
       await promise;
     });

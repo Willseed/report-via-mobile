@@ -1,10 +1,14 @@
 import { TestBed } from '@angular/core/testing';
+import { DOCUMENT } from '@angular/common';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Platform } from '@angular/cdk/platform';
 import { SmsService } from './sms.service';
 
 describe('SmsService', () => {
-  function createService(platformOverrides: Partial<Platform> = {}) {
+  function createService(
+    platformOverrides: Partial<Platform> = {},
+    mockDocument?: { location: { href: string } },
+  ) {
     const mockPlatform = {
       ANDROID: false,
       IOS: false,
@@ -18,9 +22,12 @@ describe('SmsService', () => {
       ...platformOverrides,
     } as Platform;
 
-    TestBed.configureTestingModule({
-      providers: [{ provide: Platform, useValue: mockPlatform }],
-    });
+    const providers: unknown[] = [{ provide: Platform, useValue: mockPlatform }];
+    if (mockDocument) {
+      providers.push({ provide: DOCUMENT, useValue: mockDocument });
+    }
+
+    TestBed.configureTestingModule({ providers });
     return TestBed.inject(SmsService);
   }
 
@@ -58,6 +65,15 @@ describe('SmsService', () => {
       const service = createService({ ANDROID: true });
       const link = service.generateSmsLink('0912345678', '');
       expect(link).toBe('sms:0912345678?body=');
+    });
+  });
+
+  describe('sendSms', () => {
+    it('should set document.location.href to SMS link', () => {
+      const mockDoc = { location: { href: '' } };
+      const service = createService({ ANDROID: true }, mockDoc);
+      service.sendSms('0912345678', 'Hello');
+      expect(mockDoc.location.href).toBe('sms:0912345678?body=Hello');
     });
   });
 

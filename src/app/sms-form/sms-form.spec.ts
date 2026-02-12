@@ -10,6 +10,7 @@ describe('SmsForm', () => {
   let component: SmsForm;
   let fixture: ComponentFixture<SmsForm>;
   let smsServiceSpy: {
+    sendSms: ReturnType<typeof vi.fn>;
     generateSmsLink: ReturnType<typeof vi.fn>;
     isDesktop: ReturnType<typeof vi.fn>;
   };
@@ -20,6 +21,7 @@ describe('SmsForm', () => {
 
   beforeEach(async () => {
     smsServiceSpy = {
+      sendSms: vi.fn(),
       generateSmsLink: vi.fn().mockReturnValue('sms:0911510914?body=Hello'),
       isDesktop: vi.fn().mockReturnValue(false),
     };
@@ -69,20 +71,14 @@ describe('SmsForm', () => {
     expect(component['selectedStation']).toBe(POLICE_STATIONS[0]);
   });
 
-  it('should call generateSmsLink with composed message on valid submit', () => {
+  it('should call sendSms with composed message on valid submit', () => {
     const station = POLICE_STATIONS[0];
     component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
     component['smsForm'].controls.district.setValue(station);
     component['smsForm'].controls.violation.setValue('汽車於紅線停車');
 
-    Object.defineProperty(window, 'location', {
-      value: { href: '' },
-      writable: true,
-      configurable: true,
-    });
-
     component['sendSms']();
-    expect(smsServiceSpy.generateSmsLink).toHaveBeenCalledWith(
+    expect(smsServiceSpy.sendSms).toHaveBeenCalledWith(
       station.phoneNumber,
       '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
     );
@@ -258,6 +254,22 @@ describe('SmsForm', () => {
     });
   });
 
+  describe('smsOverLimit', () => {
+    it('should detect when message exceeds 70 characters', () => {
+      const longAddress = '臺北市信義區信義路五段某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某號';
+      component['smsForm'].controls.address.setValue(longAddress);
+      component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+      expect(component['composedMessage']().length).toBeGreaterThan(70);
+      expect(component['smsOverLimit']()).toBe(true);
+    });
+
+    it('should not flag when message is within limit', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義路');
+      component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+      expect(component['smsOverLimit']()).toBe(false);
+    });
+  });
+
   describe('locateUser', () => {
     it('should fill address and auto-select district on success', async () => {
       const mockPosition = {
@@ -281,6 +293,28 @@ describe('SmsForm', () => {
 
       expect(component['locationError']()).toBe('定位權限被拒絕，請允許存取位置資訊。');
       expect(component['isLocating']()).toBe(false);
+    });
+
+    it('should skip when already locating (race condition guard)', async () => {
+      let resolvePosition!: (value: GeolocationPosition) => void;
+      geocodingServiceSpy.getCurrentPosition.mockReturnValue(
+        new Promise((resolve) => {
+          resolvePosition = resolve;
+        }),
+      );
+      geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區');
+
+      const promise1 = component['locateUser']();
+      expect(component['isLocating']()).toBe(true);
+
+      // Second call should be ignored
+      const promise2 = component['locateUser']();
+
+      resolvePosition({ coords: { latitude: 25, longitude: 121 } } as GeolocationPosition);
+      await promise1;
+      await promise2;
+
+      expect(geocodingServiceSpy.getCurrentPosition).toHaveBeenCalledTimes(1);
     });
 
     it('should set isLocating during location process', async () => {
