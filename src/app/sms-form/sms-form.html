@@ -2,109 +2,113 @@
   <h1>簡訊報案</h1>
   <p class="subtitle">填寫以下表單，透過您裝置的簡訊功能傳送報案訊息。</p>
 
-  @if (isDesktop()) {
-    <div class="desktop-warning">
-      <mat-icon>warning</mat-icon>
-      <span>簡訊連結可能無法在桌面瀏覽器上使用，請使用行動裝置開啟。</span>
-    </div>
-  }
-
-  <div class="info-banner">
-    <mat-icon>info</mat-icon>
-    <span>發送此簡訊是免費的。</span>
-  </div>
-
-  <form [formGroup]="smsForm" (ngSubmit)="sendSms()">
-    <mat-form-field appearance="outline">
-      <mat-label>事發地址</mat-label>
-      <input matInput formControlName="address" placeholder="請輸入地址..."
-        (input)="onAddressInput()" />
-      <mat-icon matPrefix>edit_location_alt</mat-icon>
-      <button mat-icon-button matSuffix type="button"
-        (click)="locateUser()" [disabled]="isLocating()"
-        aria-label="使用目前位置">
-        <mat-icon [class.locating-spin]="isLocating()">my_location</mat-icon>
-      </button>
-      <mat-hint>輸入地址或按右側按鈕定位，將自動帶入行政區。</mat-hint>
-      @if (smsForm.controls.address.hasError('required')) {
-        <mat-error>請輸入事發地址。</mat-error>
-      } @else if (smsForm.controls.address.hasError('maxlength')) {
-        <mat-error>地址不可超過 100 字。</mat-error>
-      }
-    </mat-form-field>
-
-    @if (locationError()) {
-      <div class="location-error" role="alert">
-        <mat-icon>error_outline</mat-icon>
-        <span>{{ locationError() }}</span>
-      </div>
-    }
-
-    <mat-form-field appearance="outline">
-      <mat-label>報案行政區</mat-label>
-      <mat-select formControlName="district" [compareWith]="compareStations" panelClass="fade-dropdown">
-        <mat-select-trigger>{{ selectedStation?.district }}</mat-select-trigger>
-        @for (station of stations; track station.district) {
-          <mat-option [value]="station">{{ station.district }}</mat-option>
-        }
-      </mat-select>
-      <mat-icon matPrefix>location_on</mat-icon>
-      @if (selectedStation) {
-        <mat-hint>承辦單位：{{ selectedStation.stationName }}</mat-hint>
-      }
-      @if (smsForm.controls.district.hasError('required')) {
-        <mat-error>請選擇報案行政區。</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>違規事實</mat-label>
-      <input matInput formControlName="violation" placeholder="請選擇違規事實..."
-        [matAutocomplete]="autoViolation" (input)="onViolationInput($event)" />
-      <mat-autocomplete #autoViolation="matAutocomplete" requireSelection panelClass="fade-dropdown">
-        @for (type of filteredViolations(); track type) {
-          <mat-option [value]="type">{{ type }}</mat-option>
-        }
-      </mat-autocomplete>
-      <mat-icon matPrefix>report</mat-icon>
-      @if (smsForm.controls.violation.hasError('required')) {
-        <mat-error>請選擇違規事實。</mat-error>
-      } @else if (smsForm.controls.violation.hasError('maxlength')) {
-        <mat-error>違規事實不可超過 50 字。</mat-error>
-      }
-    </mat-form-field>
-
-    @if (composedMessage()) {
-      <div class="sms-preview">
-        <div class="sms-preview-header">簡訊預覽</div>
-        <div class="sms-bubble">{{ composedMessage() }}</div>
-        <div class="sms-char-count" [class.over-limit]="smsOverLimit()">
-          {{ composedMessage().length }} / {{ SMS_CHAR_LIMIT }} 字
-        </div>
-      </div>
-      @if (smsOverLimit()) {
-        <div class="sms-length-warning" role="alert">
-          <mat-icon>warning</mat-icon>
-          <span>簡訊內容超過 {{ SMS_CHAR_LIMIT }} 字，可能被拆為多則傳送。</span>
-        </div>
-      }
-    }
-
-    @if (districtMismatch()) {
-      <div class="district-mismatch-warning" role="alert">
+  @defer (on idle) {
+    @if (isDesktop()) {
+      <div class="desktop-warning">
         <mat-icon>warning</mat-icon>
-        <span>輸入地址與報案行政區不一致，請確認後再發送。</span>
+        <span>簡訊連結可能無法在桌面瀏覽器上使用，請使用行動裝置開啟。</span>
       </div>
     }
 
-    <div class="notice-banner">
-      <mat-icon>gavel</mat-icon>
-      <span>報案的受理與否，最終由該轄區警察局依法審核決定。</span>
+    <div class="info-banner">
+      <mat-icon>info</mat-icon>
+      <span>發送此簡訊是免費的。</span>
     </div>
 
-    <button mat-flat-button type="submit" [disabled]="isDesktop() || districtMismatch()">
-      <mat-icon>send</mat-icon>
-      發送簡訊
-    </button>
-  </form>
+    <form [formGroup]="smsForm" (ngSubmit)="sendSms()">
+      <mat-form-field appearance="outline">
+        <mat-label>事發地址</mat-label>
+        <input matInput formControlName="address" placeholder="請輸入地址..."
+          (input)="onAddressInput()" />
+        <mat-icon matPrefix>edit_location_alt</mat-icon>
+        <button mat-icon-button matSuffix type="button"
+          (click)="locateUser()" [disabled]="isLocating()"
+          aria-label="使用目前位置">
+          <mat-icon [class.locating-spin]="isLocating()">my_location</mat-icon>
+        </button>
+        <mat-hint>輸入地址或按右側按鈕定位，將自動帶入行政區。</mat-hint>
+        @if (smsForm.controls.address.hasError('required')) {
+          <mat-error>請輸入事發地址。</mat-error>
+        } @else if (smsForm.controls.address.hasError('maxlength')) {
+          <mat-error>地址不可超過 100 字。</mat-error>
+        }
+      </mat-form-field>
+
+      @if (locationError()) {
+        <div class="location-error" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ locationError() }}</span>
+        </div>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>報案行政區</mat-label>
+        <mat-select formControlName="district" [compareWith]="compareStations" panelClass="fade-dropdown">
+          <mat-select-trigger>{{ selectedStation?.district }}</mat-select-trigger>
+          @for (station of stations; track station.district) {
+            <mat-option [value]="station">{{ station.district }}</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>location_on</mat-icon>
+        @if (selectedStation) {
+          <mat-hint>承辦單位：{{ selectedStation.stationName }}</mat-hint>
+        }
+        @if (smsForm.controls.district.hasError('required')) {
+          <mat-error>請選擇報案行政區。</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>違規事實</mat-label>
+        <input matInput formControlName="violation" placeholder="請選擇違規事實..."
+          [matAutocomplete]="autoViolation" (input)="onViolationInput($event)" />
+        <mat-autocomplete #autoViolation="matAutocomplete" requireSelection panelClass="fade-dropdown">
+          @for (type of filteredViolations(); track type) {
+            <mat-option [value]="type">{{ type }}</mat-option>
+          }
+        </mat-autocomplete>
+        <mat-icon matPrefix>report</mat-icon>
+        @if (smsForm.controls.violation.hasError('required')) {
+          <mat-error>請選擇違規事實。</mat-error>
+        } @else if (smsForm.controls.violation.hasError('maxlength')) {
+          <mat-error>違規事實不可超過 50 字。</mat-error>
+        }
+      </mat-form-field>
+
+      @if (composedMessage()) {
+        <div class="sms-preview">
+          <div class="sms-preview-header">簡訊預覽</div>
+          <div class="sms-bubble">{{ composedMessage() }}</div>
+          <div class="sms-char-count" [class.over-limit]="smsOverLimit()">
+            {{ composedMessage().length }} / {{ SMS_CHAR_LIMIT }} 字
+          </div>
+        </div>
+        @if (smsOverLimit()) {
+          <div class="sms-length-warning" role="alert">
+            <mat-icon>warning</mat-icon>
+            <span>簡訊內容超過 {{ SMS_CHAR_LIMIT }} 字，可能被拆為多則傳送。</span>
+          </div>
+        }
+      }
+
+      @if (districtMismatch()) {
+        <div class="district-mismatch-warning" role="alert">
+          <mat-icon>warning</mat-icon>
+          <span>輸入地址與報案行政區不一致，請確認後再發送。</span>
+        </div>
+      }
+
+      <div class="notice-banner">
+        <mat-icon>gavel</mat-icon>
+        <span>報案的受理與否，最終由該轄區警察局依法審核決定。</span>
+      </div>
+
+      <button mat-flat-button type="submit" [disabled]="isDesktop() || districtMismatch()">
+        <mat-icon>send</mat-icon>
+        發送簡訊
+      </button>
+    </form>
+  } @placeholder {
+    <p class="form-loading">載入表單中⋯</p>
+  }
 </main>

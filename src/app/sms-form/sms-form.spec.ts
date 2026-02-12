@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { SmsForm } from './sms-form';
@@ -18,6 +18,12 @@ describe('SmsForm', () => {
     getCurrentPosition: ReturnType<typeof vi.fn>;
     reverseGeocode: ReturnType<typeof vi.fn>;
   };
+
+  async function renderDeferBlock(): Promise<void> {
+    const deferBlocks = await fixture.getDeferBlocks();
+    await deferBlocks[0].render(DeferBlockState.Complete);
+    fixture.detectChanges();
+  }
 
   beforeEach(async () => {
     smsServiceSpy = {
@@ -42,6 +48,7 @@ describe('SmsForm', () => {
     fixture = TestBed.createComponent(SmsForm);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await renderDeferBlock();
   });
 
   it('should create', () => {
