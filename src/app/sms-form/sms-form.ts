@@ -24,9 +24,12 @@ const VIOLATION_DESCRIPTIONS = [
 
 const CAR_ONLY_DESCRIPTIONS = ['違法佔用孕婦及育有六歲以下兒童者停車位'];
 
+const OTHER_VIOLATIONS = ['一般油車佔用電動車停車位'];
+
 const VIOLATION_TYPES = [
   ...VEHICLE_TYPES.flatMap((v) => VIOLATION_DESCRIPTIONS.map((d) => `${v}${d}`)),
   ...CAR_ONLY_DESCRIPTIONS.map((d) => `汽車${d}`),
+  ...OTHER_VIOLATIONS,
 ];
 
 @Component({
