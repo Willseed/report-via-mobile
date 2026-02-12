@@ -119,12 +119,12 @@ button[mat-flat-button] {
 }
 
 .fade-in {
-  animation: fadeIn 2000ms ease-in;
+  animation: fadeIn 500ms ease-in;
 }
 
 .fade-out {
   opacity: 0;
-  transition: opacity 2000ms ease-out;
+  transition: opacity 500ms ease-out;
 }
 
 @keyframes fadeIn {
