@@ -75,12 +75,13 @@
         }
       </mat-form-field>
 
-      @if (composedMessage()) {
+      @let message = composedMessage();
+      @if (message) {
         <div class="sms-preview">
           <div class="sms-preview-header">簡訊預覽</div>
-          <div class="sms-bubble">{{ composedMessage() }}</div>
+          <div class="sms-bubble">{{ message }}</div>
           <div class="sms-char-count" [class.over-limit]="smsOverLimit()">
-            {{ composedMessage().length }} / {{ SMS_CHAR_LIMIT }} 字
+            {{ message.length }} / {{ SMS_CHAR_LIMIT }} 字
           </div>
         </div>
         @if (smsOverLimit()) {

@@ -99,6 +99,43 @@ describe('GeocodingService', () => {
       await expect(service.getCurrentPosition()).rejects.toThrow('定位逾時');
     });
 
+    it('should try fast positioning first, then fall back to high accuracy', async () => {
+      const mockPosition = {
+        coords: { latitude: 25.033, longitude: 121.565 },
+      } as GeolocationPosition;
+
+      const getCurrentPositionSpy = vi.fn(
+        (success: PositionCallback, error: PositionErrorCallback, options?: PositionOptions) => {
+          if (!options?.enableHighAccuracy) {
+            error({ code: 3, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: '' });
+          } else {
+            success(mockPosition);
+          }
+        },
+      );
+      vi.stubGlobal('navigator', {
+        geolocation: { getCurrentPosition: getCurrentPositionSpy },
+      });
+
+      const result = await service.getCurrentPosition();
+      expect(result).toBe(mockPosition);
+      expect(getCurrentPositionSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not retry when permission is denied', async () => {
+      const getCurrentPositionSpy = vi.fn(
+        (_success: PositionCallback, error: PositionErrorCallback) => {
+          error({ code: 1, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: '' });
+        },
+      );
+      vi.stubGlobal('navigator', {
+        geolocation: { getCurrentPosition: getCurrentPositionSpy },
+      });
+
+      await expect(service.getCurrentPosition()).rejects.toThrow('定位權限被拒絕');
+      expect(getCurrentPositionSpy).toHaveBeenCalledTimes(1);
+    });
+
     afterEach(() => {
       vi.unstubAllGlobals();
     });
@@ -234,6 +271,47 @@ describe('GeocodingService', () => {
       await expect(service.reverseGeocode(25, 181)).rejects.toThrow('無效的座標資訊。');
       await expect(service.reverseGeocode(25, -181)).rejects.toThrow('無效的座標資訊。');
       await expect(service.reverseGeocode(25, Infinity)).rejects.toThrow('無效的座標資訊。');
+    });
+
+    it('should return cached result for nearby coordinates', async () => {
+      const mockResponse = {
+        display_name: '臺北市信義區',
+        address: { city: '臺北市', suburb: '信義區' },
+      };
+
+      // First call — hits network
+      const promise1 = service.reverseGeocode(25.03301, 121.56501);
+      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush(mockResponse);
+      const result1 = await promise1;
+      expect(result1).toBe('臺北市信義區');
+
+      // Second call with nearby coords (same toFixed(4) = 25.0330, 121.5650) — should use cache
+      const result2 = await service.reverseGeocode(25.03304, 121.56504);
+      httpTesting.expectNone((r) => r.url.includes('nominatim'));
+      expect(result2).toBe('臺北市信義區');
+    });
+
+    it('should not cache failed requests', async () => {
+      vi.useFakeTimers();
+
+      // First call fails
+      const promise1 = service.reverseGeocode(25.033, 121.565);
+      let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush('Error', { status: 500, statusText: 'Server Error' });
+      await vi.advanceTimersByTimeAsync(1000);
+      req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush('Error', { status: 500, statusText: 'Server Error' });
+      await expect(promise1).rejects.toThrow('地址查詢失敗');
+
+      // Second call should still hit network (not cached)
+      const promise2 = service.reverseGeocode(25.033, 121.565);
+      req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush({ display_name: '臺北市', address: { city: '臺北市' } });
+      const result2 = await promise2;
+      expect(result2).toBe('臺北市');
+
+      vi.useRealTimers();
     });
 
     it('should not include User-Agent header in request', async () => {

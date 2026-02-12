@@ -18,31 +18,48 @@ interface NominatimResponse {
   address?: NominatimAddress;
 }
 
+class GeolocationError extends Error {
+  readonly PERMISSION_DENIED = 1;
+  constructor(message: string, readonly code: number) {
+    super(message);
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class GeocodingService {
   private http = inject(HttpClient);
+  private geocodeCache = new Map<string, string>();
 
   getCurrentPosition(): Promise<GeolocationPosition> {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('您的瀏覽器不支援定位功能。'));
-        return;
+    if (!navigator.geolocation) {
+      return Promise.reject(new Error('您的瀏覽器不支援定位功能。'));
+    }
+
+    return this.requestPosition({ enableHighAccuracy: false, timeout: 3000 }).catch((error) => {
+      if (error instanceof GeolocationError && error.code === error.PERMISSION_DENIED) {
+        throw error;
       }
+      return this.requestPosition({ enableHighAccuracy: true, timeout: 10000 });
+    });
+  }
+
+  private requestPosition(options: PositionOptions): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, (error) => {
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            reject(new Error('定位權限被拒絕，請允許存取位置資訊。'));
+            reject(new GeolocationError('定位權限被拒絕，請允許存取位置資訊。', error.code));
             break;
           case error.POSITION_UNAVAILABLE:
-            reject(new Error('無法取得位置資訊。'));
+            reject(new GeolocationError('無法取得位置資訊。', error.code));
             break;
           case error.TIMEOUT:
-            reject(new Error('定位逾時，請稍後再試。'));
+            reject(new GeolocationError('定位逾時，請稍後再試。', error.code));
             break;
           default:
-            reject(new Error('定位失敗，請稍後再試。'));
+            reject(new GeolocationError('定位失敗，請稍後再試。', error.code));
         }
-      }, { enableHighAccuracy: true, timeout: 10000 });
+      }, options);
     });
   }
 
@@ -53,6 +70,10 @@ export class GeocodingService {
     if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
       throw new Error('無效的座標資訊。');
     }
+
+    const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    const cached = this.geocodeCache.get(cacheKey);
+    if (cached) return cached;
 
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=zh-TW&addressdetails=1`;
     let data: NominatimResponse;
@@ -67,15 +88,19 @@ export class GeocodingService {
       throw new Error('地址查詢失敗，請稍後再試。');
     }
     const a = data.address;
+    let result: string | undefined;
     if (a) {
       const city = a.city ?? a.county ?? '';
       const district = a.suburb ?? a.city_district ?? a.town ?? a.village ?? '';
       const road = a.road ?? '';
       const number = a.house_number ?? '';
       const formatted = `${city}${district}${road}${number}`;
-      if (formatted) return formatted;
+      if (formatted) result = formatted;
     }
-    if (data.display_name) return data.display_name;
-    throw new Error('無法解析地址，請手動輸入。');
+    if (!result && data.display_name) result = data.display_name;
+    if (!result) throw new Error('無法解析地址，請手動輸入。');
+
+    this.geocodeCache.set(cacheKey, result);
+    return result;
   }
 }
