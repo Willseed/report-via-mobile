@@ -111,3 +111,21 @@ button[mat-flat-button] {
   height: 48px;
   font-size: 1rem;
 }
+
+.fade-in {
+  animation: fadeIn 2000ms ease-in;
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 2000ms ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
