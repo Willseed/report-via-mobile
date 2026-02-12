@@ -2,6 +2,7 @@
   <h1>簡訊報案</h1>
   <p class="subtitle">填寫以下表單，透過您裝置的簡訊功能傳送報案訊息。</p>
 
+  @defer (on idle) {
     @if (isDesktop()) {
       <div class="desktop-warning">
         <mat-icon>warning</mat-icon>
@@ -108,4 +109,13 @@
         發送簡訊
       </button>
     </form>
+  } @placeholder {
+    <div class="form-skeleton" aria-hidden="true">
+      <div class="skeleton-banner"></div>
+      <div class="skeleton-field"></div>
+      <div class="skeleton-field"></div>
+      <div class="skeleton-field"></div>
+      <div class="skeleton-button"></div>
+    </div>
+  }
 </main>

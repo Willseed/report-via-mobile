@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { SmsForm, DISTRICT_SEARCH_DEBOUNCE_MS } from './sms-form';
@@ -163,10 +163,12 @@ describe('SmsForm', () => {
       expect(component['districtMismatch']()).toBe(false);
     });
 
-    it('should disable submit button when district mismatches', () => {
+    it('should disable submit button when district mismatches', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
       const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
       component['smsForm'].controls.district.setValue(kaohsiungStation);
+      const deferBlock = (await fixture.getDeferBlocks())[0];
+      await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
       const button = (fixture.nativeElement as HTMLElement).querySelector(
         'button[mat-flat-button]',
@@ -174,10 +176,12 @@ describe('SmsForm', () => {
       expect(button.disabled).toBe(true);
     });
 
-    it('should show warning message when district mismatches', () => {
+    it('should show warning message when district mismatches', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
       const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
       component['smsForm'].controls.district.setValue(kaohsiungStation);
+      const deferBlock = (await fixture.getDeferBlocks())[0];
+      await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
       const warning = (fixture.nativeElement as HTMLElement).querySelector(
         '.district-mismatch-warning',
@@ -185,9 +189,11 @@ describe('SmsForm', () => {
       expect(warning).toBeTruthy();
     });
 
-    it('should not show warning when district matches', () => {
+    it('should not show warning when district matches', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
       component['smsForm'].controls.district.setValue(POLICE_STATIONS[0]);
+      const deferBlock = (await fixture.getDeferBlocks())[0];
+      await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
       const warning = (fixture.nativeElement as HTMLElement).querySelector(
         '.district-mismatch-warning',
@@ -217,31 +223,39 @@ describe('SmsForm', () => {
   });
 
   describe('sms preview', () => {
-    it('should show preview when address and violation are filled', () => {
+    it('should show preview when address and violation are filled', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
       component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+      const deferBlock = (await fixture.getDeferBlocks())[0];
+      await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeTruthy();
     });
 
-    it('should hide preview when address is empty', () => {
+    it('should hide preview when address is empty', async () => {
       component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+      const deferBlock = (await fixture.getDeferBlocks())[0];
+      await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeNull();
     });
 
-    it('should hide preview when violation is empty', () => {
+    it('should hide preview when violation is empty', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      const deferBlock = (await fixture.getDeferBlocks())[0];
+      await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeNull();
     });
 
-    it('should display composed message in bubble', () => {
+    it('should display composed message in bubble', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
       component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+      const deferBlock = (await fixture.getDeferBlocks())[0];
+      await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
       const bubble = (fixture.nativeElement as HTMLElement).querySelector('.sms-bubble');
       expect(bubble?.textContent?.trim()).toBe(
