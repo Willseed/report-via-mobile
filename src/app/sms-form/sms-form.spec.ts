@@ -238,7 +238,7 @@ describe('SmsForm', () => {
 
   describe('filteredViolations', () => {
     it('should return all violations when filter is empty', () => {
-      expect(component['filteredViolations']().length).toBe(18);
+      expect(component['filteredViolations']().length).toBe(19);
     });
 
     it('should filter violations by keyword', () => {
@@ -254,7 +254,7 @@ describe('SmsForm', () => {
 
     it('should return all violations when filter matches an exact option', () => {
       component['violationFilter'].set('汽車於紅線停車');
-      expect(component['filteredViolations']().length).toBe(18);
+      expect(component['filteredViolations']().length).toBe(19);
     });
   });
 
