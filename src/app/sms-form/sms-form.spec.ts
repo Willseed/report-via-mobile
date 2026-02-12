@@ -242,7 +242,7 @@ describe('SmsForm', () => {
 
   describe('filteredViolations', () => {
     it('should return all violations when filter is empty', () => {
-      expect(component['filteredViolations']().length).toBe(19);
+      expect(component['filteredViolations']().length).toBe(20);
     });
 
     it('should filter violations by keyword', () => {
@@ -258,7 +258,19 @@ describe('SmsForm', () => {
 
     it('should return all violations when filter matches an exact option', () => {
       component['violationFilter'].set('汽車於紅線停車');
-      expect(component['filteredViolations']().length).toBe(19);
+      expect(component['filteredViolations']().length).toBe(20);
+    });
+
+    it('should include car-only violation for disabled parking space', () => {
+      component['violationFilter'].set('殘障');
+      const results = component['filteredViolations']();
+      expect(results).toEqual(['汽車違法佔用殘障車位']);
+    });
+
+    it('should not include car-only violations for motorcycles', () => {
+      const violations = component['filteredViolations']();
+      expect(violations).not.toContain('機車違法佔用殘障車位');
+      expect(violations).toContain('汽車違法佔用殘障車位');
     });
   });
 
