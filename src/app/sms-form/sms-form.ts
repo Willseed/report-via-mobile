@@ -11,18 +11,17 @@ import { SmsService } from '../sms.service';
 import { POLICE_STATIONS, PoliceStation, findStationByAddress } from '../police-stations';
 import { GeocodingService } from '../geocoding.service';
 
-const VIOLATION_TYPES = [
-  '汽車於紅線停車',
-  '汽車於黃線停車',
-  '汽車於騎樓停車',
-  '汽車於人行道停車',
-  '汽車並排停車',
-  '機車於紅線停車',
-  '機車於黃線停車',
-  '機車於騎樓停車',
-  '機車於人行道停車',
-  '機車並排停車',
+const VEHICLE_TYPES = ['汽車', '機車'] as const;
+const VIOLATION_DESCRIPTIONS = [
+  '於紅線停車',
+  '於黃線停車',
+  '於騎樓停車',
+  '於人行道停車',
+  '並排停車',
+  '於轉彎處停車',
 ];
+
+const VIOLATION_TYPES = VEHICLE_TYPES.flatMap((v) => VIOLATION_DESCRIPTIONS.map((d) => `${v}${d}`));
 
 @Component({
   selector: 'app-sms-form',

@@ -238,7 +238,7 @@ describe('SmsForm', () => {
 
   describe('filteredViolations', () => {
     it('should return all violations when filter is empty', () => {
-      expect(component['filteredViolations']().length).toBe(10);
+      expect(component['filteredViolations']().length).toBe(12);
     });
 
     it('should filter violations by keyword', () => {
@@ -248,13 +248,13 @@ describe('SmsForm', () => {
 
     it('should filter by vehicle type', () => {
       component['violationFilter'].set('機車');
-      expect(component['filteredViolations']().length).toBe(5);
+      expect(component['filteredViolations']().length).toBe(6);
       expect(component['filteredViolations']().every((v) => v.startsWith('機車'))).toBe(true);
     });
 
     it('should return all violations when filter matches an exact option', () => {
       component['violationFilter'].set('汽車於紅線停車');
-      expect(component['filteredViolations']().length).toBe(10);
+      expect(component['filteredViolations']().length).toBe(12);
     });
   });
 
