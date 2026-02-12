@@ -84,14 +84,14 @@
       </div>
     }
 
-    <button mat-flat-button type="submit" [disabled]="isDesktop() || districtMismatch()">
-      <mat-icon>send</mat-icon>
-      發送簡訊
-    </button>
-
     <div class="notice-banner">
       <mat-icon>gavel</mat-icon>
       <span>報案的受理與否，最終由該轄區警察局依法審核決定。</span>
     </div>
+
+    <button mat-flat-button type="submit" [disabled]="isDesktop() || districtMismatch()">
+      <mat-icon>send</mat-icon>
+      發送簡訊
+    </button>
   </form>
 </div>
