@@ -112,6 +112,12 @@ button[mat-flat-button] {
   font-size: 1rem;
 }
 
+.notice-banner {
+  @include banner(var(--mat-sys-surface-container), var(--mat-sys-on-surface-variant));
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+}
+
 .fade-in {
   animation: fadeIn 2000ms ease-in;
 }
