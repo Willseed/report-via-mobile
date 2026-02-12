@@ -1,5 +1,5 @@
 import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { SmsForm } from './sms-form';
 import { SmsService } from '../sms.service';
@@ -73,10 +73,10 @@ describe('SmsForm', () => {
   });
 
   it('should return selectedStation from district control', () => {
-    expect(component['selectedStation']).toBeNull();
+    expect(component['selectedStation']()).toBeNull();
 
     component['smsForm'].controls.district.setValue(POLICE_STATIONS[0]);
-    expect(component['selectedStation']).toBe(POLICE_STATIONS[0]);
+    expect(component['selectedStation']()).toBe(POLICE_STATIONS[0]);
   });
 
   it('should call sendSms with composed message on valid submit', () => {
@@ -108,23 +108,41 @@ describe('SmsForm', () => {
   });
 
   describe('address input and auto-select district', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('should auto-select district when address contains district name', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      component['onAddressInput']();
+      vi.advanceTimersByTime(300);
       expect(component['smsForm'].controls.district.value).toEqual(POLICE_STATIONS[0]);
     });
 
     it('should auto-select district with 台 → 臺 normalization', () => {
       component['smsForm'].controls.address.setValue('台中市西屯區某路');
-      component['onAddressInput']();
+      vi.advanceTimersByTime(300);
       const taichungStation = POLICE_STATIONS.find((s) => s.district === '臺中市');
       expect(component['smsForm'].controls.district.value).toEqual(taichungStation);
     });
 
     it('should not change district when address does not match', () => {
       component['smsForm'].controls.address.setValue('某個不存在的地方');
-      component['onAddressInput']();
+      vi.advanceTimersByTime(300);
       expect(component['smsForm'].controls.district.value).toBeNull();
+    });
+
+    it('should debounce rapid address inputs', () => {
+      component['smsForm'].controls.address.setValue('臺北');
+      vi.advanceTimersByTime(100);
+      expect(component['smsForm'].controls.district.value).toBeNull();
+
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      vi.advanceTimersByTime(300);
+      expect(component['smsForm'].controls.district.value).toEqual(POLICE_STATIONS[0]);
     });
   });
 

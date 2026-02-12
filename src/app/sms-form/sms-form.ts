@@ -1,6 +1,7 @@
 import { Component, afterNextRender, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -58,6 +59,12 @@ export class SmsForm {
     afterNextRender(() => {
       this.isDesktop.set(this.smsService.isDesktop());
     });
+
+    this.smsForm.controls.address.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe((address) => {
+        this.autoSelectDistrict(address || '');
+      });
   }
   protected locationError = signal('');
   protected stations = POLICE_STATIONS;
@@ -75,15 +82,13 @@ export class SmsForm {
     violation: ['', [Validators.required, Validators.maxLength(50)]],
   });
 
-  protected get selectedStation(): PoliceStation | null {
-    return this.smsForm.controls.district.value;
-  }
-
   private addressValue = toSignal(this.smsForm.controls.address.valueChanges, { initialValue: '' });
   private violationValue = toSignal(this.smsForm.controls.violation.valueChanges, { initialValue: '' });
   private districtValue = toSignal(this.smsForm.controls.district.valueChanges, {
     initialValue: null as PoliceStation | null,
   });
+
+  protected selectedStation = computed(() => this.districtValue());
 
   protected districtMismatch = computed(() => {
     const address = this.addressValue() ?? '';
@@ -114,11 +119,6 @@ export class SmsForm {
 
   protected onViolationInput(event: Event): void {
     this.violationFilter.set((event.target as HTMLInputElement).value);
-  }
-
-  protected onAddressInput(): void {
-    const address = this.smsForm.controls.address.value ?? '';
-    this.autoSelectDistrict(address);
   }
 
   protected async locateUser(): Promise<void> {

@@ -18,8 +18,7 @@
     <form [formGroup]="smsForm" (ngSubmit)="sendSms()">
       <mat-form-field appearance="outline">
         <mat-label>事發地址</mat-label>
-        <input matInput formControlName="address" placeholder="請輸入地址..."
-          (input)="onAddressInput()" />
+        <input matInput formControlName="address" placeholder="請輸入地址..." />
         <mat-icon matPrefix>edit_location_alt</mat-icon>
         <button mat-icon-button matSuffix type="button"
           (click)="locateUser()" [disabled]="isLocating()"
@@ -44,14 +43,15 @@
       <mat-form-field appearance="outline">
         <mat-label>報案行政區</mat-label>
         <mat-select formControlName="district" [compareWith]="compareStations" panelClass="fade-dropdown">
-          <mat-select-trigger>{{ selectedStation?.district }}</mat-select-trigger>
+          <mat-select-trigger>{{ selectedStation()?.district }}</mat-select-trigger>
           @for (station of stations; track station.district) {
             <mat-option [value]="station">{{ station.district }}</mat-option>
           }
         </mat-select>
         <mat-icon matPrefix>location_on</mat-icon>
-        @if (selectedStation) {
-          <mat-hint>承辦單位：{{ selectedStation.stationName }}</mat-hint>
+        @let station = selectedStation();
+        @if (station) {
+          <mat-hint>承辦單位：{{ station.stationName }}</mat-hint>
         }
         @if (smsForm.controls.district.hasError('required')) {
           <mat-error>請選擇報案行政區。</mat-error>
