@@ -1,6 +1,5 @@
 import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { SmsForm, DISTRICT_SEARCH_DEBOUNCE_MS } from './sms-form';
 import { SmsService } from '../sms.service';
 import { POLICE_STATIONS, findStationByAddress } from '../police-stations';
@@ -33,7 +32,6 @@ describe('SmsForm', () => {
     await TestBed.configureTestingModule({
       imports: [SmsForm],
       providers: [
-        provideNoopAnimations(),
         { provide: SmsService, useValue: smsServiceSpy },
         { provide: GeocodingService, useValue: geocodingServiceSpy },
       ],
