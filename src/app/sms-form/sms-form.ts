@@ -1,4 +1,4 @@
-import { Component, afterNextRender, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -48,6 +48,7 @@ export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
   ],
   templateUrl: './sms-form.html',
   styleUrl: './sms-form.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SmsForm {
   private fb = inject(FormBuilder);

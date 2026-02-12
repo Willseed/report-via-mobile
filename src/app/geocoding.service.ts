@@ -28,6 +28,7 @@ class GeolocationError extends Error {
 @Injectable({ providedIn: 'root' })
 export class GeocodingService {
   private http = inject(HttpClient);
+  private static readonly MAX_CACHE_SIZE = 100;
   private geocodeCache = new Map<string, string>();
 
   getCurrentPosition(): Promise<GeolocationPosition> {
@@ -100,6 +101,10 @@ export class GeocodingService {
     if (!result && data.display_name) result = data.display_name;
     if (!result) throw new Error('無法解析地址，請手動輸入。');
 
+    if (this.geocodeCache.size >= GeocodingService.MAX_CACHE_SIZE) {
+      const firstKey = this.geocodeCache.keys().next().value!;
+      this.geocodeCache.delete(firstKey);
+    }
     this.geocodeCache.set(cacheKey, result);
     return result;
   }
