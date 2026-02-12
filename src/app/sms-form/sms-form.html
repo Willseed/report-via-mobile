@@ -40,7 +40,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>報案行政區</mat-label>
-      <mat-select formControlName="district" [compareWith]="compareStations">
+      <mat-select formControlName="district" [compareWith]="compareStations" panelClass="fade-dropdown">
         <mat-select-trigger>{{ selectedStation?.district }}</mat-select-trigger>
         @for (station of stations; track station.district) {
           <mat-option [value]="station">{{ station.district }}</mat-option>
@@ -59,7 +59,7 @@
       <mat-label>違規事實</mat-label>
       <input matInput formControlName="violation" placeholder="請選擇違規事實..."
         [matAutocomplete]="autoViolation" (input)="onViolationInput($event)" />
-      <mat-autocomplete #autoViolation="matAutocomplete" requireSelection>
+      <mat-autocomplete #autoViolation="matAutocomplete" requireSelection panelClass="fade-dropdown">
         @for (type of filteredViolations(); track type) {
           <mat-option [value]="type">{{ type }}</mat-option>
         }

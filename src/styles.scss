@@ -36,3 +36,16 @@ body {
   height: 100%;
 }
 /* You can add global styles to this file, and also import other style files */
+
+.fade-dropdown {
+  animation: dropdownFadeIn 500ms ease-in;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
