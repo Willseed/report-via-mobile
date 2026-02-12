@@ -22,7 +22,12 @@ const VIOLATION_DESCRIPTIONS = [
   '佔用車道影響交通',
 ];
 
-const VIOLATION_TYPES = VEHICLE_TYPES.flatMap((v) => VIOLATION_DESCRIPTIONS.map((d) => `${v}${d}`));
+const CAR_ONLY_DESCRIPTIONS = ['違法佔用孕婦及育有六歲以下兒童者停車位'];
+
+const VIOLATION_TYPES = [
+  ...VEHICLE_TYPES.flatMap((v) => VIOLATION_DESCRIPTIONS.map((d) => `${v}${d}`)),
+  ...CAR_ONLY_DESCRIPTIONS.map((d) => `汽車${d}`),
+];
 
 @Component({
   selector: 'app-sms-form',
