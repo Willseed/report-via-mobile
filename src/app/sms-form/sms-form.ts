@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, afterNextRender, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -51,8 +51,14 @@ export class SmsForm {
   private smsService = inject(SmsService);
   private geocodingService = inject(GeocodingService);
 
-  protected isDesktop = signal(this.smsService.isDesktop());
+  protected isDesktop = signal(false);
   protected isLocating = signal(false);
+
+  constructor() {
+    afterNextRender(() => {
+      this.isDesktop.set(this.smsService.isDesktop());
+    });
+  }
   protected locationError = signal('');
   protected stations = POLICE_STATIONS;
   protected violationTypes = VIOLATION_TYPES;
