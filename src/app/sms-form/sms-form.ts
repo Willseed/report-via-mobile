@@ -33,6 +33,8 @@ const VIOLATION_TYPES = [
   ...OTHER_VIOLATIONS,
 ];
 
+export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
+
 @Component({
   selector: 'app-sms-form',
   imports: [
@@ -61,7 +63,7 @@ export class SmsForm {
     });
 
     this.smsForm.controls.address.valueChanges
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .pipe(debounceTime(DISTRICT_SEARCH_DEBOUNCE_MS), distinctUntilChanged(), takeUntilDestroyed())
       .subscribe((address) => {
         this.autoSelectDistrict(address || '');
       });

@@ -1,7 +1,7 @@
 import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { SmsForm } from './sms-form';
+import { SmsForm, DISTRICT_SEARCH_DEBOUNCE_MS } from './sms-form';
 import { SmsService } from '../sms.service';
 import { POLICE_STATIONS, findStationByAddress } from '../police-stations';
 import { GeocodingService } from '../geocoding.service';
@@ -118,20 +118,20 @@ describe('SmsForm', () => {
 
     it('should auto-select district when address contains district name', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(component['smsForm'].controls.district.value).toEqual(POLICE_STATIONS[0]);
     });
 
     it('should auto-select district with 台 → 臺 normalization', () => {
       component['smsForm'].controls.address.setValue('台中市西屯區某路');
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       const taichungStation = POLICE_STATIONS.find((s) => s.district === '臺中市');
       expect(component['smsForm'].controls.district.value).toEqual(taichungStation);
     });
 
     it('should not change district when address does not match', () => {
       component['smsForm'].controls.address.setValue('某個不存在的地方');
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(component['smsForm'].controls.district.value).toBeNull();
     });
 
@@ -141,7 +141,7 @@ describe('SmsForm', () => {
       expect(component['smsForm'].controls.district.value).toBeNull();
 
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(component['smsForm'].controls.district.value).toEqual(POLICE_STATIONS[0]);
     });
   });
