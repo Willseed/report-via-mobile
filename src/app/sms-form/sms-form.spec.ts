@@ -21,6 +21,7 @@ describe('SmsForm', () => {
 
   async function renderDeferBlock(): Promise<void> {
     const deferBlocks = await fixture.getDeferBlocks();
+    expect(deferBlocks.length).toBe(1);
     await deferBlocks[0].render(DeferBlockState.Complete);
     fixture.detectChanges();
   }
