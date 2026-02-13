@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, afterNextRender, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -58,14 +58,10 @@ export class SmsForm {
   private geocodingService = inject(GeocodingService);
   private dialog = inject(MatDialog);
 
-  protected isDesktop = signal(false);
+  protected isDesktop = signal(this.smsService.isDesktop());
   protected isLocating = signal(false);
 
   constructor() {
-    afterNextRender(() => {
-      this.isDesktop.set(this.smsService.isDesktop());
-    });
-
     this.smsForm.controls.address.valueChanges
       .pipe(debounceTime(DISTRICT_SEARCH_DEBOUNCE_MS), distinctUntilChanged(), takeUntilDestroyed())
       .subscribe((address) => {
