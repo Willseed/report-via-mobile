@@ -38,7 +38,7 @@ describe('GeocodingService', () => {
     });
 
     it('should reject when geolocation is not supported', async () => {
-      vi.stubGlobal('navigator', { geolocation: undefined });
+      vi.stubGlobal('navigator', {});
       await expect(service.getCurrentPosition()).rejects.toThrow('您的瀏覽器不支援定位功能。');
     });
 

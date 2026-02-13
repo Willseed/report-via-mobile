@@ -146,8 +146,9 @@ describe('SmsForm', () => {
   it('should not open dialog when district mismatches even if form is valid', () => {
     component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
     component['smsForm'].controls.violation.setValue('汽車於紅線停車');
-    const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
-    component['smsForm'].controls.district.setValue(kaohsiungStation);
+    const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市');
+    expect(kaohsiungStation).toBeDefined();
+    component['smsForm'].controls.district.setValue(kaohsiungStation!);
 
     component['sendSms']();
     expect(dialogSpy.open).not.toHaveBeenCalled();
@@ -195,8 +196,9 @@ describe('SmsForm', () => {
   describe('districtMismatch', () => {
     it('should detect mismatch when address district differs from selected district', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
-      component['smsForm'].controls.district.setValue(kaohsiungStation);
+      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市');
+      expect(kaohsiungStation).toBeDefined();
+      component['smsForm'].controls.district.setValue(kaohsiungStation!);
       expect(component['districtMismatch']()).toBe(true);
     });
 
@@ -219,8 +221,9 @@ describe('SmsForm', () => {
 
     it('should disable submit button when district mismatches', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
-      component['smsForm'].controls.district.setValue(kaohsiungStation);
+      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市');
+      expect(kaohsiungStation).toBeDefined();
+      component['smsForm'].controls.district.setValue(kaohsiungStation!);
       const deferBlock = (await fixture.getDeferBlocks())[0];
       await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
@@ -232,8 +235,9 @@ describe('SmsForm', () => {
 
     it('should show warning message when district mismatches', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
-      component['smsForm'].controls.district.setValue(kaohsiungStation);
+      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市');
+      expect(kaohsiungStation).toBeDefined();
+      component['smsForm'].controls.district.setValue(kaohsiungStation!);
       const deferBlock = (await fixture.getDeferBlocks())[0];
       await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
@@ -480,6 +484,7 @@ describe('SmsForm desktop behavior', () => {
     const deferBlock = (await fixture.getDeferBlocks())[0];
     await deferBlock.render(DeferBlockState.Complete);
     fixture.detectChanges();
+    // eslint-disable-next-line xss/no-mixed-html -- Angular test DOM query
     const button = (fixture.nativeElement as HTMLElement).querySelector(
       'button[mat-flat-button]',
     ) as HTMLButtonElement;
@@ -491,13 +496,13 @@ describe('findStationByAddress', () => {
   it('should find station by district name', () => {
     const result = findStationByAddress('臺北市信義區信義路');
     expect(result).not.toBeNull();
-    expect(result!.district).toBe('臺北市');
+    expect(result?.district).toBe('臺北市');
   });
 
   it('should normalize 台 to 臺', () => {
     const result = findStationByAddress('台中市西屯區');
     expect(result).not.toBeNull();
-    expect(result!.district).toBe('臺中市');
+    expect(result?.district).toBe('臺中市');
   });
 
   it('should return null for unmatched address', () => {
@@ -508,6 +513,6 @@ describe('findStationByAddress', () => {
   it('should match 台東縣 after normalization', () => {
     const result = findStationByAddress('台東縣太麻里鄉');
     expect(result).not.toBeNull();
-    expect(result!.district).toBe('臺東縣');
+    expect(result?.district).toBe('臺東縣');
   });
 });

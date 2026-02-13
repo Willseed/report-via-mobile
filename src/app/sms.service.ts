@@ -9,7 +9,7 @@ export class SmsService {
 
   sendSms(phone: string, body: string): void {
     const link = this.generateSmsLink(phone, body);
-    this.document.location.href = link;
+    this.document.location.assign(link);
   }
 
   generateSmsLink(phone: string, body: string): string {
