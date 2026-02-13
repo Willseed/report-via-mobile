@@ -47,7 +47,7 @@ jobs:
               .automationDetails.id = (
                 "codacy/" +
                 (.tool.driver.name // ("tool-" + ($i | tostring))) +
-                "/"
+                "/" + ($i | tostring)
               )
             ]
           ' "$SARIF_FILE" > "${{ runner.temp }}/results-patched.sarif"
