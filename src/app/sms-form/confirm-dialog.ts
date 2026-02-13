@@ -7,6 +7,7 @@ export interface ConfirmDialogData {
   stationName: string;
   phoneNumber: string;
   message: string;
+  licensePlate?: string;
 }
 
 @Component({

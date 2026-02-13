@@ -76,6 +76,31 @@
         }
       </mat-form-field>
 
+      @if (!showLicensePlate()) {
+        <button mat-button type="button" class="add-plate-btn" (click)="toggleLicensePlate()" #addPlateButton>
+          <mat-icon>directions_car</mat-icon>
+          新增車牌號碼
+        </button>
+      } @else {
+        <mat-form-field appearance="outline">
+          <mat-label>車牌號碼（選填）</mat-label>
+          <input matInput formControlName="licensePlate" placeholder="例：ABC1234"
+            autocapitalize="characters" inputmode="text" maxlength="10"
+            (input)="onLicensePlateInput($event)" #licensePlateInput />
+          <mat-icon matPrefix>directions_car</mat-icon>
+          <button mat-icon-button matSuffix type="button"
+            (click)="clearLicensePlate()" aria-label="移除車牌號碼">
+            <mat-icon>close</mat-icon>
+          </button>
+          <mat-hint>僅限英文及數字，英文將自動轉為大寫。</mat-hint>
+          @if (smsForm.controls.licensePlate.hasError('maxlength')) {
+            <mat-error>車牌號碼不可超過 10 字。</mat-error>
+          } @else if (smsForm.controls.licensePlate.hasError('pattern')) {
+            <mat-error>車牌號碼僅限英文及數字。</mat-error>
+          }
+        </mat-form-field>
+      }
+
       @let message = composedMessage();
       @if (message) {
         <div class="sms-preview">

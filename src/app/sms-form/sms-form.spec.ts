@@ -415,6 +415,119 @@ describe('SmsForm', () => {
       expect(component['isLocating']()).toBe(false);
     });
   });
+  describe('licensePlate', () => {
+    it('should not show license plate field by default', () => {
+      expect(component['showLicensePlate']()).toBe(false);
+    });
+
+    it('should show license plate field after toggle', () => {
+      component['toggleLicensePlate']();
+      expect(component['showLicensePlate']()).toBe(true);
+    });
+
+    it('should hide field and clear value on clearLicensePlate', () => {
+      component['toggleLicensePlate']();
+      component['smsForm'].controls.licensePlate.setValue('ABC1234');
+      component['clearLicensePlate']();
+      expect(component['showLicensePlate']()).toBe(false);
+      expect(component['smsForm'].controls.licensePlate.value).toBe('');
+    });
+
+    it('should auto-uppercase and filter non-alphanumeric on input', () => {
+      component['toggleLicensePlate']();
+      const event = { target: { value: 'abc-123!' } } as unknown as Event;
+      component['onLicensePlateInput'](event);
+      expect(component['smsForm'].controls.licensePlate.value).toBe('ABC123');
+    });
+
+    it('should not modify value when input is already clean uppercase', () => {
+      component['toggleLicensePlate']();
+      component['smsForm'].controls.licensePlate.setValue('ABC1234');
+      const event = { target: { value: 'ABC1234' } } as unknown as Event;
+      component['onLicensePlateInput'](event);
+      expect(component['smsForm'].controls.licensePlate.value).toBe('ABC1234');
+    });
+
+    it('should include plate in composed message when provided', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+      component['smsForm'].controls.licensePlate.setValue('ABC1234');
+      expect(component['composedMessage']()).toBe(
+        '臺北市信義區信義路五段7號，有汽車於紅線停車，車牌號碼：ABC1234，請派員處理',
+      );
+    });
+
+    it('should not include plate segment when plate is empty', () => {
+      component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+      component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+      expect(component['composedMessage']()).toBe(
+        '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
+      );
+    });
+
+    it('should pass licensePlate to confirm dialog when present', () => {
+      fillValidForm();
+      component['smsForm'].controls.licensePlate.setValue('XYZ9999');
+
+      component['sendSms']();
+      expect(dialogSpy.open).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          data: expect.objectContaining({
+            licensePlate: 'XYZ9999',
+          }),
+        }),
+      );
+    });
+
+    it('should not pass licensePlate to dialog when empty', () => {
+      fillValidForm();
+
+      component['sendSms']();
+      expect(dialogSpy.open).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          data: expect.objectContaining({
+            licensePlate: undefined,
+          }),
+        }),
+      );
+    });
+
+    it('should show add-plate button in template when not toggled', async () => {
+      await renderDeferBlock();
+      const btn = (fixture.nativeElement as HTMLElement).querySelector('.add-plate-btn');
+      expect(btn).toBeTruthy();
+      expect(btn?.textContent).toContain('新增車牌號碼');
+    });
+
+    it('should show license plate field after clicking add button', async () => {
+      component['toggleLicensePlate']();
+      await renderDeferBlock();
+      const field = (fixture.nativeElement as HTMLElement).querySelector(
+        'input[formcontrolname="licensePlate"]',
+      );
+      expect(field).toBeTruthy();
+    });
+
+    it('should hide add-plate button when field is shown', async () => {
+      component['toggleLicensePlate']();
+      await renderDeferBlock();
+      const btn = (fixture.nativeElement as HTMLElement).querySelector('.add-plate-btn');
+      expect(btn).toBeNull();
+    });
+
+    it('should keep form valid when license plate is empty (optional field)', () => {
+      fillValidForm();
+      expect(component['smsForm'].valid).toBe(true);
+    });
+
+    it('should keep form valid with a valid license plate', () => {
+      fillValidForm();
+      component['smsForm'].controls.licensePlate.setValue('ABC1234');
+      expect(component['smsForm'].valid).toBe(true);
+    });
+  });
 });
 
 describe('SmsForm desktop behavior', () => {

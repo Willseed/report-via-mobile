@@ -124,6 +124,16 @@ mat-form-field {
   @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
 }
 
+.add-plate-btn {
+  align-self: flex-start;
+  color: var(--mat-sys-primary);
+  font-size: 0.875rem;
+}
+
+input[formcontrolname='licensePlate'] {
+  text-transform: uppercase;
+}
+
 button[mat-flat-button] {
   margin-top: 0.5rem;
   height: 48px;

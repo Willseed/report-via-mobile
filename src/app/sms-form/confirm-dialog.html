@@ -11,6 +11,13 @@
     <span class="confirm-value">{{ data.phoneNumber }}</span>
   </div>
 
+  @if (data.licensePlate) {
+    <div class="confirm-field">
+      <span class="confirm-label">車牌號碼</span>
+      <span class="confirm-value">{{ data.licensePlate }}</span>
+    </div>
+  }
+
   <div class="confirm-field">
     <span class="confirm-label">簡訊內容</span>
     <span class="confirm-value message">{{ data.message }}</span>
