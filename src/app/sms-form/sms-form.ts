@@ -8,9 +8,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 import { SmsService } from '../sms.service';
 import { POLICE_STATIONS, PoliceStation, findStationByAddress } from '../police-stations';
 import { GeocodingService } from '../geocoding.service';
+import { ConfirmDialog, ConfirmDialogData } from './confirm-dialog';
 
 const VEHICLE_TYPES = ['汽車', '機車'] as const;
 const VIOLATION_DESCRIPTIONS = [
@@ -54,6 +56,7 @@ export class SmsForm {
   private fb = inject(FormBuilder);
   private smsService = inject(SmsService);
   private geocodingService = inject(GeocodingService);
+  private dialog = inject(MatDialog);
 
   protected isDesktop = signal(false);
   protected isLocating = signal(false);
@@ -149,7 +152,21 @@ export class SmsForm {
 
     const station = this.smsForm.controls.district.value;
     if (!station) return;
-    this.smsService.sendSms(station.phoneNumber, this.composedMessage());
+
+    const data: ConfirmDialogData = {
+      stationName: station.stationName,
+      phoneNumber: station.phoneNumber,
+      message: this.composedMessage(),
+    };
+
+    this.dialog
+      .open(ConfirmDialog, { data, width: '92vw', maxWidth: '400px' })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          this.smsService.sendSms(station.phoneNumber, this.composedMessage());
+        }
+      });
   }
 
   private autoSelectDistrict(address: string): void {
