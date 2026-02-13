@@ -1,5 +1,7 @@
 import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Subject } from 'rxjs';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { SmsForm, DISTRICT_SEARCH_DEBOUNCE_MS } from './sms-form';
 import { SmsService } from '../sms.service';
 import { POLICE_STATIONS, findStationByAddress } from '../police-stations';
@@ -17,8 +19,11 @@ describe('SmsForm', () => {
     getCurrentPosition: ReturnType<typeof vi.fn>;
     reverseGeocode: ReturnType<typeof vi.fn>;
   };
+  let dialogSpy: { open: ReturnType<typeof vi.fn> };
+  let afterClosedSubject: Subject<boolean | undefined>;
 
   beforeEach(async () => {
+    afterClosedSubject = new Subject<boolean | undefined>();
     smsServiceSpy = {
       sendSms: vi.fn(),
       generateSmsLink: vi.fn().mockReturnValue('sms:0911510914?body=Hello'),
@@ -28,12 +33,18 @@ describe('SmsForm', () => {
       getCurrentPosition: vi.fn(),
       reverseGeocode: vi.fn(),
     };
+    dialogSpy = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: () => afterClosedSubject.asObservable(),
+      } as Partial<MatDialogRef<unknown>>),
+    };
 
     await TestBed.configureTestingModule({
       imports: [SmsForm],
       providers: [
         { provide: SmsService, useValue: smsServiceSpy },
         { provide: GeocodingService, useValue: geocodingServiceSpy },
+        { provide: MatDialog, useValue: dialogSpy },
       ],
     }).compileComponents();
 
@@ -69,32 +80,77 @@ describe('SmsForm', () => {
     expect(component['selectedStation']()).toBe(POLICE_STATIONS[0]);
   });
 
-  it('should call sendSms with composed message on valid submit', () => {
+  it('should open confirm dialog on valid submit', () => {
     const station = POLICE_STATIONS[0];
     component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
     component['smsForm'].controls.district.setValue(station);
     component['smsForm'].controls.violation.setValue('汽車於紅線停車');
 
     component['sendSms']();
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: {
+          stationName: station.stationName,
+          phoneNumber: station.phoneNumber,
+          message: '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
+        },
+      }),
+    );
+  });
+
+  it('should call sendSms after dialog is confirmed', () => {
+    const station = POLICE_STATIONS[0];
+    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+    component['smsForm'].controls.district.setValue(station);
+    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+
+    component['sendSms']();
+    afterClosedSubject.next(true);
+
     expect(smsServiceSpy.sendSms).toHaveBeenCalledWith(
       station.phoneNumber,
       '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
     );
   });
 
-  it('should not submit when form is invalid', () => {
+  it('should not call sendSms when dialog is cancelled', () => {
+    const station = POLICE_STATIONS[0];
+    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+    component['smsForm'].controls.district.setValue(station);
+    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+
     component['sendSms']();
-    expect(smsServiceSpy.generateSmsLink).not.toHaveBeenCalled();
+    afterClosedSubject.next(false);
+
+    expect(smsServiceSpy.sendSms).not.toHaveBeenCalled();
   });
 
-  it('should not submit when district mismatches even if form is valid', () => {
+  it('should not call sendSms when dialog is dismissed (backdrop click)', () => {
+    const station = POLICE_STATIONS[0];
+    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+    component['smsForm'].controls.district.setValue(station);
+    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+
+    component['sendSms']();
+    afterClosedSubject.next(undefined);
+
+    expect(smsServiceSpy.sendSms).not.toHaveBeenCalled();
+  });
+
+  it('should not open dialog when form is invalid', () => {
+    component['sendSms']();
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+  });
+
+  it('should not open dialog when district mismatches even if form is valid', () => {
     component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
     component['smsForm'].controls.violation.setValue('汽車於紅線停車');
     const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
     component['smsForm'].controls.district.setValue(kaohsiungStation);
 
     component['sendSms']();
-    expect(smsServiceSpy.generateSmsLink).not.toHaveBeenCalled();
+    expect(dialogSpy.open).not.toHaveBeenCalled();
   });
 
   describe('address input and auto-select district', () => {

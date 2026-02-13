@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>確認發送簡訊</h2>
+
+<mat-dialog-content>
+  <div class="confirm-field">
+    <span class="confirm-label">收件單位</span>
+    <span class="confirm-value">{{ data.stationName }}</span>
+  </div>
+
+  <div class="confirm-field">
+    <span class="confirm-label">簡訊號碼</span>
+    <span class="confirm-value">{{ data.phoneNumber }}</span>
+  </div>
+
+  <div class="confirm-field">
+    <span class="confirm-label">簡訊內容</span>
+    <span class="confirm-value message">{{ data.message }}</span>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">取消</button>
+  <button mat-flat-button (click)="confirm()">
+    <mat-icon>send</mat-icon>
+    確認發送
+  </button>
+</mat-dialog-actions>
