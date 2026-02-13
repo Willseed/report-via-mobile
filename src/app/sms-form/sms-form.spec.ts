@@ -73,11 +73,11 @@ describe('SmsForm', () => {
     expect(component['smsForm'].valid).toBe(true);
   });
 
-  it('should return selectedStation from district control', () => {
-    expect(component['selectedStation']()).toBeNull();
+  it('should return districtValue from district control', () => {
+    expect(component['districtValue']()).toBeNull();
 
     component['smsForm'].controls.district.setValue(POLICE_STATIONS[0]);
-    expect(component['selectedStation']()).toBe(POLICE_STATIONS[0]);
+    expect(component['districtValue']()).toBe(POLICE_STATIONS[0]);
   });
 
   it('should open confirm dialog on valid submit', () => {

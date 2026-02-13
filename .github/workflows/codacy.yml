@@ -1,0 +1,63 @@
+name: Codacy Analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  codacy:
+    name: Codacy Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run Codacy Analysis CLI
+        uses: codacy/codacy-analysis-cli-action@562ee3e92b8e92df8b67e0a5ff8aa8e261919c08 # v4.4.7
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          upload: true
+          max-allowed-issues: 2147483647
+          format: sarif
+          output: ${{ runner.temp }}/results.sarif
+          gh-code-scanning-compat: true
+
+      - name: Ensure unique SARIF run categories
+        run: |
+          SARIF_FILE="${{ runner.temp }}/results.sarif"
+
+          if [ ! -s "$SARIF_FILE" ]; then
+            echo "::warning::SARIF file is empty or missing, skipping"
+            exit 0
+          fi
+
+          RUN_COUNT=$(jq '.runs | length' "$SARIF_FILE")
+          echo "SARIF contains $RUN_COUNT run(s)"
+
+          jq '
+            .runs |= [
+              range(length) as $i |
+              .[$i] |
+              ((.tool.driver.name // "") | if . == "" then "tool-" + ($i | tostring) else . end) as $name |
+              .automationDetails.id = (
+                "codacy/" + $name + "/" + ($i | tostring)
+              )
+            ]
+          ' "$SARIF_FILE" > "${{ runner.temp }}/results-patched.sarif"
+
+          mv "${{ runner.temp }}/results-patched.sarif" "$SARIF_FILE"
+
+          echo "Patched automationDetails.id values:"
+          jq -r '.runs[] | "  - \(.automationDetails.id) (\(.tool.driver.name // "unknown"))"' "$SARIF_FILE"
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
+        with:
+          sarif_file: ${{ runner.temp }}/results.sarif
+          wait-for-processing: true

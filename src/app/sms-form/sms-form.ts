@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { SmsService } from '../sms.service';
 import { POLICE_STATIONS, PoliceStation, findStationByAddress } from '../police-stations';
-import { GeocodingService } from '../geocoding.service';
+import { GeocodingService, DEFAULT_GEOLOCATION_ERROR_MSG } from '../geocoding.service';
 import { ConfirmDialog, ConfirmDialogData } from './confirm-dialog';
 
 const VEHICLE_TYPES = ['汽車', '機車'] as const;
@@ -36,6 +36,8 @@ const VIOLATION_TYPES = [
 ];
 
 export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
+export const ADDRESS_MAX_LENGTH = 100;
+export const VIOLATION_MAX_LENGTH = 50;
 
 @Component({
   selector: 'app-sms-form',
@@ -79,18 +81,16 @@ export class SmsForm {
   });
 
   protected smsForm = this.fb.group({
-    address: ['', [Validators.required, Validators.maxLength(100)]],
+    address: ['', [Validators.required, Validators.maxLength(ADDRESS_MAX_LENGTH)]],
     district: [null as PoliceStation | null, [Validators.required]],
-    violation: ['', [Validators.required, Validators.maxLength(50)]],
+    violation: ['', [Validators.required, Validators.maxLength(VIOLATION_MAX_LENGTH)]],
   });
 
   private addressValue = toSignal(this.smsForm.controls.address.valueChanges, { initialValue: '' });
   private violationValue = toSignal(this.smsForm.controls.violation.valueChanges, { initialValue: '' });
-  private districtValue = toSignal(this.smsForm.controls.district.valueChanges, {
+  protected districtValue = toSignal(this.smsForm.controls.district.valueChanges, {
     initialValue: null as PoliceStation | null,
   });
-
-  protected selectedStation = computed(() => this.districtValue());
 
   protected districtMismatch = computed(() => {
     const address = this.addressValue() ?? '';
@@ -134,7 +134,7 @@ export class SmsForm {
       this.smsForm.controls.address.setValue(displayName);
       this.autoSelectDistrict(displayName);
     } catch (e) {
-      this.locationError.set(e instanceof Error ? e.message : '定位失敗，請稍後再試。');
+      this.locationError.set(e instanceof Error ? e.message : DEFAULT_GEOLOCATION_ERROR_MSG);
     } finally {
       this.isLocating.set(false);
     }

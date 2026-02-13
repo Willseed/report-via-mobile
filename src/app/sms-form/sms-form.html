@@ -44,13 +44,13 @@
       <mat-form-field appearance="outline">
         <mat-label>報案行政區</mat-label>
         <mat-select formControlName="district" [compareWith]="compareStations" panelClass="fade-dropdown">
-          <mat-select-trigger>{{ selectedStation()?.district }}</mat-select-trigger>
+          <mat-select-trigger>{{ districtValue()?.district }}</mat-select-trigger>
           @for (station of stations; track station.district) {
             <mat-option [value]="station">{{ station.district }}</mat-option>
           }
         </mat-select>
         <mat-icon matPrefix>location_on</mat-icon>
-        @let station = selectedStation();
+        @let station = districtValue();
         @if (station) {
           <mat-hint>承辦單位：{{ station.stationName }}</mat-hint>
         }
