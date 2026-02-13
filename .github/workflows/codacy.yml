@@ -32,4 +32,5 @@ jobs:
         uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
         with:
           sarif_file: ${{ runner.temp }}/results.sarif
+          category: codacy
           wait-for-processing: true
