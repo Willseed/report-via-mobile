@@ -26,18 +26,18 @@ jobs:
 
     steps:
       - name: Checkout 程式碼
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: 初始化 CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
 
       - name: 自動建置
-        uses: github/codeql-action/autobuild@v4
+        uses: github/codeql-action/autobuild@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
 
       - name: 執行 CodeQL 分析
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
         with:
           category: "/language:${{matrix.language}}"
