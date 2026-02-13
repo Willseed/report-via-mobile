@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -44,6 +44,8 @@ const VIOLATION_TYPES = [
 export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
 export const ADDRESS_MAX_LENGTH = 100;
 export const VIOLATION_MAX_LENGTH = 50;
+export const LICENSE_PLATE_MAX_LENGTH = 10;
+export const LICENSE_PLATE_PATTERN = /^[A-Z0-9]*$/;
 
 @Component({
   selector: 'app-sms-form',
@@ -65,6 +67,10 @@ export class SmsForm {
   private smsService = inject(SmsService);
   private geocodingService = inject(GeocodingService);
   private dialog = inject(MatDialog);
+  private injector = inject(Injector);
+
+  private licensePlateInput = viewChild<ElementRef<HTMLInputElement>>('licensePlateInput');
+  private addPlateButton = viewChild<ElementRef<HTMLButtonElement>>('addPlateButton');
 
   protected isDesktop = signal(this.smsService.isDesktop());
   protected isLocating = signal(false);
@@ -90,10 +96,14 @@ export class SmsForm {
     address: ['', [Validators.required, Validators.maxLength(ADDRESS_MAX_LENGTH)]],
     district: [null as PoliceStation | null, [Validators.required]],
     violation: ['', [Validators.required, Validators.maxLength(VIOLATION_MAX_LENGTH)]],
+    licensePlate: ['', [Validators.maxLength(LICENSE_PLATE_MAX_LENGTH), Validators.pattern(LICENSE_PLATE_PATTERN)]],
   });
+
+  protected showLicensePlate = signal(false);
 
   private addressValue = toSignal(this.smsForm.controls.address.valueChanges, { initialValue: '' });
   private violationValue = toSignal(this.smsForm.controls.violation.valueChanges, { initialValue: '' });
+  private licensePlateValue = toSignal(this.smsForm.controls.licensePlate.valueChanges, { initialValue: '' });
   protected districtValue = toSignal(this.smsForm.controls.district.valueChanges, {
     initialValue: null as PoliceStation | null,
   });
@@ -111,8 +121,10 @@ export class SmsForm {
   protected composedMessage = computed(() => {
     const address = this.addressValue() ?? '';
     const violation = this.violationValue() ?? '';
+    const plate = this.licensePlateValue() ?? '';
     if (!address || !violation) return '';
-    return `${address}，有${violation}，請派員處理`;
+    const plateSegment = plate ? `，車牌號碼：${plate}` : '';
+    return `${address}，有${violation}${plateSegment}，請派員處理`;
   });
 
   protected smsOverLimit = computed(() => {
@@ -130,6 +142,29 @@ export class SmsForm {
     this.violationFilter.set(
       (event.target as HTMLInputElement).value.replace(/[<>]/g, ''),
     );
+  }
+
+  protected toggleLicensePlate(): void {
+    this.showLicensePlate.set(true);
+    afterNextRender(() => {
+      this.licensePlateInput()?.nativeElement.focus();
+    }, { injector: this.injector });
+  }
+
+  protected clearLicensePlate(): void {
+    this.smsForm.controls.licensePlate.setValue('');
+    this.showLicensePlate.set(false);
+    afterNextRender(() => {
+      this.addPlateButton()?.nativeElement.focus();
+    }, { injector: this.injector });
+  }
+
+  protected onLicensePlateInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const cleaned = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (input.value !== cleaned) {
+      this.smsForm.controls.licensePlate.setValue(cleaned, { emitEvent: true });
+    }
   }
 
   protected async locateUser(): Promise<void> {
@@ -162,6 +197,7 @@ export class SmsForm {
       stationName: station.stationName,
       phoneNumber: station.phoneNumber,
       message: this.composedMessage(),
+      licensePlate: this.smsForm.controls.licensePlate.value || undefined,
     };
 
     this.dialog

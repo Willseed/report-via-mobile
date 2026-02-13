@@ -75,4 +75,18 @@ describe('ConfirmDialog', () => {
     );
     expect(cancelBtn?.nativeElement.textContent).toContain('取消');
   });
+
+  it('should display license plate when provided', async () => {
+    const dataWithPlate: ConfirmDialogData = { ...mockData, licensePlate: 'ABC1234' };
+    fixture = TestBed.createComponent(ConfirmDialog);
+    // Override the injected data
+    (fixture.componentInstance as any).data = dataWithPlate;
+    fixture.detectChanges();
+    expect(fixture.debugElement.nativeElement.textContent).toContain('ABC1234');
+    expect(fixture.debugElement.nativeElement.textContent).toContain('車牌號碼');
+  });
+
+  it('should not display license plate section when not provided', () => {
+    expect(fixture.debugElement.nativeElement.textContent).not.toContain('車牌號碼');
+  });
 });
