@@ -1,5 +1,6 @@
 # Report via Mobile
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/df9a6a592af94cb298384bede0f5ef7f)](https://app.codacy.com/gh/Willseed/report-via-mobile/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Willseed/report-via-mobile/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Willseed/report-via-mobile)
 ![Build Status](https://github.com/Willseed/report-via-mobile/actions/workflows/ci.yml/badge.svg)
 ![CodeQL](https://github.com/Willseed/report-via-mobile/actions/workflows/codeql.yml/badge.svg)
@@ -7,6 +8,13 @@
 ![Dependabot](https://img.shields.io/badge/dependabot-enabled-blue?logo=dependabot)
 
 行動裝置簡訊報案應用程式。使用者填寫事發地址、選擇行政區與違規事實後，自動組合簡訊內容並透過裝置原生簡訊功能（`sms:` URI scheme）發送至對應警局。
+
+## 專案特色
+
+- 無需手動輸入地址——GPS 一鍵定位自動填入
+- 無需查詢警局電話——根據地點自動對應承辦警局
+- 無需自組簡訊——APP 自動產生通順的報案內容
+- 支援行動裝置原生簡訊功能（`sms:` URI）直接發送
 
 **工具網址：** [簡訊報案](https://tools.pylot.dev)
 
@@ -27,6 +35,12 @@
 - **Routing:** HashLocationStrategy (GitHub Pages compatible)
 - **Testing:** Vitest + jsdom
 - **Hosting:** GitHub Pages (static)
+- **Geocoding API:** OpenStreetMap Nominatim
+
+## 安裝環境需求
+
+- Node.js >= 20.19.0 (Angular 21 requirement)
+- npm >= 11.6.2
 
 ## Development
 
@@ -54,3 +68,18 @@ ng test
 ## Deployment
 
 Deployment is automated via GitHub Actions on push to `main`. See `.github/workflows/deploy.yml`.
+
+## 貢獻方式
+
+歡迎提出 Issue 或 Pull Request。請遵循專案規範與 commit 格式（Conventional Commits，中文提交訊息）。
+
+有安全漏洞發現？請參閱 [SECURITY.md](./SECURITY.md) 進行私下回報。
+
+## License
+
+本專案採用 MIT License，詳見 LICENSE 檔案。
+
+## 相關連結
+
+- [Package Dependencies](./package.json)
+- [Security Policy](./SECURITY.md)
