@@ -1,21 +1,36 @@
-# Security Policy
+# 安全性政策
 
-## Supported Versions
+## 支援版本
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+我們目前正在支援以下版本的安全性更新：
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| 版本   | 是否支援           |
+| ------ | ------------------ |
+| 0.x    | :white_check_mark: |
 
-## Reporting a Vulnerability
+## 回報安全漏洞
 
-Use this section to tell people how to report a vulnerability.
+如果您在此專案中發現安全漏洞，請透過 GitHub 的私人安全性報告功能進行回報，以避免在修復前公開漏洞細節。
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+### 回報方式
+
+1. 前往此專案的 [Security Advisories](https://github.com/Willseed/report-via-mobile/security/advisories) 頁面
+2. 點選「Report a vulnerability」按鈕
+3. 填寫漏洞詳細資訊，包括：
+   - 受影響的元件或功能
+   - 漏洞的嚴重程度
+   - 重現步驟
+   - 可能的影響範圍
+
+### 回應時程
+
+- **初步確認**：我們會在 **3 個工作天內**回覆您的報告
+- **漏洞評估**：完成評估後會在 **7 個工作天內**告知是否接受此漏洞報告
+- **修復計畫**：接受的漏洞會依照嚴重性優先處理，並提供預計修復時程
+- **發布修復**：修復完成後會發布安全性更新並在 Security Advisories 中公告
+
+### 其他聯絡方式
+
+若無法使用 GitHub Security Advisories，您也可以透過 GitHub Issues 聯絡專案維護者 @Willseed，但請**不要**在 Issue 中公開漏洞細節。
+
+感謝您協助保護此專案及其使用者的安全！
