@@ -30,12 +30,14 @@ jobs:
         run: npm ci
 
       - name: Run Tests with Coverage
-        run: npx ng test --coverage
+        run: npx ng test --coverage --coverage-reporters lcovonly
 
       - name: SonarCloud Scan
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORG }}
