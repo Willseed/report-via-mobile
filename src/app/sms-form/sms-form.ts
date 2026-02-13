@@ -27,7 +27,13 @@ const VIOLATION_DESCRIPTIONS = [
 
 const CAR_ONLY_DESCRIPTIONS = ['違法佔用孕婦及育有六歲以下兒童者停車位', '違法佔用殘障車位'];
 
-const OTHER_VIOLATIONS = ['一般油車佔用電動車停車位', '雜物佔用國有地', '攤販於騎樓違法擺攤', '慢車未依規定停放'];
+const OTHER_VIOLATIONS = [
+  '一般油車佔用電動車停車位',
+  '雜物佔用國有地',
+  '攤販於騎樓違法擺攤',
+  '慢車未依規定停放',
+  '物品堆置於道路（含騎樓、人行道）妨礙交通',
+];
 
 const VIOLATION_TYPES = [
   ...VEHICLE_TYPES.flatMap((v) => VIOLATION_DESCRIPTIONS.map((d) => `${v}${d}`)),
