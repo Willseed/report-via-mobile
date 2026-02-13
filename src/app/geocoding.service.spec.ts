@@ -4,6 +4,22 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GeocodingService } from './geocoding.service';
 
+function mockGeoError(code: number): GeolocationPositionError {
+  return { code, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: '' };
+}
+
+type GeoImplFn = (
+  success: PositionCallback,
+  error: PositionErrorCallback,
+  options?: PositionOptions,
+) => void;
+
+function stubGeolocation(impl: GeoImplFn): ReturnType<typeof vi.fn> {
+  const spy = vi.fn(impl);
+  vi.stubGlobal('navigator', { geolocation: { getCurrentPosition: spy } });
+  return spy;
+}
+
 describe('GeocodingService', () => {
   let service: GeocodingService;
   let httpTesting: HttpTestingController;
@@ -21,17 +37,12 @@ describe('GeocodingService', () => {
   });
 
   describe('getCurrentPosition', () => {
-    it('should resolve with position on success', async () => {
-      const mockPosition = {
-        coords: { latitude: 25.033, longitude: 121.565 },
-      } as GeolocationPosition;
+    const mockPosition = {
+      coords: { latitude: 25.033, longitude: 121.565 },
+    } as GeolocationPosition;
 
-      const getCurrentPositionSpy = vi.fn((success: PositionCallback) => {
-        success(mockPosition);
-      });
-      vi.stubGlobal('navigator', {
-        geolocation: { getCurrentPosition: getCurrentPositionSpy },
-      });
+    it('should resolve with position on success', async () => {
+      stubGeolocation((success: PositionCallback) => success(mockPosition));
 
       const result = await service.getCurrentPosition();
       expect(result).toBe(mockPosition);
@@ -43,97 +54,43 @@ describe('GeocodingService', () => {
     });
 
     it('should reject with permission denied message', async () => {
-      const getCurrentPositionSpy = vi.fn(
-        (_success: PositionCallback, error: PositionErrorCallback) => {
-          error({
-            code: 1,
-            PERMISSION_DENIED: 1,
-            POSITION_UNAVAILABLE: 2,
-            TIMEOUT: 3,
-            message: '',
-          });
-        },
-      );
-      vi.stubGlobal('navigator', {
-        geolocation: { getCurrentPosition: getCurrentPositionSpy },
-      });
-
+      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => err(mockGeoError(1)));
       await expect(service.getCurrentPosition()).rejects.toThrow('定位權限被拒絕');
     });
 
     it('should reject with position unavailable message', async () => {
-      const getCurrentPositionSpy = vi.fn(
-        (_success: PositionCallback, error: PositionErrorCallback) => {
-          error({
-            code: 2,
-            PERMISSION_DENIED: 1,
-            POSITION_UNAVAILABLE: 2,
-            TIMEOUT: 3,
-            message: '',
-          });
-        },
-      );
-      vi.stubGlobal('navigator', {
-        geolocation: { getCurrentPosition: getCurrentPositionSpy },
-      });
-
+      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => err(mockGeoError(2)));
       await expect(service.getCurrentPosition()).rejects.toThrow('無法取得位置資訊');
     });
 
     it('should reject with timeout message', async () => {
-      const getCurrentPositionSpy = vi.fn(
-        (_success: PositionCallback, error: PositionErrorCallback) => {
-          error({
-            code: 3,
-            PERMISSION_DENIED: 1,
-            POSITION_UNAVAILABLE: 2,
-            TIMEOUT: 3,
-            message: '',
-          });
-        },
-      );
-      vi.stubGlobal('navigator', {
-        geolocation: { getCurrentPosition: getCurrentPositionSpy },
-      });
-
+      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => err(mockGeoError(3)));
       await expect(service.getCurrentPosition()).rejects.toThrow('定位逾時');
     });
 
     it('should try fast positioning first, then fall back to high accuracy', async () => {
-      const mockPosition = {
-        coords: { latitude: 25.033, longitude: 121.565 },
-      } as GeolocationPosition;
-
-      const getCurrentPositionSpy = vi.fn(
+      const spy = stubGeolocation(
         (success: PositionCallback, error: PositionErrorCallback, options?: PositionOptions) => {
           if (!options?.enableHighAccuracy) {
-            error({ code: 3, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: '' });
+            error(mockGeoError(3));
           } else {
             success(mockPosition);
           }
         },
       );
-      vi.stubGlobal('navigator', {
-        geolocation: { getCurrentPosition: getCurrentPositionSpy },
-      });
 
       const result = await service.getCurrentPosition();
       expect(result).toBe(mockPosition);
-      expect(getCurrentPositionSpy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledTimes(2);
     });
 
     it('should not retry when permission is denied', async () => {
-      const getCurrentPositionSpy = vi.fn(
-        (_success: PositionCallback, error: PositionErrorCallback) => {
-          error({ code: 1, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: '' });
-        },
+      const spy = stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) =>
+        err(mockGeoError(1)),
       );
-      vi.stubGlobal('navigator', {
-        geolocation: { getCurrentPosition: getCurrentPositionSpy },
-      });
 
       await expect(service.getCurrentPosition()).rejects.toThrow('定位權限被拒絕');
-      expect(getCurrentPositionSpy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledTimes(1);
     });
 
     afterEach(() => {
@@ -142,56 +99,43 @@ describe('GeocodingService', () => {
   });
 
   describe('reverseGeocode', () => {
-    it('should return formatted address from address fields', async () => {
-      const mockResponse = {
-        display_name: '7號, 信義路五段, 信義區, 臺北市, 110, 臺灣',
-        address: {
-          house_number: '7號',
-          road: '信義路五段',
-          suburb: '信義區',
-          city: '臺北市',
-        },
-      };
+    async function flushReverseGeocode(
+      lat: number,
+      lon: number,
+      response: object,
+    ): Promise<string> {
+      const promise = service.reverseGeocode(lat, lon);
+      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush(response);
+      return promise;
+    }
 
+    it('should return formatted address from address fields', async () => {
       const promise = service.reverseGeocode(25.033, 121.565);
       const req = httpTesting.expectOne((r) => r.url.includes('addressdetails=1'));
       expect(req.request.method).toBe('GET');
-      req.flush(mockResponse);
+      req.flush({
+        display_name: '7號, 信義路五段, 信義區, 臺北市, 110, 臺灣',
+        address: { house_number: '7號', road: '信義路五段', suburb: '信義區', city: '臺北市' },
+      });
 
       const result = await promise;
       expect(result).toBe('臺北市信義區信義路五段7號');
     });
 
     it('should use county and town as fallback for city and district', async () => {
-      const mockResponse = {
+      const result = await flushReverseGeocode(24.859, 121.823, {
         display_name: '中正路100號, 頭城鎮, 宜蘭縣, 臺灣',
-        address: {
-          house_number: '100號',
-          road: '中正路',
-          town: '頭城鎮',
-          county: '宜蘭縣',
-        },
-      };
-
-      const promise = service.reverseGeocode(24.859, 121.823);
-      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      req.flush(mockResponse);
-
-      const result = await promise;
+        address: { house_number: '100號', road: '中正路', town: '頭城鎮', county: '宜蘭縣' },
+      });
       expect(result).toBe('宜蘭縣頭城鎮中正路100號');
     });
 
     it('should fallback to display_name when address fields are insufficient', async () => {
-      const mockResponse = {
+      const result = await flushReverseGeocode(25.033, 121.565, {
         display_name: '某個地方, 臺灣',
         address: {},
-      };
-
-      const promise = service.reverseGeocode(25.033, 121.565);
-      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      req.flush(mockResponse);
-
-      const result = await promise;
+      });
       expect(result).toBe('某個地方, 臺灣');
     });
 
@@ -254,11 +198,9 @@ describe('GeocodingService', () => {
     });
 
     it('should throw when no address and no display_name', async () => {
-      const promise = service.reverseGeocode(25.033, 121.565);
-      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      req.flush({});
-
-      await expect(promise).rejects.toThrow('無法解析地址，請手動輸入。');
+      await expect(flushReverseGeocode(25.033, 121.565, {})).rejects.toThrow(
+        '無法解析地址，請手動輸入。',
+      );
     });
 
     it('should throw on invalid latitude', async () => {
@@ -280,10 +222,7 @@ describe('GeocodingService', () => {
       };
 
       // First call — hits network
-      const promise1 = service.reverseGeocode(25.03301, 121.56501);
-      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      req.flush(mockResponse);
-      const result1 = await promise1;
+      const result1 = await flushReverseGeocode(25.03301, 121.56501, mockResponse);
       expect(result1).toBe('臺北市信義區');
 
       // Second call with nearby coords (same toFixed(4) = 25.0330, 121.5650) — should use cache
@@ -305,10 +244,10 @@ describe('GeocodingService', () => {
       await expect(promise1).rejects.toThrow('地址查詢失敗');
 
       // Second call should still hit network (not cached)
-      const promise2 = service.reverseGeocode(25.033, 121.565);
-      req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      req.flush({ display_name: '臺北市', address: { city: '臺北市' } });
-      const result2 = await promise2;
+      const result2 = await flushReverseGeocode(25.033, 121.565, {
+        display_name: '臺北市',
+        address: { city: '臺北市' },
+      });
       expect(result2).toBe('臺北市');
 
       vi.useRealTimers();
