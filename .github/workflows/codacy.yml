@@ -24,6 +24,9 @@ jobs:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           upload: true
           max-allowed-issues: 2147483647
+          format: sarif
+          output: results.sarif
+          gh-code-scanning-compat: true
 
       - name: Upload SARIF results
         uses: github/codeql-action/upload-sarif@v3
