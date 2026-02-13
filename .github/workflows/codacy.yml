@@ -28,9 +28,37 @@ jobs:
           output: ${{ runner.temp }}/results.sarif
           gh-code-scanning-compat: true
 
+      - name: Ensure unique SARIF run categories
+        run: |
+          SARIF_FILE="${{ runner.temp }}/results.sarif"
+
+          if [ ! -s "$SARIF_FILE" ]; then
+            echo "::warning::SARIF file is empty or missing, skipping"
+            exit 0
+          fi
+
+          RUN_COUNT=$(jq '.runs | length' "$SARIF_FILE")
+          echo "SARIF contains $RUN_COUNT run(s)"
+
+          jq '
+            .runs |= [
+              range(length) as $i |
+              .[$i] |
+              .automationDetails.id = (
+                "codacy/" +
+                (.tool.driver.name // ("tool-" + ($i | tostring))) +
+                "/"
+              )
+            ]
+          ' "$SARIF_FILE" > "${{ runner.temp }}/results-patched.sarif"
+
+          mv "${{ runner.temp }}/results-patched.sarif" "$SARIF_FILE"
+
+          echo "Patched automationDetails.id values:"
+          jq -r '.runs[] | "  - \(.automationDetails.id) (\(.tool.driver.name // "unknown"))"' "$SARIF_FILE"
+
       - name: Upload SARIF results
         uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
         with:
           sarif_file: ${{ runner.temp }}/results.sarif
-          category: codacy
           wait-for-processing: true
