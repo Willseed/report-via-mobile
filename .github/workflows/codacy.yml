@@ -44,10 +44,9 @@ jobs:
             .runs |= [
               range(length) as $i |
               .[$i] |
+              ((.tool.driver.name // "") | if . == "" then "tool-" + ($i | tostring) else . end) as $name |
               .automationDetails.id = (
-                "codacy/" +
-                (.tool.driver.name // ("tool-" + ($i | tostring))) +
-                "/" + ($i | tostring)
+                "codacy/" + $name + "/" + ($i | tostring)
               )
             ]
           ' "$SARIF_FILE" > "${{ runner.temp }}/results-patched.sarif"
