@@ -164,7 +164,7 @@ export class SmsForm {
       .afterClosed()
       .subscribe((confirmed) => {
         if (confirmed) {
-          this.smsService.sendSms(station.phoneNumber, this.composedMessage());
+          this.smsService.sendSms(data.phoneNumber, data.message);
         }
       });
   }
