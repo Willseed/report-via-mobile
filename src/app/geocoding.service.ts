@@ -39,7 +39,7 @@ export class GeocodingService {
   private geocodeCache = new Map<string, string>();
 
   getCurrentPosition(): Promise<GeolocationPosition> {
-    if (!navigator.geolocation) {
+    if (!('geolocation' in navigator)) {
       return Promise.reject(new Error('您的瀏覽器不支援定位功能。'));
     }
 
@@ -118,8 +118,8 @@ export class GeocodingService {
     if (!result) throw new Error('無法解析地址，請手動輸入。');
 
     if (this.geocodeCache.size >= GeocodingService.MAX_CACHE_SIZE) {
-      const firstKey = this.geocodeCache.keys().next().value!;
-      this.geocodeCache.delete(firstKey);
+      const firstKey = this.geocodeCache.keys().next().value;
+      if (firstKey !== undefined) this.geocodeCache.delete(firstKey);
     }
     this.geocodeCache.set(cacheKey, result);
     return result;

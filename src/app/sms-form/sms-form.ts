@@ -126,7 +126,9 @@ export class SmsForm {
   }
 
   protected onViolationInput(event: Event): void {
-    this.violationFilter.set((event.target as HTMLInputElement).value);
+    // eslint-disable-next-line xss/no-mixed-html -- filter signal 僅供過濾用，不直接渲染為 HTML
+    const inputValue = (event.target as HTMLInputElement).value;
+    this.violationFilter.set(inputValue.replace(/[<>]/g, ''));
   }
 
   protected async locateUser(): Promise<void> {
