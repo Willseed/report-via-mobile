@@ -18,6 +18,13 @@ interface NominatimResponse {
   address?: NominatimAddress;
 }
 
+const FAST_POSITION_TIMEOUT_MS = 3000;
+const ACCURATE_POSITION_TIMEOUT_MS = 10000;
+const GEOCODE_REQUEST_TIMEOUT_MS = 8000;
+const GEOCODE_RETRY_DELAY_MS = 1000;
+const INVALID_COORDINATES_MSG = '無效的座標資訊。';
+export const DEFAULT_GEOLOCATION_ERROR_MSG = '定位失敗，請稍後再試。';
+
 class GeolocationError extends Error {
   readonly PERMISSION_DENIED = 1;
   constructor(message: string, readonly code: number) {
@@ -36,11 +43,17 @@ export class GeocodingService {
       return Promise.reject(new Error('您的瀏覽器不支援定位功能。'));
     }
 
-    return this.requestPosition({ enableHighAccuracy: false, timeout: 3000 }).catch((error) => {
+    return this.requestPosition({
+      enableHighAccuracy: false,
+      timeout: FAST_POSITION_TIMEOUT_MS,
+    }).catch((error) => {
       if (error instanceof GeolocationError && error.code === error.PERMISSION_DENIED) {
         throw error;
       }
-      return this.requestPosition({ enableHighAccuracy: true, timeout: 10000 });
+      return this.requestPosition({
+        enableHighAccuracy: true,
+        timeout: ACCURATE_POSITION_TIMEOUT_MS,
+      });
     });
   }
 
@@ -58,7 +71,7 @@ export class GeocodingService {
             reject(new GeolocationError('定位逾時，請稍後再試。', error.code));
             break;
           default:
-            reject(new GeolocationError('定位失敗，請稍後再試。', error.code));
+            reject(new GeolocationError(DEFAULT_GEOLOCATION_ERROR_MSG, error.code));
         }
       }, options);
     });
@@ -66,10 +79,10 @@ export class GeocodingService {
 
   async reverseGeocode(lat: number, lng: number): Promise<string> {
     if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
-      throw new Error('無效的座標資訊。');
+      throw new Error(INVALID_COORDINATES_MSG);
     }
     if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
-      throw new Error('無效的座標資訊。');
+      throw new Error(INVALID_COORDINATES_MSG);
     }
 
     const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
@@ -82,7 +95,10 @@ export class GeocodingService {
       data = await firstValueFrom(
         this.http
           .get<NominatimResponse>(url)
-          .pipe(timeout(8000), retry({ count: 1, delay: 1000 }))
+          .pipe(
+            timeout(GEOCODE_REQUEST_TIMEOUT_MS),
+            retry({ count: 1, delay: GEOCODE_RETRY_DELAY_MS }),
+          )
       );
     } catch (error) {
       console.error('Geocoding error:', error);
