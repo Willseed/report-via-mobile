@@ -227,7 +227,6 @@ describe('SmsForm', () => {
       const deferBlock = (await fixture.getDeferBlocks())[0];
       await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
-      // eslint-disable-next-line xss/no-mixed-html -- Angular test DOM query, not HTML construction
       const buttonDebug = fixture.debugElement.query(
         (el) => el.name === 'button' && el.attributes['mat-flat-button'] !== undefined,
       );

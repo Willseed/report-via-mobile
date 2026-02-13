@@ -35,24 +35,20 @@ describe('ConfirmDialog', () => {
   });
 
   it('should display station name', () => {
-    // eslint-disable-next-line xss/no-mixed-html -- Angular test DOM assertion
     expect(fixture.debugElement.nativeElement.textContent).toContain('臺北市政府警察局');
   });
 
   it('should display phone number', () => {
-    // eslint-disable-next-line xss/no-mixed-html -- Angular test DOM assertion
     expect(fixture.debugElement.nativeElement.textContent).toContain('0911510914');
   });
 
   it('should display message', () => {
-    // eslint-disable-next-line xss/no-mixed-html -- Angular test DOM assertion
     expect(fixture.debugElement.nativeElement.textContent).toContain(
       '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
     );
   });
 
   it('should display dialog title', () => {
-    // eslint-disable-next-line xss/no-mixed-html -- Angular test DOM assertion
     expect(fixture.debugElement.nativeElement.textContent).toContain('確認發送簡訊');
   });
 
@@ -67,7 +63,6 @@ describe('ConfirmDialog', () => {
   });
 
   it('should have confirm button with send text', () => {
-    // eslint-disable-next-line xss/no-mixed-html -- Angular test DOM query
     const confirmBtn = fixture.debugElement.query(
       (de) => de.name === 'button' && de.attributes['mat-flat-button'] !== undefined,
     );
@@ -75,7 +70,6 @@ describe('ConfirmDialog', () => {
   });
 
   it('should have cancel button', () => {
-    // eslint-disable-next-line xss/no-mixed-html -- Angular test DOM query
     const cancelBtn = fixture.debugElement.query(
       (de) => de.name === 'button' && de.attributes['mat-button'] !== undefined,
     );
