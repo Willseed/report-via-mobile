@@ -53,6 +53,30 @@ describe('SmsForm', () => {
     fixture.detectChanges();
   });
 
+  const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
+
+  function fillValidForm(station = POLICE_STATIONS[0]) {
+    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
+    component['smsForm'].controls.district.setValue(station);
+    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+  }
+
+  async function renderDeferBlock() {
+    const deferBlock = (await fixture.getDeferBlocks())[0];
+    await deferBlock.render(DeferBlockState.Complete);
+    fixture.detectChanges();
+  }
+
+  function mockPendingPosition() {
+    let resolvePosition!: (value: GeolocationPosition) => void;
+    geocodingServiceSpy.getCurrentPosition.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePosition = resolve;
+      }),
+    );
+    return resolvePosition;
+  }
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
@@ -67,9 +91,7 @@ describe('SmsForm', () => {
   });
 
   it('should accept valid form values with all required fields', () => {
-    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-    component['smsForm'].controls.district.setValue(POLICE_STATIONS[0]);
-    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+    fillValidForm();
     expect(component['smsForm'].valid).toBe(true);
   });
 
@@ -81,18 +103,15 @@ describe('SmsForm', () => {
   });
 
   it('should open confirm dialog on valid submit', () => {
-    const station = POLICE_STATIONS[0];
-    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-    component['smsForm'].controls.district.setValue(station);
-    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+    fillValidForm();
 
     component['sendSms']();
     expect(dialogSpy.open).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         data: {
-          stationName: station.stationName,
-          phoneNumber: station.phoneNumber,
+          stationName: POLICE_STATIONS[0].stationName,
+          phoneNumber: POLICE_STATIONS[0].phoneNumber,
           message: '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
         },
       }),
@@ -100,25 +119,19 @@ describe('SmsForm', () => {
   });
 
   it('should call sendSms after dialog is confirmed', () => {
-    const station = POLICE_STATIONS[0];
-    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-    component['smsForm'].controls.district.setValue(station);
-    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+    fillValidForm();
 
     component['sendSms']();
     afterClosedSubject.next(true);
 
     expect(smsServiceSpy.sendSms).toHaveBeenCalledWith(
-      station.phoneNumber,
+      POLICE_STATIONS[0].phoneNumber,
       '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
     );
   });
 
   it('should not call sendSms when dialog is cancelled', () => {
-    const station = POLICE_STATIONS[0];
-    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-    component['smsForm'].controls.district.setValue(station);
-    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+    fillValidForm();
 
     component['sendSms']();
     afterClosedSubject.next(false);
@@ -127,10 +140,7 @@ describe('SmsForm', () => {
   });
 
   it('should not call sendSms when dialog is dismissed (backdrop click)', () => {
-    const station = POLICE_STATIONS[0];
-    component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-    component['smsForm'].controls.district.setValue(station);
-    component['smsForm'].controls.violation.setValue('汽車於紅線停車');
+    fillValidForm();
 
     component['sendSms']();
     afterClosedSubject.next(undefined);
@@ -146,9 +156,7 @@ describe('SmsForm', () => {
   it('should not open dialog when district mismatches even if form is valid', () => {
     component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
     component['smsForm'].controls.violation.setValue('汽車於紅線停車');
-    const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市');
-    expect(kaohsiungStation).toBeDefined();
-    component['smsForm'].controls.district.setValue(kaohsiungStation!);
+    component['smsForm'].controls.district.setValue(kaohsiungStation);
 
     component['sendSms']();
     expect(dialogSpy.open).not.toHaveBeenCalled();
@@ -196,9 +204,7 @@ describe('SmsForm', () => {
   describe('districtMismatch', () => {
     it('should detect mismatch when address district differs from selected district', () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市');
-      expect(kaohsiungStation).toBeDefined();
-      component['smsForm'].controls.district.setValue(kaohsiungStation!);
+      component['smsForm'].controls.district.setValue(kaohsiungStation);
       expect(component['districtMismatch']()).toBe(true);
     });
 
@@ -221,12 +227,8 @@ describe('SmsForm', () => {
 
     it('should disable submit button when district mismatches', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市');
-      expect(kaohsiungStation).toBeDefined();
-      component['smsForm'].controls.district.setValue(kaohsiungStation!);
-      const deferBlock = (await fixture.getDeferBlocks())[0];
-      await deferBlock.render(DeferBlockState.Complete);
-      fixture.detectChanges();
+      component['smsForm'].controls.district.setValue(kaohsiungStation);
+      await renderDeferBlock();
       const buttonDebug = fixture.debugElement.query(
         (el) => el.name === 'button' && el.attributes['mat-flat-button'] !== undefined,
       );
@@ -235,12 +237,8 @@ describe('SmsForm', () => {
 
     it('should show warning message when district mismatches', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市');
-      expect(kaohsiungStation).toBeDefined();
-      component['smsForm'].controls.district.setValue(kaohsiungStation!);
-      const deferBlock = (await fixture.getDeferBlocks())[0];
-      await deferBlock.render(DeferBlockState.Complete);
-      fixture.detectChanges();
+      component['smsForm'].controls.district.setValue(kaohsiungStation);
+      await renderDeferBlock();
       const warning = (fixture.nativeElement as HTMLElement).querySelector(
         '.district-mismatch-warning',
       );
@@ -250,9 +248,7 @@ describe('SmsForm', () => {
     it('should not show warning when district matches', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
       component['smsForm'].controls.district.setValue(POLICE_STATIONS[0]);
-      const deferBlock = (await fixture.getDeferBlocks())[0];
-      await deferBlock.render(DeferBlockState.Complete);
-      fixture.detectChanges();
+      await renderDeferBlock();
       const warning = (fixture.nativeElement as HTMLElement).querySelector(
         '.district-mismatch-warning',
       );
@@ -284,27 +280,21 @@ describe('SmsForm', () => {
     it('should show preview when address and violation are filled', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
       component['smsForm'].controls.violation.setValue('汽車於紅線停車');
-      const deferBlock = (await fixture.getDeferBlocks())[0];
-      await deferBlock.render(DeferBlockState.Complete);
-      fixture.detectChanges();
+      await renderDeferBlock();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeTruthy();
     });
 
     it('should hide preview when address is empty', async () => {
       component['smsForm'].controls.violation.setValue('汽車於紅線停車');
-      const deferBlock = (await fixture.getDeferBlocks())[0];
-      await deferBlock.render(DeferBlockState.Complete);
-      fixture.detectChanges();
+      await renderDeferBlock();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeNull();
     });
 
     it('should hide preview when violation is empty', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
-      const deferBlock = (await fixture.getDeferBlocks())[0];
-      await deferBlock.render(DeferBlockState.Complete);
-      fixture.detectChanges();
+      await renderDeferBlock();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeNull();
     });
@@ -312,9 +302,7 @@ describe('SmsForm', () => {
     it('should display composed message in bubble', async () => {
       component['smsForm'].controls.address.setValue('臺北市信義區信義路五段7號');
       component['smsForm'].controls.violation.setValue('汽車於紅線停車');
-      const deferBlock = (await fixture.getDeferBlocks())[0];
-      await deferBlock.render(DeferBlockState.Complete);
-      fixture.detectChanges();
+      await renderDeferBlock();
       const bubble = (fixture.nativeElement as HTMLElement).querySelector('.sms-bubble');
       expect(bubble?.textContent?.trim()).toBe(
         '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
@@ -398,12 +386,7 @@ describe('SmsForm', () => {
     });
 
     it('should skip when already locating (race condition guard)', async () => {
-      let resolvePosition!: (value: GeolocationPosition) => void;
-      geocodingServiceSpy.getCurrentPosition.mockReturnValue(
-        new Promise((resolve) => {
-          resolvePosition = resolve;
-        }),
-      );
+      const resolvePosition = mockPendingPosition();
       geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區');
 
       const promise1 = component['locateUser']();
@@ -420,12 +403,7 @@ describe('SmsForm', () => {
     });
 
     it('should set isLocating during location process', async () => {
-      let resolvePosition!: (value: GeolocationPosition) => void;
-      geocodingServiceSpy.getCurrentPosition.mockReturnValue(
-        new Promise((resolve) => {
-          resolvePosition = resolve;
-        }),
-      );
+      const resolvePosition = mockPendingPosition();
 
       const promise = component['locateUser']();
       expect(component['isLocating']()).toBe(true);
