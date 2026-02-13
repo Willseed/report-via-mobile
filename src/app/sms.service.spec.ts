@@ -7,7 +7,7 @@ import { SmsService } from './sms.service';
 describe('SmsService', () => {
   function createService(
     platformOverrides: Partial<Platform> = {},
-    mockDocument?: { location: { href: string } },
+    mockDocument?: { location: { assign: ReturnType<typeof import('vitest').vi.fn> } },
   ) {
     const mockPlatform = {
       ANDROID: false,
@@ -69,11 +69,11 @@ describe('SmsService', () => {
   });
 
   describe('sendSms', () => {
-    it('should set document.location.href to SMS link', () => {
-      const mockDoc = { location: { href: '' } };
+    it('should navigate to SMS link via location.assign', () => {
+      const mockDoc = { location: { assign: vi.fn() } };
       const service = createService({ ANDROID: true }, mockDoc);
       service.sendSms('0912345678', 'Hello');
-      expect(mockDoc.location.href).toBe('sms:0912345678?body=Hello');
+      expect(mockDoc.location.assign).toHaveBeenCalledWith('sms:0912345678?body=Hello');
     });
   });
 

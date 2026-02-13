@@ -126,10 +126,9 @@ export class SmsForm {
   }
 
   protected onViolationInput(event: Event): void {
-    // CodeQL 合規修正：violationFilter 僅供過濾用，不直接渲染，且 autocomplete 有 requireSelection
-    this.violationFilter.set(
-      (event.target as HTMLInputElement).value.replace(/[<>]/g, ''),
-    );
+    // eslint-disable-next-line xss/no-mixed-html -- filter signal 僅供過濾用，不直接渲染為 HTML
+    const inputValue = (event.target as HTMLInputElement).value;
+    this.violationFilter.set(inputValue.replace(/[<>]/g, ''));
   }
 
   protected async locateUser(): Promise<void> {
