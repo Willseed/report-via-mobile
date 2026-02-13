@@ -224,10 +224,10 @@ describe('SmsForm', () => {
       const deferBlock = (await fixture.getDeferBlocks())[0];
       await deferBlock.render(DeferBlockState.Complete);
       fixture.detectChanges();
-      const button = (fixture.nativeElement as HTMLElement).querySelector(
-        'button[mat-flat-button]',
-      ) as HTMLButtonElement;
-      expect(button.disabled).toBe(true);
+      const buttonDebug = fixture.debugElement.query(
+        (el) => el.name === 'button' && el.attributes['mat-flat-button'] !== undefined,
+      );
+      expect(buttonDebug.nativeElement.disabled).toBe(true);
     });
 
     it('should show warning message when district mismatches', async () => {
