@@ -2,13 +2,14 @@
   <h1>簡訊報案</h1>
   <p class="subtitle">填寫以下表單，透過您裝置的簡訊功能傳送報案訊息。</p>
 
+  @if (isDesktop()) {
+    <div class="desktop-warning">
+      <mat-icon>warning</mat-icon>
+      <span>簡訊連結可能無法在桌面瀏覽器上使用，請使用行動裝置開啟。</span>
+    </div>
+  }
+
   @defer (on idle) {
-    @if (isDesktop()) {
-      <div class="desktop-warning">
-        <mat-icon>warning</mat-icon>
-        <span>簡訊連結可能無法在桌面瀏覽器上使用，請使用行動裝置開啟。</span>
-      </div>
-    }
 
     <div class="info-banner">
       <mat-icon>info</mat-icon>

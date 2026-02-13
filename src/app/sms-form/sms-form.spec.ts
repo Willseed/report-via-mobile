@@ -435,6 +435,58 @@ describe('SmsForm', () => {
   });
 });
 
+describe('SmsForm desktop behavior', () => {
+  let fixture: ComponentFixture<SmsForm>;
+
+  beforeEach(async () => {
+    const afterClosedSubject = new Subject<boolean | undefined>();
+    await TestBed.configureTestingModule({
+      imports: [SmsForm],
+      providers: [
+        {
+          provide: SmsService,
+          useValue: {
+            sendSms: vi.fn(),
+            generateSmsLink: vi.fn().mockReturnValue('sms:0911510914?body=Hello'),
+            isDesktop: vi.fn().mockReturnValue(true),
+          },
+        },
+        {
+          provide: GeocodingService,
+          useValue: { getCurrentPosition: vi.fn(), reverseGeocode: vi.fn() },
+        },
+        {
+          provide: MatDialog,
+          useValue: {
+            open: vi.fn().mockReturnValue({
+              afterClosed: () => afterClosedSubject.asObservable(),
+            }),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(SmsForm);
+    fixture.detectChanges();
+  });
+
+  it('should show desktop warning when on desktop', () => {
+    const warning = (fixture.nativeElement as HTMLElement).querySelector('.desktop-warning');
+    expect(warning).toBeTruthy();
+    expect(warning?.textContent).toContain('簡訊連結可能無法在桌面瀏覽器上使用');
+  });
+
+  it('should disable submit button when on desktop', async () => {
+    const deferBlock = (await fixture.getDeferBlocks())[0];
+    await deferBlock.render(DeferBlockState.Complete);
+    fixture.detectChanges();
+    const button = (fixture.nativeElement as HTMLElement).querySelector(
+      'button[mat-flat-button]',
+    ) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+  });
+});
+
 describe('findStationByAddress', () => {
   it('should find station by district name', () => {
     const result = findStationByAddress('臺北市信義區信義路');
