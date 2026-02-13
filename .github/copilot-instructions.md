@@ -9,8 +9,8 @@
 
 ### Testing
 - **Run all tests:** `npm test` or `ng test`
-- **Run single test file:** `npx vitest run src/app/app.spec.ts`
-- **Run tests in watch mode:** `npx vitest`
+- **Run single test file:** `ng test --include src/app/app.spec.ts`
+- **Run tests in watch mode:** `ng test`
 
 ### Other
 - **Watch mode build:** `ng build --watch --configuration development`

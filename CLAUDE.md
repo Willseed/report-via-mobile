@@ -11,7 +11,7 @@ Mobile-first Angular 21 application for reporting traffic violations via SMS. Us
 - **Dev server:** `ng serve` (http://localhost:4200/)
 - **Build:** `ng build` (output: `dist/report-via-mobile/browser/`)
 - **Run tests:** `ng test` (Vitest + jsdom)
-- **Run single test:** `npx vitest run src/app/sms-form/sms-form.spec.ts`
+- **Run single test:** `ng test --include src/app/sms-form/sms-form.spec.ts`
 
 ## Architecture
 
