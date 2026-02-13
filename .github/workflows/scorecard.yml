@@ -48,6 +48,6 @@ jobs:
 
       # 將結果上傳到 GitHub 的程式碼掃描儀表板
       - name: "上傳到程式碼掃描"
-        uses: github/codeql-action/upload-sarif@b5ebac6f4c00c8ccddb7cdcd45fdb248329f808a # v3
+        uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4.32.2
         with:
           sarif_file: results.sarif
