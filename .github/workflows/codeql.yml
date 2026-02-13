@@ -1,8 +1,6 @@
 name: "CodeQL 程式碼分析"
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
   schedule:
