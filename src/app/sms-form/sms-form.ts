@@ -126,9 +126,10 @@ export class SmsForm {
   }
 
   protected onViolationInput(event: Event): void {
-    const raw = (event.target as HTMLInputElement).value;
-    // Codacy XSS 誤報修正：violationFilter 僅供過濾用，不直接渲染，且 autocomplete 有 requireSelection
-    this.violationFilter.set(raw.replace(/<[^>]*>/g, ''));
+    // CodeQL 合規修正：violationFilter 僅供過濾用，不直接渲染，且 autocomplete 有 requireSelection
+    this.violationFilter.set(
+      (event.target as HTMLInputElement).value.replace(/[<>]/g, ''),
+    );
   }
 
   protected async locateUser(): Promise<void> {
