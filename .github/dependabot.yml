@@ -1,0 +1,40 @@
+# Dependabot 自動化相依性更新設定
+# 文件: https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  # 維護 npm 相依性
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Asia/Taipei"
+    labels:
+      - "相依性更新"
+      - "npm"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Willseed"
+
+  # 維護 GitHub Actions 相依性
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Asia/Taipei"
+    labels:
+      - "相依性更新"
+      - "github-actions"
+    commit-message:
+      prefix: "ci(deps)"
+      include: "scope"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "Willseed"
