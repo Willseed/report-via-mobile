@@ -25,11 +25,11 @@ jobs:
           upload: true
           max-allowed-issues: 2147483647
           format: sarif
-          output: results.sarif
+          output: ${{ runner.temp }}/results.sarif
           gh-code-scanning-compat: true
 
       - name: Upload SARIF results
         uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
         with:
-          sarif_file: results.sarif
+          sarif_file: ${{ runner.temp }}/results.sarif
           wait-for-processing: true
