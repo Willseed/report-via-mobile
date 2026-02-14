@@ -56,82 +56,8 @@ form {
   gap: 0.5rem;
 }
 
-mat-form-field {
-  width: 100%;
-}
-
-.location-error {
-  @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
-}
-
-.sms-preview {
-  margin-top: 0.5rem;
-  padding: 1rem;
-  border-radius: 12px;
-  background-color: var(--mat-sys-surface-container-low);
-}
-
-.sms-preview-header {
-  font-size: 0.75rem;
-  color: var(--mat-sys-on-surface-variant);
-  margin-bottom: 0.5rem;
-  text-align: center;
-}
-
-.sms-bubble {
-  background-color: #34c759;
-  color: #fff;
-  padding: 0.625rem 0.875rem;
-  border-radius: 18px 18px 4px;
-  max-width: 85%;
-  margin-left: auto;
-  font-size: 0.9375rem;
-  line-height: 1.4;
-  overflow-wrap: break-word;
-  white-space: pre-wrap;
-}
-
-.sms-char-count {
-  font-size: 0.75rem;
-  color: var(--mat-sys-on-surface-variant);
-  text-align: right;
-  margin-top: 0.5rem;
-
-  &.over-limit {
-    color: var(--mat-sys-error);
-  }
-}
-
-.sms-length-warning {
-  @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
-}
-
-.locating-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .district-mismatch-warning {
   @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
-}
-
-.add-plate-btn {
-  align-self: flex-start;
-  color: var(--mat-sys-primary);
-  font-size: 0.875rem;
-}
-
-input[formcontrolname='licensePlate'] {
-  text-transform: uppercase;
 }
 
 button[mat-flat-button] {
@@ -145,25 +71,6 @@ button[mat-flat-button] {
 
   margin-top: 0.5rem;
   font-size: 0.8125rem;
-}
-
-.fade-in {
-  animation: fade-in 500ms ease-in;
-}
-
-.fade-out {
-  opacity: 0;
-  transition: opacity 500ms ease-out;
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
 }
 
 .form-skeleton {

@@ -1,0 +1,56 @@
+<mat-form-field appearance="outline">
+  <mat-label>事發地址</mat-label>
+  <input
+    matInput
+    [formField]="addressForm.address"
+    placeholder="請輸入地址..."
+    (input)="onAddressInput()"
+  />
+  <mat-icon matPrefix>edit_location_alt</mat-icon>
+  <button
+    mat-icon-button
+    matSuffix
+    type="button"
+    (click)="locateUser()"
+    [disabled]="isLocating()"
+    aria-label="使用目前位置"
+  >
+    <mat-icon [class.locating-spin]="isLocating()">my_location</mat-icon>
+  </button>
+  <mat-hint>輸入地址或按右側按鈕定位，將自動帶入行政區。</mat-hint>
+  @if (addressForm.address().touched() && addressForm.address().invalid()) {
+    @for (error of addressForm.address().errors(); track error) {
+      <mat-error>{{ error.message }}</mat-error>
+    }
+  }
+</mat-form-field>
+
+@if (locationError()) {
+  <div class="location-error" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ locationError() }}</span>
+  </div>
+}
+
+<mat-form-field appearance="outline">
+  <mat-label>報案行政區</mat-label>
+  <mat-select
+    [value]="district()"
+    (selectionChange)="onDistrictChange($event.value)"
+    [compareWith]="compareStations"
+    panelClass="fade-dropdown"
+  >
+    <mat-select-trigger>{{ district()?.district }}</mat-select-trigger>
+    @for (station of stations; track station.district) {
+      <mat-option [value]="station">{{ station.district }}</mat-option>
+    }
+  </mat-select>
+  <mat-icon matPrefix>location_on</mat-icon>
+  @let station = district();
+  @if (station) {
+    <mat-hint>承辦單位：{{ station.stationName }}</mat-hint>
+  }
+  @if (districtRequired) {
+    <mat-hint class="district-error">請選擇報案行政區。</mat-hint>
+  }
+</mat-form-field>

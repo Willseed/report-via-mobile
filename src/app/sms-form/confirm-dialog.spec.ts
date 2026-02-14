@@ -80,6 +80,7 @@ describe('ConfirmDialog', () => {
     const dataWithPlate: ConfirmDialogData = { ...mockData, licensePlate: 'ABC1234' };
     fixture = TestBed.createComponent(ConfirmDialog);
     // Override the injected data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test override of injected data
     (fixture.componentInstance as any).data = dataWithPlate;
     fixture.detectChanges();
     expect(fixture.debugElement.nativeElement.textContent).toContain('ABC1234');

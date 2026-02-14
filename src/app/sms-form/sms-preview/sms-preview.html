@@ -1,0 +1,15 @@
+@if (message()) {
+  <div class="sms-preview">
+    <div class="sms-preview-header">簡訊預覽</div>
+    <div class="sms-bubble">{{ message() }}</div>
+    <div class="sms-char-count" [class.over-limit]="overLimit()">
+      {{ message().length }} / {{ SMS_CHAR_LIMIT }} 字
+    </div>
+  </div>
+  @if (overLimit()) {
+    <div class="sms-length-warning" role="alert">
+      <mat-icon>warning</mat-icon>
+      <span>簡訊內容超過 {{ SMS_CHAR_LIMIT }} 字，可能被拆為多則傳送。</span>
+    </div>
+  }
+}
