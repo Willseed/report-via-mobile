@@ -16,8 +16,6 @@ on:
           - baseline
           - full
 
-permissions: read-all
-
 jobs:
   zap_baseline:
     if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.scan_type == 'baseline')
