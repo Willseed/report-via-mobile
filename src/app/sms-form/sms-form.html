@@ -16,7 +16,7 @@
       <span>發送此簡訊是免費的。</span>
     </div>
 
-    <form (ngSubmit)="sendSms()">
+    <form novalidate (submit)="$event.preventDefault(); sendSms()">
       <app-location-input
         [(address)]="address"
         [(district)]="district"

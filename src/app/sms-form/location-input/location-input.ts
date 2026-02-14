@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   computed,
   DestroyRef,
@@ -36,6 +37,7 @@ export const ADDRESS_MAX_LENGTH = 100;
 export class LocationInput {
   private geocodingService = inject(GeocodingService);
   private destroyRef = inject(DestroyRef);
+  private cdr = inject(ChangeDetectorRef);
 
   readonly address = model('');
   readonly district = model<PoliceStation | null>(null);
@@ -66,8 +68,9 @@ export class LocationInput {
     return stationFromAddress.district !== selected.district;
   });
 
-  protected onAddressInput(): void {
-    const value = this.addressForm.address().value();
+  protected onAddressInput(event: Event): void {
+    const value = (event.target as EventTarget & { value: string }).value;
+    this.addressForm.address().value.set(value);
     this.address.set(value);
 
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
@@ -109,6 +112,7 @@ export class LocationInput {
 
   markAsTouched(): void {
     this.addressForm.address().markAsTouched();
+    queueMicrotask(() => this.cdr.detectChanges());
   }
 
   get valid(): boolean {

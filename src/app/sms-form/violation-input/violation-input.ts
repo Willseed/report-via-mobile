@@ -1,6 +1,7 @@
 import {
   afterNextRender,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   computed,
   ElementRef,
@@ -64,6 +65,7 @@ export const LICENSE_PLATE_PATTERN = /^[A-Z0-9]*$/;
 })
 export class ViolationInput {
   private injector = inject(Injector);
+  private cdr = inject(ChangeDetectorRef);
 
   private licensePlateInputRef = viewChild<ElementRef<HTMLInputElement>>('licensePlateInput');
   private addPlateButton = viewChild<ElementRef<HTMLButtonElement>>('addPlateButton');
@@ -94,9 +96,11 @@ export class ViolationInput {
   });
 
   protected onViolationInput(event: Event): void {
-    const value = (event.target as HTMLInputElement).value.replace(/[<>]/g, '');
+    const target = event.target as EventTarget & { value: string };
+    const value = target.value.replace(/[<>]/g, '');
     this.violationFilter.set(value);
-    this.violation.set(this.violationForm.violation().value());
+    this.violationForm.violation().value.set(value);
+    this.violation.set(value);
   }
 
   protected onViolationChange(): void {
@@ -138,6 +142,7 @@ export class ViolationInput {
   markAsTouched(): void {
     this.violationForm.violation().markAsTouched();
     this.violationForm.licensePlate().markAsTouched();
+    queueMicrotask(() => this.cdr.detectChanges());
   }
 
   get valid(): boolean {

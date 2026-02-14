@@ -80,6 +80,10 @@ describe('SmsForm', () => {
     vi['violation'].set('汽車於紅線停車');
   }
 
+  function mockInputEvent(value: string): Event {
+    return { target: { value } } as unknown as Event;
+  }
+
   async function renderDeferBlock() {
     const deferBlock = (await fixture.getDeferBlocks())[0];
     await deferBlock.render(DeferBlockState.Complete);
@@ -207,18 +211,14 @@ describe('SmsForm', () => {
 
     it('should auto-select district when address contains district name', () => {
       const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['onAddressInput']();
+      loc['onAddressInput'](mockInputEvent('臺北市信義區信義路五段7號'));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(loc['district']()).toEqual(POLICE_STATIONS[0]);
     });
 
     it('should auto-select district with 台 → 臺 normalization', () => {
       const loc = getLocationInput();
-      loc['addressForm'].address().value.set('台中市西屯區某路');
-      loc['address'].set('台中市西屯區某路');
-      loc['onAddressInput']();
+      loc['onAddressInput'](mockInputEvent('台中市西屯區某路'));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       const taichungStation = POLICE_STATIONS.find((s) => s.district === '臺中市');
       expect(loc['district']()).toEqual(taichungStation);
@@ -226,24 +226,18 @@ describe('SmsForm', () => {
 
     it('should not change district when address does not match', () => {
       const loc = getLocationInput();
-      loc['addressForm'].address().value.set('某個不存在的地方');
-      loc['address'].set('某個不存在的地方');
-      loc['onAddressInput']();
+      loc['onAddressInput'](mockInputEvent('某個不存在的地方'));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(loc['district']()).toBeNull();
     });
 
     it('should debounce rapid address inputs', () => {
       const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北');
-      loc['address'].set('臺北');
-      loc['onAddressInput']();
+      loc['onAddressInput'](mockInputEvent('臺北'));
       vi.advanceTimersByTime(100);
       expect(loc['district']()).toBeNull();
 
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['onAddressInput']();
+      loc['onAddressInput'](mockInputEvent('臺北市信義區信義路五段7號'));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(loc['district']()).toEqual(POLICE_STATIONS[0]);
     });
@@ -733,9 +727,7 @@ describe('SmsForm', () => {
 
       const loc = getLocationInput();
       // Trigger an address input to start a debounce timer
-      loc['addressForm'].address().value.set('臺北市');
-      loc['address'].set('臺北市');
-      loc['onAddressInput']();
+      loc['onAddressInput'](mockInputEvent('臺北市'));
 
       // Locate should clear the pending debounce
       await loc['locateUser']();
@@ -792,9 +784,8 @@ describe('SmsForm', () => {
     it('should trigger onAddressInput via DOM input event', () => {
       fixture.detectChanges();
       const el = queryEl<HTMLInputElement>('input[placeholder="請輸入地址..."]');
-      // Simulate formField syncing the value, then trigger input event
-      getLocationInput()['addressForm'].address().value.set('臺北市');
-      el.dispatchEvent(new Event('input'));
+      el.value = '臺北市';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
       fixture.detectChanges();
       expect(getLocationInput()['address']()).toBe('臺北市');
     });

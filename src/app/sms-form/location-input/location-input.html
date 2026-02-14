@@ -4,7 +4,7 @@
     matInput
     [formField]="addressForm.address"
     placeholder="請輸入地址..."
-    (input)="onAddressInput()"
+    (input)="onAddressInput($event)"
   />
   <mat-icon matPrefix>edit_location_alt</mat-icon>
   <button
