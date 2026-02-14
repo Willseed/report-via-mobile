@@ -16,7 +16,7 @@ test.describe('確認對話框', () => {
   test('填寫完整表單後點擊發送應顯示確認對話框', async ({ page }) => {
     // 填寫表單
     await page.getByLabel('事發地址').fill('台北市中正區重慶南路一段122號');
-    await page.waitForTimeout(400);
+    await expect(page.locator('mat-select-trigger')).toContainText('臺北市');
     await page.getByLabel('違規事實').click();
     await page.getByRole('option', { name: '汽車於紅線停車' }).click();
 
@@ -30,7 +30,7 @@ test.describe('確認對話框', () => {
 
   test('確認對話框應顯示承辦單位資訊', async ({ page }) => {
     await page.getByLabel('事發地址').fill('台北市大安區忠孝東路四段1號');
-    await page.waitForTimeout(400);
+    await expect(page.locator('mat-select-trigger')).toContainText('臺北市');
     await page.getByLabel('違規事實').click();
     await page.getByRole('option', { name: '機車於黃線停車' }).click();
     await page.getByRole('button', { name: '發送簡訊' }).click();
@@ -42,7 +42,7 @@ test.describe('確認對話框', () => {
 
   test('確認對話框應顯示簡訊內容預覽', async ({ page }) => {
     await page.getByLabel('事發地址').fill('台北市信義區松仁路100號');
-    await page.waitForTimeout(400);
+    await expect(page.locator('mat-select-trigger')).toContainText('臺北市');
     await page.getByLabel('違規事實').click();
     await page.getByRole('option', { name: '汽車並排停車' }).click();
     await page.getByRole('button', { name: '發送簡訊' }).click();
@@ -53,7 +53,7 @@ test.describe('確認對話框', () => {
 
   test('確認對話框應有確認和取消按鈕', async ({ page }) => {
     await page.getByLabel('事發地址').fill('台北市中山區南京東路二段1號');
-    await page.waitForTimeout(400);
+    await expect(page.locator('mat-select-trigger')).toContainText('臺北市');
     await page.getByLabel('違規事實').click();
     await page.getByRole('option', { name: '汽車於紅線停車' }).click();
     await page.getByRole('button', { name: '發送簡訊' }).click();
@@ -64,7 +64,7 @@ test.describe('確認對話框', () => {
 
   test('點擊取消應關閉對話框', async ({ page }) => {
     await page.getByLabel('事發地址').fill('台北市中正區重慶南路一段122號');
-    await page.waitForTimeout(400);
+    await expect(page.locator('mat-select-trigger')).toContainText('臺北市');
     await page.getByLabel('違規事實').click();
     await page.getByRole('option', { name: '汽車於紅線停車' }).click();
     await page.getByRole('button', { name: '發送簡訊' }).click();
@@ -76,7 +76,7 @@ test.describe('確認對話框', () => {
 
   test('確認對話框應顯示車牌號碼', async ({ page }) => {
     await page.getByLabel('事發地址').fill('台北市松山區民生東路五段1號');
-    await page.waitForTimeout(400);
+    await expect(page.locator('mat-select-trigger')).toContainText('臺北市');
     await page.getByLabel('違規事實').click();
     await page.getByRole('option', { name: '機車於騎樓停車' }).click();
     await page.getByRole('button', { name: '新增車牌號碼' }).click();

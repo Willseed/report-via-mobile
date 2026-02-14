@@ -9,15 +9,13 @@ test.describe('表單互動', () => {
 
   test('輸入台北市地址應自動選擇對應行政區', async ({ page }) => {
     await page.getByLabel('事發地址').fill('台北市中正區重慶南路一段122號');
-    // 等待 debounce (300ms)
-    await page.waitForTimeout(400);
-    await expect(page.getByText('承辦單位')).toBeVisible();
+    // 等待 debounce 後行政區自動選擇完成
     await expect(page.locator('mat-select-trigger')).toContainText('臺北市');
+    await expect(page.getByText('承辦單位')).toBeVisible();
   });
 
   test('輸入新北市地址應自動選擇對應行政區', async ({ page }) => {
     await page.getByLabel('事發地址').fill('新北市板橋區中山路一段161號');
-    await page.waitForTimeout(400);
     await expect(page.locator('mat-select-trigger')).toContainText('新北市');
   });
 

@@ -44,9 +44,8 @@ test.describe('行政區不一致警告', () => {
   test('地址與選擇行政區不一致應顯示警告', async ({ page }) => {
     // 輸入台北市地址
     await page.getByLabel('事發地址').fill('台北市中正區重慶南路一段122號');
-    await page.waitForTimeout(400);
 
-    // 確認自動選擇了臺北市
+    // 等待自動選擇臺北市完成
     await expect(page.locator('mat-select-trigger')).toContainText('臺北市');
 
     // 手動改選新北市
@@ -60,7 +59,7 @@ test.describe('行政區不一致警告', () => {
 
   test('行政區不一致時發送按鈕應停用', async ({ page }) => {
     await page.getByLabel('事發地址').fill('台北市中正區重慶南路一段122號');
-    await page.waitForTimeout(400);
+    await expect(page.locator('mat-select-trigger')).toContainText('臺北市');
     await page.getByLabel('報案行政區').click();
     await page.getByRole('option', { name: '新北市' }).click();
     const violationInput = page.getByRole('combobox', { name: '違規事實' });
@@ -72,7 +71,7 @@ test.describe('行政區不一致警告', () => {
 
   test('修正行政區後警告應消失', async ({ page }) => {
     await page.getByLabel('事發地址').fill('台北市中正區重慶南路一段122號');
-    await page.waitForTimeout(400);
+    await expect(page.locator('mat-select-trigger')).toContainText('臺北市');
     await page.getByRole('combobox', { name: '報案行政區' }).click();
     await page.getByRole('option', { name: '新北市' }).click();
     await expect(page.locator('.district-mismatch-warning')).toBeVisible();
