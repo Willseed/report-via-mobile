@@ -670,6 +670,107 @@ describe('SmsForm', () => {
       expect(vi.valid).toBe(true);
     });
   });
+
+  describe('sms preview over-limit warning', () => {
+    it('should show over-limit warning when message exceeds 70 chars', async () => {
+      await renderDeferBlock();
+      const longAddress =
+        '臺北市信義區信義路五段某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某號';
+      const loc = getLocationInput();
+      loc['addressForm'].address().value.set(longAddress);
+      loc['address'].set(longAddress);
+      const vi = getViolationInput();
+      vi['violationForm'].violation().value.set('汽車於紅線停車');
+      vi['violation'].set('汽車於紅線停車');
+      fixture.detectChanges();
+      const warning = (fixture.nativeElement as HTMLElement).querySelector('.sms-length-warning');
+      expect(warning).toBeTruthy();
+      expect(warning?.textContent).toContain('可能被拆為多則傳送');
+    });
+
+    it('should not show over-limit warning when message is within limit', async () => {
+      await renderDeferBlock();
+      const loc = getLocationInput();
+      loc['addressForm'].address().value.set('臺北市信義路');
+      loc['address'].set('臺北市信義路');
+      const vi = getViolationInput();
+      vi['violationForm'].violation().value.set('汽車於紅線停車');
+      vi['violation'].set('汽車於紅線停車');
+      fixture.detectChanges();
+      const warning = (fixture.nativeElement as HTMLElement).querySelector('.sms-length-warning');
+      expect(warning).toBeNull();
+    });
+  });
+
+  describe('onDistrictChange', () => {
+    it('should update district when selection changes', async () => {
+      await renderDeferBlock();
+      const loc = getLocationInput();
+      loc['onDistrictChange'](POLICE_STATIONS[0]);
+      expect(loc['district']()).toBe(POLICE_STATIONS[0]);
+    });
+  });
+
+  describe('locateUser clears pending debounce', () => {
+    beforeEach(async () => {
+      vi.useFakeTimers();
+      await renderDeferBlock();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should clear pending debounce timer when locating', async () => {
+      geocodingServiceSpy.getCurrentPosition.mockResolvedValue({
+        coords: { latitude: 25.033, longitude: 121.565 },
+      } as GeolocationPosition);
+      geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
+
+      const loc = getLocationInput();
+      // Trigger an address input to start a debounce timer
+      loc['addressForm'].address().value.set('臺北市');
+      loc['address'].set('臺北市');
+      loc['onAddressInput']();
+
+      // Locate should clear the pending debounce
+      await loc['locateUser']();
+
+      // Advance past debounce — original debounce should not fire
+      vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS + 100);
+
+      // District should match the geocoded address, not the typed '臺北市'
+      expect(loc['address']()).toBe('臺北市信義區信義路五段7號');
+    });
+  });
+
+  describe('violation input events', () => {
+    beforeEach(async () => {
+      await renderDeferBlock();
+    });
+
+    it('should update violation model on input event', () => {
+      const vi = getViolationInput();
+      vi['violationForm'].violation().value.set('汽車於紅線停車');
+      const event = { target: { value: '汽車於紅線停車' } } as unknown as Event;
+      vi['onViolationInput'](event);
+      expect(vi['violation']()).toBe('汽車於紅線停車');
+    });
+
+    it('should strip angle brackets from violation input', () => {
+      const vi = getViolationInput();
+      const event = { target: { value: '<script>alert</script>' } } as unknown as Event;
+      vi['onViolationInput'](event);
+      expect(vi['violationFilter']()).toBe('scriptalert/script');
+    });
+
+    it('should update violation model on change event', () => {
+      const vi = getViolationInput();
+      vi['violationForm'].violation().value.set('機車於黃線停車');
+      vi['onViolationChange']();
+      expect(vi['violation']()).toBe('機車於黃線停車');
+    });
+  });
 });
 
 describe('SmsForm desktop behavior', () => {

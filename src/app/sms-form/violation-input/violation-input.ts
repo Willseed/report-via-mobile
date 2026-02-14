@@ -103,10 +103,6 @@ export class ViolationInput {
     this.violation.set(this.violationForm.violation().value());
   }
 
-  protected onLicensePlateChange(): void {
-    this.licensePlate.set(this.violationForm.licensePlate().value());
-  }
-
   protected toggleLicensePlate(): void {
     this.showLicensePlate.set(true);
     afterNextRender(
