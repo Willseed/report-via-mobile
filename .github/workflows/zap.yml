@@ -70,7 +70,7 @@ jobs:
 
       - name: Convert ZAP JSON to SARIF
         if: always() && hashFiles('report_json.json') != ''
-        run: node .github/scripts/zap-to-sarif.js report_json.json zap-results.sarif
+        run: node --no-warnings --experimental-strip-types .github/scripts/zap-to-sarif.ts report_json.json zap-results.sarif
 
       - name: Upload SARIF to GitHub Security
         if: always() && hashFiles('zap-results.sarif') != ''
@@ -139,7 +139,7 @@ jobs:
 
       - name: Convert ZAP JSON to SARIF
         if: always() && hashFiles('report_json.json') != ''
-        run: node .github/scripts/zap-to-sarif.js report_json.json zap-results.sarif
+        run: node --no-warnings --experimental-strip-types .github/scripts/zap-to-sarif.ts report_json.json zap-results.sarif
 
       - name: Upload SARIF to GitHub Security
         if: always() && hashFiles('zap-results.sarif') != ''
