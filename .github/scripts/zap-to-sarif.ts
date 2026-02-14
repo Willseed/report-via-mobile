@@ -105,9 +105,15 @@ const RISK_TO_LEVEL: Record<number, string> = {
 const SARIF_SCHEMA =
   'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json';
 
-/** 移除 HTML 標籤並 trim */
+/** 移除 HTML 標籤並 trim（迴圈移除以防巢狀標籤殘留） */
 function stripHtml(str: string): string {
-  return str.replace(/<[^>]*>/g, '').trim();
+  let result = str;
+  let previous: string;
+  do {
+    previous = result;
+    result = result.replace(/<[^>]*>/g, '');
+  } while (result !== previous);
+  return result.trim();
 }
 
 /** 將 HTTP URL 轉為相對路徑（GitHub Code Scanning 不接受 http scheme） */
