@@ -4,8 +4,6 @@
 
 name: OpenSSF Scorecard
 on:
-  # 僅在預設分支上執行分析，避免寫入權限問題
-  branch_protection_rule:
   schedule:
     - cron: '30 2 * * 0' # 每週日 02:30 UTC 執行
   push:
@@ -22,10 +20,7 @@ jobs:
     permissions:
       # 需要寫入權限以上傳結果至 Security 標籤
       security-events: write
-      # 需要讀取權限以擷取儲存庫的內容
       id-token: write
-      contents: read
-      actions: read
 
     steps:
       - name: "檢出程式碼"
@@ -38,12 +33,6 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
-          # （選用）"write" PAT 權限。如果未設定，將僅包含公開可見的 GitHub 資訊。
-          # 這在私有儲存庫上執行時是必需的。
-          repo_token: ${{ secrets.SCORECARD_TOKEN }}
-
-          # 發佈結果至 OpenSSF REST API
-          # 若要使用此功能，請啟用上方的 id-token 權限
           publish_results: true
 
       # 將結果上傳到 GitHub 的程式碼掃描儀表板
