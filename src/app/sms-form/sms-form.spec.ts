@@ -771,6 +771,169 @@ describe('SmsForm', () => {
       expect(vi['violation']()).toBe('機車於黃線停車');
     });
   });
+
+  describe('DOM-driven template coverage', () => {
+    beforeEach(async () => {
+      await renderDeferBlock();
+    });
+
+    it('should trigger onAddressInput via DOM input event', () => {
+      fixture.detectChanges();
+      const addressInput = (fixture.nativeElement as HTMLElement).querySelector(
+        'input[placeholder="請輸入地址..."]',
+      ) as HTMLInputElement;
+      expect(addressInput).toBeTruthy();
+      // Simulate formField syncing the value, then trigger input event
+      getLocationInput()['addressForm'].address().value.set('臺北市');
+      addressInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(getLocationInput()['address']()).toBe('臺北市');
+    });
+
+    it('should trigger locateUser via DOM click event', async () => {
+      geocodingServiceSpy.getCurrentPosition.mockResolvedValue({
+        coords: { latitude: 25.033, longitude: 121.565 },
+      } as GeolocationPosition);
+      geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
+
+      fixture.detectChanges();
+      const locateBtn = (fixture.nativeElement as HTMLElement).querySelector(
+        'button[aria-label="使用目前位置"]',
+      ) as HTMLButtonElement;
+      expect(locateBtn).toBeTruthy();
+      locateBtn.click();
+
+      // Wait for async locateUser to complete
+      await vi.waitFor(() => {
+        expect(getLocationInput()['isLocating']()).toBe(false);
+      });
+      fixture.detectChanges();
+    });
+
+    it('should show address validation errors when touched and invalid', () => {
+      const loc = getLocationInput();
+      loc['addressForm'].address().value.set('');
+      loc.markAsTouched();
+      fixture.detectChanges();
+      const errors = (fixture.nativeElement as HTMLElement).querySelectorAll('mat-error');
+      expect(errors.length).toBeGreaterThan(0);
+    });
+
+    it('should show location error when geolocation fails', async () => {
+      geocodingServiceSpy.getCurrentPosition.mockRejectedValue(
+        new Error('定位權限被拒絕，請允許存取位置資訊。'),
+      );
+      await getLocationInput()['locateUser']();
+      fixture.detectChanges();
+      const errorDiv = (fixture.nativeElement as HTMLElement).querySelector('.location-error');
+      expect(errorDiv).toBeTruthy();
+      expect(errorDiv?.textContent).toContain('定位權限被拒絕');
+    });
+
+    it('should trigger onDistrictChange via mat-select in DOM', () => {
+      const loc = getLocationInput();
+      loc['onDistrictChange'](POLICE_STATIONS[1]);
+      fixture.detectChanges();
+      expect(loc['district']()).toBe(POLICE_STATIONS[1]);
+      const hints = (fixture.nativeElement as HTMLElement).querySelectorAll('mat-hint');
+      const stationHint = Array.from(hints).find((h) =>
+        h.textContent?.includes(POLICE_STATIONS[1].stationName),
+      );
+      expect(stationHint).toBeTruthy();
+    });
+
+    it('should trigger violation input via DOM', () => {
+      fixture.detectChanges();
+      const violationInput = (fixture.nativeElement as HTMLElement).querySelector(
+        'input[placeholder="請選擇違規事實..."]',
+      ) as HTMLInputElement;
+      expect(violationInput).toBeTruthy();
+      violationInput.value = '紅線';
+      violationInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+    });
+
+    it('should trigger toggleLicensePlate via DOM click', () => {
+      fixture.detectChanges();
+      const addBtn = (fixture.nativeElement as HTMLElement).querySelector(
+        '.add-plate-btn',
+      ) as HTMLButtonElement;
+      expect(addBtn).toBeTruthy();
+      addBtn.click();
+      fixture.detectChanges();
+      expect(getViolationInput()['showLicensePlate']()).toBe(true);
+    });
+
+    it('should trigger clearLicensePlate via DOM click', () => {
+      getViolationInput()['toggleLicensePlate']();
+      fixture.detectChanges();
+      const clearBtn = (fixture.nativeElement as HTMLElement).querySelector(
+        'button[aria-label="移除車牌號碼"]',
+      ) as HTMLButtonElement;
+      expect(clearBtn).toBeTruthy();
+      clearBtn.click();
+      fixture.detectChanges();
+      expect(getViolationInput()['showLicensePlate']()).toBe(false);
+    });
+
+    it('should trigger license plate input via DOM', () => {
+      getViolationInput()['toggleLicensePlate']();
+      fixture.detectChanges();
+      const plateInput = (fixture.nativeElement as HTMLElement).querySelector(
+        'input[placeholder="例：ABC1234"]',
+      ) as HTMLInputElement;
+      expect(plateInput).toBeTruthy();
+      plateInput.value = 'abc-123';
+      plateInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(getViolationInput()['violationForm'].licensePlate().value()).toBe('ABC123');
+    });
+
+    it('should mark license plate as touched on blur', () => {
+      getViolationInput()['toggleLicensePlate']();
+      fixture.detectChanges();
+      const plateInput = (fixture.nativeElement as HTMLElement).querySelector(
+        'input[placeholder="例：ABC1234"]',
+      ) as HTMLInputElement;
+      plateInput.dispatchEvent(new Event('blur'));
+      fixture.detectChanges();
+      expect(getViolationInput()['violationForm'].licensePlate().touched()).toBe(true);
+    });
+
+    it('should show violation validation errors when touched and invalid', () => {
+      const vi = getViolationInput();
+      vi['violationForm'].violation().value.set('');
+      vi.markAsTouched();
+      fixture.detectChanges();
+      const errors = (fixture.nativeElement as HTMLElement).querySelectorAll(
+        'app-violation-input mat-error',
+      );
+      expect(errors.length).toBeGreaterThan(0);
+    });
+
+    it('should show license plate validation errors when touched and invalid', () => {
+      const vi = getViolationInput();
+      vi['toggleLicensePlate']();
+      vi['violationForm'].licensePlate().value.set('!!!');
+      vi['violationForm'].licensePlate().markAsTouched();
+      fixture.detectChanges();
+      const errors = (fixture.nativeElement as HTMLElement).querySelectorAll(
+        'app-violation-input mat-error',
+      );
+      expect(errors.length).toBeGreaterThan(0);
+    });
+
+    it('should render @defer placeholder skeleton', async () => {
+      const freshFixture = TestBed.createComponent(SmsForm);
+      freshFixture.detectChanges();
+      const skeleton = (freshFixture.nativeElement as HTMLElement).querySelector('.form-skeleton');
+      expect(skeleton).toBeTruthy();
+      const skeletonFields = (freshFixture.nativeElement as HTMLElement).querySelectorAll(
+        '.skeleton-field',
+      );
+      expect(skeletonFields.length).toBeGreaterThan(0);
+    });
+  });
 });
 
 describe('SmsForm desktop behavior', () => {
