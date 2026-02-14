@@ -11,7 +11,8 @@ on:
   workflow_dispatch:
 
 # 宣告預設權限為唯讀
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   analysis:
