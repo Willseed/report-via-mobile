@@ -55,7 +55,8 @@ describe('SmsForm', () => {
     fixture.detectChanges();
   });
 
-  const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === '高雄市')!;
+  const kaohsiungStation =
+    POLICE_STATIONS.find((s) => s.district === '高雄市') ?? POLICE_STATIONS[0];
 
   function getLocationInput(): LocationInput {
     return component['locationInput']()!;
