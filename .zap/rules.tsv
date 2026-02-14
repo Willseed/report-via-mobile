@@ -1,0 +1,14 @@
+# ZAP 規則設定（SPA 常見誤報降噪）
+# 格式: <plugin_id> <level> <comment>
+10015	WARN	Incomplete or No Cache-control Header Set
+10016	WARN	Web Browser XSS Protection Not Enabled
+10017	WARN	Cross-Domain JavaScript Source File Inclusion
+10020	WARN	X-Frame-Options Header Not Set
+10021	WARN	X-Content-Type-Options Header Missing
+10035	WARN	Strict-Transport-Security Header Not Set
+10038	WARN	Content Security Policy (CSP) Header Not Set
+10049	WARN	Non-Storable Content
+10096	IGNORE	Timestamp Disclosure - Unix
+10098	WARN	Cross-Domain Misconfiguration
+10109	WARN	Modern Web Application
+90033	WARN	Loosely Scoped Cookie

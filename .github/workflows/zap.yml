@@ -1,0 +1,154 @@
+name: OWASP ZAP DAST
+
+on:
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "0 4 * * 0"
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Scan type'
+        required: true
+        default: 'baseline'
+        type: choice
+        options:
+          - baseline
+          - full
+
+permissions: read-all
+
+jobs:
+  zap_baseline:
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.scan_type == 'baseline')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    env:
+      APP_URL: http://host.docker.internal:4200/
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npx ng build --configuration production
+
+      - name: Start static file server
+        run: |
+          npx serve -s dist/report-via-mobile/browser -l 4200 --host 0.0.0.0 > /tmp/serve.log 2>&1 &
+          echo $! > /tmp/serve.pid
+
+      - name: Wait for server ready
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:4200/ > /dev/null; then
+              echo "Server is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Server failed to start"
+          cat /tmp/serve.log
+          exit 1
+
+      - name: ZAP baseline scan
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+        with:
+          target: ${{ env.APP_URL }}
+          rules_file_name: .zap/rules.tsv
+          cmd_options: "-m 10 -r zap-baseline.html -w zap-baseline.md -J report_json.json -x zap-baseline.xml"
+          fail_action: true
+          allow_issue_writing: false
+          artifact_name: zap-baseline
+
+      - name: Upload SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
+        with:
+          sarif_file: report_sarif.sarif
+          category: zap-baseline
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: zap-baseline-html
+          path: zap-baseline.html
+
+  zap_full:
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scan_type == 'full')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      security-events: write
+    env:
+      APP_URL: http://host.docker.internal:4200/
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npx ng build --configuration production
+
+      - name: Start static file server
+        run: |
+          npx serve -s dist/report-via-mobile/browser -l 4200 --host 0.0.0.0 > /tmp/serve.log 2>&1 &
+          echo $! > /tmp/serve.pid
+
+      - name: Wait for server ready
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:4200/ > /dev/null; then
+              echo "Server is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Server failed to start"
+          cat /tmp/serve.log
+          exit 1
+
+      - name: ZAP full scan
+        uses: zaproxy/action-full-scan@3c58388149901b9a03b7718852c5ba889646c27c # v0.13.0
+        with:
+          target: ${{ env.APP_URL }}
+          rules_file_name: .zap/rules.tsv
+          cmd_options: "-m 30 -j -r zap-full.html -w zap-full.md -J report_json.json -x zap-full.xml"
+          fail_action: true
+          allow_issue_writing: false
+          artifact_name: zap-full
+
+      - name: Upload SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
+        with:
+          sarif_file: report_sarif.sarif
+          category: zap-full
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: zap-full-html
+          path: zap-full.html
