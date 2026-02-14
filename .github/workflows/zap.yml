@@ -24,8 +24,6 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    env:
-      APP_URL: http://host.docker.internal:4200/
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -63,18 +61,49 @@ jobs:
       - name: ZAP baseline scan
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
-          target: ${{ env.APP_URL }}
+          target: http://localhost:4200/
           rules_file_name: .zap/rules.tsv
-          cmd_options: "-m 10 -j -r zap-baseline.html -w zap-baseline.md -J report_json.json"
+          cmd_options: "-m 10 -j"
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-baseline
 
+      - name: Convert ZAP JSON to SARIF
+        if: always() && hashFiles('report_json.json') != ''
+        run: |
+          node -e "
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('report_json.json', 'utf8'));
+          const sarif = {
+            '\$schema': 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json',
+            version: '2.1.0',
+            runs: [{
+              tool: { driver: { name: 'OWASP ZAP', informationUri: 'https://www.zaproxy.org/', version: report['@version'] || 'unknown', rules: [] } },
+              results: []
+            }]
+          };
+          const ruleMap = new Map();
+          for (const site of (report.site || [])) {
+            for (const alert of (site.alerts || [])) {
+              const ruleId = 'ZAP-' + alert.pluginid;
+              if (!ruleMap.has(ruleId)) {
+                ruleMap.set(ruleId, { id: ruleId, name: alert.name, shortDescription: { text: alert.name }, fullDescription: { text: alert.desc?.replace(/<[^>]*>/g, '') || alert.name }, defaultConfiguration: { level: ({ '3': 'error', '2': 'warning', '1': 'note', '0': 'none' })[alert.riskcode] || 'warning' }, helpUri: alert.reference?.replace(/<[^>]*>/g, '').trim().split(/\\s+/)[0] || 'https://www.zaproxy.org/' });
+              }
+              for (const instance of (alert.instances || [])) {
+                sarif.runs[0].results.push({ ruleId, level: ({ '3': 'error', '2': 'warning', '1': 'note', '0': 'none' })[alert.riskcode] || 'warning', message: { text: alert.solution?.replace(/<[^>]*>/g, '') || alert.name }, locations: [{ physicalLocation: { artifactLocation: { uri: instance.uri || site['@host'], uriBaseId: '%SRCROOT%' } } }] });
+              }
+            }
+          }
+          sarif.runs[0].tool.driver.rules = Array.from(ruleMap.values());
+          fs.writeFileSync('zap-results.sarif', JSON.stringify(sarif, null, 2));
+          console.log('SARIF report generated with ' + sarif.runs[0].results.length + ' results');
+          "
+
       - name: Upload SARIF to GitHub Security
-        if: always()
+        if: always() && hashFiles('zap-results.sarif') != ''
         uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
         with:
-          sarif_file: results.sarif
+          sarif_file: zap-results.sarif
           category: zap-baseline
 
       - name: Upload HTML report
@@ -82,7 +111,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: zap-baseline-html
-          path: zap-baseline.html
+          path: report_html.html
 
   zap_full:
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scan_type == 'full')
@@ -91,8 +120,6 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    env:
-      APP_URL: http://host.docker.internal:4200/
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -130,18 +157,49 @@ jobs:
       - name: ZAP full scan
         uses: zaproxy/action-full-scan@3c58388149901b9a03b7718852c5ba889646c27c # v0.13.0
         with:
-          target: ${{ env.APP_URL }}
+          target: http://localhost:4200/
           rules_file_name: .zap/rules.tsv
-          cmd_options: "-m 30 -j -r zap-full.html -w zap-full.md -J report_json.json"
+          cmd_options: "-m 30 -j"
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-full
 
+      - name: Convert ZAP JSON to SARIF
+        if: always() && hashFiles('report_json.json') != ''
+        run: |
+          node -e "
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('report_json.json', 'utf8'));
+          const sarif = {
+            '\$schema': 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json',
+            version: '2.1.0',
+            runs: [{
+              tool: { driver: { name: 'OWASP ZAP', informationUri: 'https://www.zaproxy.org/', version: report['@version'] || 'unknown', rules: [] } },
+              results: []
+            }]
+          };
+          const ruleMap = new Map();
+          for (const site of (report.site || [])) {
+            for (const alert of (site.alerts || [])) {
+              const ruleId = 'ZAP-' + alert.pluginid;
+              if (!ruleMap.has(ruleId)) {
+                ruleMap.set(ruleId, { id: ruleId, name: alert.name, shortDescription: { text: alert.name }, fullDescription: { text: alert.desc?.replace(/<[^>]*>/g, '') || alert.name }, defaultConfiguration: { level: ({ '3': 'error', '2': 'warning', '1': 'note', '0': 'none' })[alert.riskcode] || 'warning' }, helpUri: alert.reference?.replace(/<[^>]*>/g, '').trim().split(/\\s+/)[0] || 'https://www.zaproxy.org/' });
+              }
+              for (const instance of (alert.instances || [])) {
+                sarif.runs[0].results.push({ ruleId, level: ({ '3': 'error', '2': 'warning', '1': 'note', '0': 'none' })[alert.riskcode] || 'warning', message: { text: alert.solution?.replace(/<[^>]*>/g, '') || alert.name }, locations: [{ physicalLocation: { artifactLocation: { uri: instance.uri || site['@host'], uriBaseId: '%SRCROOT%' } } }] });
+              }
+            }
+          }
+          sarif.runs[0].tool.driver.rules = Array.from(ruleMap.values());
+          fs.writeFileSync('zap-results.sarif', JSON.stringify(sarif, null, 2));
+          console.log('SARIF report generated with ' + sarif.runs[0].results.length + ' results');
+          "
+
       - name: Upload SARIF to GitHub Security
-        if: always()
+        if: always() && hashFiles('zap-results.sarif') != ''
         uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
         with:
-          sarif_file: results.sarif
+          sarif_file: zap-results.sarif
           category: zap-full
 
       - name: Upload HTML report
@@ -149,4 +207,4 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: zap-full-html
-          path: zap-full.html
+          path: report_html.html
