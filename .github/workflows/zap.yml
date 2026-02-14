@@ -46,7 +46,7 @@ jobs:
 
       - name: Start static file server
         run: |
-          npx serve -s dist/report-via-mobile/browser -l 4200 --host 0.0.0.0 > /tmp/serve.log 2>&1 &
+          npx -y serve -s dist/report-via-mobile/browser -l tcp://0.0.0.0:4200 > /tmp/serve.log 2>&1 &
           echo $! > /tmp/serve.pid
 
       - name: Wait for server ready
@@ -67,7 +67,7 @@ jobs:
         with:
           target: ${{ env.APP_URL }}
           rules_file_name: .zap/rules.tsv
-          cmd_options: "-m 10 -r zap-baseline.html -w zap-baseline.md -J report_json.json -x zap-baseline.xml"
+          cmd_options: "-m 10 -j -r zap-baseline.html -w zap-baseline.md -J report_json.json"
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-baseline
@@ -76,7 +76,7 @@ jobs:
         if: always()
         uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
         with:
-          sarif_file: report_sarif.sarif
+          sarif_file: results.sarif
           category: zap-baseline
 
       - name: Upload HTML report
@@ -113,7 +113,7 @@ jobs:
 
       - name: Start static file server
         run: |
-          npx serve -s dist/report-via-mobile/browser -l 4200 --host 0.0.0.0 > /tmp/serve.log 2>&1 &
+          npx -y serve -s dist/report-via-mobile/browser -l tcp://0.0.0.0:4200 > /tmp/serve.log 2>&1 &
           echo $! > /tmp/serve.pid
 
       - name: Wait for server ready
@@ -134,7 +134,7 @@ jobs:
         with:
           target: ${{ env.APP_URL }}
           rules_file_name: .zap/rules.tsv
-          cmd_options: "-m 30 -j -r zap-full.html -w zap-full.md -J report_json.json -x zap-full.xml"
+          cmd_options: "-m 30 -j -r zap-full.html -w zap-full.md -J report_json.json"
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-full
@@ -143,7 +143,7 @@ jobs:
         if: always()
         uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
         with:
-          sarif_file: report_sarif.sarif
+          sarif_file: results.sarif
           category: zap-full
 
       - name: Upload HTML report
