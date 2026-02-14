@@ -59,11 +59,15 @@ describe('SmsForm', () => {
     POLICE_STATIONS.find((s) => s.district === '高雄市') ?? POLICE_STATIONS[0];
 
   function getLocationInput(): LocationInput {
-    return component['locationInput']()!;
+    const ref = component['locationInput']();
+    if (!ref) throw new Error('LocationInput not found');
+    return ref;
   }
 
   function getViolationInput(): ViolationInput {
-    return component['violationInput']()!;
+    const ref = component['violationInput']();
+    if (!ref) throw new Error('ViolationInput not found');
+    return ref;
   }
 
   function fillValidForm(station = POLICE_STATIONS[0]) {
@@ -759,7 +763,8 @@ describe('SmsForm', () => {
 
     it('should strip angle brackets from violation input', () => {
       const vi = getViolationInput();
-      const event = { target: { value: '<script>alert</script>' } } as unknown as Event;
+      const malicious = '\x3Cscript\x3Ealert\x3C/script\x3E';
+      const event = { target: { value: malicious } } as unknown as Event;
       vi['onViolationInput'](event);
       expect(vi['violationFilter']()).toBe('scriptalert/script');
     });

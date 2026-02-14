@@ -126,11 +126,11 @@ export class ViolationInput {
   }
 
   protected onLicensePlateInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const cleaned = input.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    const target = event.target as EventTarget & { value: string };
+    const cleaned = target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     this.violationForm.licensePlate().value.set(cleaned);
-    if (input.value !== cleaned) {
-      input.value = cleaned;
+    if (target.value !== cleaned) {
+      target.value = cleaned;
     }
     this.licensePlate.set(cleaned);
   }
