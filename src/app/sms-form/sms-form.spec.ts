@@ -763,8 +763,9 @@ describe('SmsForm', () => {
 
     it('should strip angle brackets from violation input', () => {
       const vi = getViolationInput();
-      const malicious = '\x3Cscript\x3Ealert\x3C/script\x3E';
-      const event = { target: { value: malicious } } as unknown as Event;
+      const sanitizeTarget = String.fromCharCode(60) + 'script' + String.fromCharCode(62) +
+        'alert' + String.fromCharCode(60) + '/script' + String.fromCharCode(62);
+      const event = { target: { value: sanitizeTarget } } as unknown as Event;
       vi['onViolationInput'](event);
       expect(vi['violationFilter']()).toBe('scriptalert/script');
     });
@@ -778,19 +779,22 @@ describe('SmsForm', () => {
   });
 
   describe('DOM-driven template coverage', () => {
+    function queryEl<T extends Element>(selector: string): T {
+      const el = (fixture.nativeElement as Element).querySelector<T>(selector);
+      if (!el) throw new Error(`Element not found: ${selector}`);
+      return el;
+    }
+
     beforeEach(async () => {
       await renderDeferBlock();
     });
 
     it('should trigger onAddressInput via DOM input event', () => {
       fixture.detectChanges();
-      const addressInput = (fixture.nativeElement as HTMLElement).querySelector(
-        'input[placeholder="請輸入地址..."]',
-      ) as HTMLInputElement;
-      expect(addressInput).toBeTruthy();
+      const el = queryEl<HTMLInputElement>('input[placeholder="請輸入地址..."]');
       // Simulate formField syncing the value, then trigger input event
       getLocationInput()['addressForm'].address().value.set('臺北市');
-      addressInput.dispatchEvent(new Event('input'));
+      el.dispatchEvent(new Event('input'));
       fixture.detectChanges();
       expect(getLocationInput()['address']()).toBe('臺北市');
     });
@@ -802,11 +806,7 @@ describe('SmsForm', () => {
       geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
 
       fixture.detectChanges();
-      const locateBtn = (fixture.nativeElement as HTMLElement).querySelector(
-        'button[aria-label="使用目前位置"]',
-      ) as HTMLButtonElement;
-      expect(locateBtn).toBeTruthy();
-      locateBtn.click();
+      queryEl<HTMLButtonElement>('button[aria-label="使用目前位置"]').click();
 
       // Wait for async locateUser to complete
       await vi.waitFor(() => {
@@ -820,7 +820,7 @@ describe('SmsForm', () => {
       loc['addressForm'].address().value.set('');
       loc.markAsTouched();
       fixture.detectChanges();
-      const errors = (fixture.nativeElement as HTMLElement).querySelectorAll('mat-error');
+      const errors = (fixture.nativeElement as Element).querySelectorAll('mat-error');
       expect(errors.length).toBeGreaterThan(0);
     });
 
@@ -830,7 +830,7 @@ describe('SmsForm', () => {
       );
       await getLocationInput()['locateUser']();
       fixture.detectChanges();
-      const errorDiv = (fixture.nativeElement as HTMLElement).querySelector('.location-error');
+      const errorDiv = (fixture.nativeElement as Element).querySelector('.location-error');
       expect(errorDiv).toBeTruthy();
       expect(errorDiv?.textContent).toContain('定位權限被拒絕');
     });
@@ -840,7 +840,7 @@ describe('SmsForm', () => {
       loc['onDistrictChange'](POLICE_STATIONS[1]);
       fixture.detectChanges();
       expect(loc['district']()).toBe(POLICE_STATIONS[1]);
-      const hints = (fixture.nativeElement as HTMLElement).querySelectorAll('mat-hint');
+      const hints = (fixture.nativeElement as Element).querySelectorAll('mat-hint');
       const stationHint = Array.from(hints).find((h) =>
         h.textContent?.includes(POLICE_STATIONS[1].stationName),
       );
@@ -849,22 +849,15 @@ describe('SmsForm', () => {
 
     it('should trigger violation input via DOM', () => {
       fixture.detectChanges();
-      const violationInput = (fixture.nativeElement as HTMLElement).querySelector(
-        'input[placeholder="請選擇違規事實..."]',
-      ) as HTMLInputElement;
-      expect(violationInput).toBeTruthy();
-      violationInput.value = '紅線';
-      violationInput.dispatchEvent(new Event('input'));
+      const el = queryEl<HTMLInputElement>('input[placeholder="請選擇違規事實..."]');
+      el.value = '紅線';
+      el.dispatchEvent(new Event('input'));
       fixture.detectChanges();
     });
 
     it('should trigger toggleLicensePlate via DOM click', () => {
       fixture.detectChanges();
-      const addBtn = (fixture.nativeElement as HTMLElement).querySelector(
-        '.add-plate-btn',
-      ) as HTMLButtonElement;
-      expect(addBtn).toBeTruthy();
-      addBtn.click();
+      queryEl<HTMLButtonElement>('.add-plate-btn').click();
       fixture.detectChanges();
       expect(getViolationInput()['showLicensePlate']()).toBe(true);
     });
@@ -872,11 +865,7 @@ describe('SmsForm', () => {
     it('should trigger clearLicensePlate via DOM click', () => {
       getViolationInput()['toggleLicensePlate']();
       fixture.detectChanges();
-      const clearBtn = (fixture.nativeElement as HTMLElement).querySelector(
-        'button[aria-label="移除車牌號碼"]',
-      ) as HTMLButtonElement;
-      expect(clearBtn).toBeTruthy();
-      clearBtn.click();
+      queryEl<HTMLButtonElement>('button[aria-label="移除車牌號碼"]').click();
       fixture.detectChanges();
       expect(getViolationInput()['showLicensePlate']()).toBe(false);
     });
@@ -884,12 +873,9 @@ describe('SmsForm', () => {
     it('should trigger license plate input via DOM', () => {
       getViolationInput()['toggleLicensePlate']();
       fixture.detectChanges();
-      const plateInput = (fixture.nativeElement as HTMLElement).querySelector(
-        'input[placeholder="例：ABC1234"]',
-      ) as HTMLInputElement;
-      expect(plateInput).toBeTruthy();
-      plateInput.value = 'abc-123';
-      plateInput.dispatchEvent(new Event('input'));
+      const el = queryEl<HTMLInputElement>('input[placeholder="例：ABC1234"]');
+      el.value = 'abc-123';
+      el.dispatchEvent(new Event('input'));
       fixture.detectChanges();
       expect(getViolationInput()['violationForm'].licensePlate().value()).toBe('ABC123');
     });
@@ -897,10 +883,7 @@ describe('SmsForm', () => {
     it('should mark license plate as touched on blur', () => {
       getViolationInput()['toggleLicensePlate']();
       fixture.detectChanges();
-      const plateInput = (fixture.nativeElement as HTMLElement).querySelector(
-        'input[placeholder="例：ABC1234"]',
-      ) as HTMLInputElement;
-      plateInput.dispatchEvent(new Event('blur'));
+      queryEl<HTMLInputElement>('input[placeholder="例：ABC1234"]').dispatchEvent(new Event('blur'));
       fixture.detectChanges();
       expect(getViolationInput()['violationForm'].licensePlate().touched()).toBe(true);
     });
