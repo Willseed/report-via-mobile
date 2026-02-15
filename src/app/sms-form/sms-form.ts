@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
+import { firstValueFrom } from 'rxjs';
 import { SmsService } from '../sms.service';
 import { PoliceStation } from '../police-stations';
 import { ConfirmDialog, ConfirmDialogData } from './confirm-dialog';
@@ -46,7 +47,7 @@ export class SmsForm {
     return `${address}，有${violation}${plateSegment}，請派員處理`;
   });
 
-  protected sendSms(): void {
+  protected async sendSms(): Promise<void> {
     const location = this.locationInput();
     const violationComp = this.violationInput();
 
@@ -66,13 +67,13 @@ export class SmsForm {
       licensePlate: this.licensePlate() || undefined,
     };
 
-    this.dialog
-      .open(ConfirmDialog, { data, width: '92vw', maxWidth: '400px' })
-      .afterClosed()
-      .subscribe((confirmed) => {
-        if (confirmed) {
-          this.smsService.sendSms(data.phoneNumber, data.message);
-        }
-      });
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .open(ConfirmDialog, { data, width: '92vw', maxWidth: '400px' })
+        .afterClosed(),
+    );
+    if (confirmed) {
+      this.smsService.sendSms(data.phoneNumber, data.message);
+    }
   }
 }

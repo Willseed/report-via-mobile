@@ -1,6 +1,6 @@
 import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Subject } from 'rxjs';
+import { of } from 'rxjs';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { SmsForm, DISTRICT_SEARCH_DEBOUNCE_MS } from './sms-form';
 import { SmsService } from '../sms.service';
@@ -22,10 +22,14 @@ describe('SmsForm', () => {
     reverseGeocode: ReturnType<typeof vi.fn>;
   };
   let dialogSpy: { open: ReturnType<typeof vi.fn> };
-  let afterClosedSubject: Subject<boolean | undefined>;
+
+  function mockDialogResult(result: boolean | undefined): void {
+    dialogSpy.open.mockReturnValue({
+      afterClosed: () => of(result),
+    } as Partial<MatDialogRef<unknown>>);
+  }
 
   beforeEach(async () => {
-    afterClosedSubject = new Subject<boolean | undefined>();
     smsServiceSpy = {
       sendSms: vi.fn(),
       generateSmsLink: vi.fn().mockReturnValue('sms:0911510914?body=Hello'),
@@ -37,7 +41,7 @@ describe('SmsForm', () => {
     };
     dialogSpy = {
       open: vi.fn().mockReturnValue({
-        afterClosed: () => afterClosedSubject.asObservable(),
+        afterClosed: () => of(undefined),
       } as Partial<MatDialogRef<unknown>>),
     };
 
@@ -150,9 +154,9 @@ describe('SmsForm', () => {
   it('should call sendSms after dialog is confirmed', async () => {
     await renderDeferBlock();
     fillValidForm();
+    mockDialogResult(true);
 
-    component['sendSms']();
-    afterClosedSubject.next(true);
+    await component['sendSms']();
 
     expect(smsServiceSpy.sendSms).toHaveBeenCalledWith(
       POLICE_STATIONS[0].phoneNumber,
@@ -163,9 +167,9 @@ describe('SmsForm', () => {
   it('should not call sendSms when dialog is cancelled', async () => {
     await renderDeferBlock();
     fillValidForm();
+    mockDialogResult(false);
 
-    component['sendSms']();
-    afterClosedSubject.next(false);
+    await component['sendSms']();
 
     expect(smsServiceSpy.sendSms).not.toHaveBeenCalled();
   });
@@ -173,9 +177,9 @@ describe('SmsForm', () => {
   it('should not call sendSms when dialog is dismissed (backdrop click)', async () => {
     await renderDeferBlock();
     fillValidForm();
+    mockDialogResult(undefined);
 
-    component['sendSms']();
-    afterClosedSubject.next(undefined);
+    await component['sendSms']();
 
     expect(smsServiceSpy.sendSms).not.toHaveBeenCalled();
   });
@@ -919,7 +923,6 @@ describe('SmsForm desktop behavior', () => {
   let fixture: ComponentFixture<SmsForm>;
 
   beforeEach(async () => {
-    const afterClosedSubject = new Subject<boolean | undefined>();
     await TestBed.configureTestingModule({
       imports: [SmsForm],
       providers: [
@@ -939,7 +942,7 @@ describe('SmsForm desktop behavior', () => {
           provide: MatDialog,
           useValue: {
             open: vi.fn().mockReturnValue({
-              afterClosed: () => afterClosedSubject.asObservable(),
+              afterClosed: () => of(undefined),
             }),
           },
         },
