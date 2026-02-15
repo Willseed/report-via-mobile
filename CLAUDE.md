@@ -52,6 +52,16 @@ Mobile-first Angular 21 application for reporting traffic violations via SMS. Us
 - All user-facing UI text must be in Traditional Chinese (zh_TW)
 - Commit messages in Traditional Chinese following Conventional Commits format (feat, fix, refactor, test, ci, docs)
 
+## PWA Architecture (Planned)
+
+> ⚠️ **Status: Not yet implemented** — `@angular/pwa` is not installed.
+
+- **Offline-First**: App Shell must display offline; never show a blank page.
+- **Installability**: Use guided UI for install prompts; never auto-prompt on first load.
+- **iOS Compatibility**: Configure Apple Touch Icons and `apple-mobile-web-app-status-bar-style`.
+- **Service Worker Updates**: Listen to `SwUpdate.versionUpdates`; notify users via SnackBar with explicit update button.
+- **Cache Strategy**: Core assets use `prefetch`; lazy assets use `lazy`; API calls use `freshness`.
+
 ## Testing Patterns
 
 - Use `provideNoopAnimations()` and `provideHttpClientTesting()` in TestBed
