@@ -4,6 +4,7 @@ import {
   ChangeDetectorRef,
   Component,
   computed,
+  DestroyRef,
   ElementRef,
   inject,
   Injector,
@@ -45,6 +46,7 @@ const VIOLATION_TYPES = [
   ...OTHER_VIOLATIONS,
 ];
 
+export const VIOLATION_FILTER_DEBOUNCE_MS = 150;
 export const VIOLATION_MAX_LENGTH = 50;
 export const LICENSE_PLATE_MAX_LENGTH = 10;
 export const LICENSE_PLATE_PATTERN = /^[A-Z0-9]*$/;
@@ -66,6 +68,14 @@ export const LICENSE_PLATE_PATTERN = /^[A-Z0-9]*$/;
 export class ViolationInput {
   private injector = inject(Injector);
   private cdr = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
+  private filterDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.filterDebounceTimer) clearTimeout(this.filterDebounceTimer);
+    });
+  }
 
   private licensePlateInputRef = viewChild<ElementRef<HTMLInputElement>>('licensePlateInput');
   private addPlateButton = viewChild<ElementRef<HTMLButtonElement>>('addPlateButton');
@@ -98,13 +108,23 @@ export class ViolationInput {
   protected onViolationInput(event: Event): void {
     const target = event.target as EventTarget & { value: string };
     const value = target.value;
-    this.violationFilter.set(value);
     this.violationForm.violation().value.set(value);
     this.violation.set(value);
+
+    if (this.filterDebounceTimer) clearTimeout(this.filterDebounceTimer);
+    this.filterDebounceTimer = setTimeout(() => {
+      this.violationFilter.set(value);
+    }, VIOLATION_FILTER_DEBOUNCE_MS);
   }
 
   protected onViolationChange(): void {
-    this.violation.set(this.violationForm.violation().value());
+    if (this.filterDebounceTimer) {
+      clearTimeout(this.filterDebounceTimer);
+      this.filterDebounceTimer = null;
+    }
+    const value = this.violationForm.violation().value();
+    this.violation.set(value);
+    this.violationFilter.set(value);
   }
 
   protected toggleLicensePlate(): void {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import {
@@ -12,6 +12,7 @@ describe('ViolationInput', () => {
   let component: ViolationInput;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     TestBed.configureTestingModule({
       imports: [ViolationInput],
       providers: [provideNoopAnimations()],
@@ -19,6 +20,10 @@ describe('ViolationInput', () => {
     fixture = TestBed.createComponent(ViolationInput);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   function mockInputEvent(value: string): Event {
@@ -120,5 +125,24 @@ describe('ViolationInput', () => {
 
     expect(component['violationForm'].violation().touched()).toBe(true);
     expect(component['violationForm'].licensePlate().touched()).toBe(true);
+  });
+
+  it('should cancel pending filter debounce on violation change', () => {
+    component['onViolationInput'](mockInputEvent('紅'));
+    expect(component['filterDebounceTimer']).not.toBeNull();
+
+    component['violationForm'].violation().value.set('汽車於紅線停車');
+    component['onViolationChange']();
+
+    expect(component['filterDebounceTimer']).toBeNull();
+    expect(component['violationFilter']()).toBe('汽車於紅線停車');
+  });
+
+  it('should clear filter debounce timer on destroy', () => {
+    component['onViolationInput'](mockInputEvent('紅'));
+    expect(component['filterDebounceTimer']).not.toBeNull();
+
+    fixture.destroy();
+    expect(component['filterDebounceTimer']).not.toBeNull();
   });
 });
