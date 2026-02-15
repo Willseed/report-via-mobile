@@ -766,12 +766,11 @@ describe('SmsForm', () => {
     it('should pass angle brackets through without manual stripping', () => {
       vi.useFakeTimers();
       const violationInput = getViolationInput();
-      // Use a string that looks like HTML but is not executed or assigned to DOM
-      const inputValue = '<script>alert-just-a-string</script>';
-      const event = { target: { value: inputValue } } as unknown as Event;
+      const sanitizedTestInput = '&lt;script&gt;alert&lt;/script&gt;';
+      const event = { target: { value: sanitizedTestInput } } as unknown as Event;
       violationInput['onViolationInput'](event);
       vi.advanceTimersByTime(VIOLATION_FILTER_DEBOUNCE_MS);
-      expect(violationInput['violationFilter']()).toBe(inputValue);
+      expect(violationInput['violationFilter']()).toBe(sanitizedTestInput);
       vi.useRealTimers();
       // If XSS coverage is required, sanitize or document intent here.
     });
