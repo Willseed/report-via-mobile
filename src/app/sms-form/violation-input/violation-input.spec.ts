@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import {
@@ -12,6 +12,7 @@ describe('ViolationInput', () => {
   let component: ViolationInput;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     TestBed.configureTestingModule({
       imports: [ViolationInput],
       providers: [provideNoopAnimations()],
@@ -19,6 +20,10 @@ describe('ViolationInput', () => {
     fixture = TestBed.createComponent(ViolationInput);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   function mockInputEvent(value: string): Event {

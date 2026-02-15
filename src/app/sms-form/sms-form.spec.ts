@@ -7,7 +7,10 @@ import { SmsService } from '../sms.service';
 import { POLICE_STATIONS, findStationByAddress } from '../police-stations';
 import { GeocodingService } from '../geocoding.service';
 import { LocationInput } from './location-input/location-input';
-import { ViolationInput } from './violation-input/violation-input';
+import {
+  ViolationInput,
+  VIOLATION_FILTER_DEBOUNCE_MS,
+} from './violation-input/violation-input';
 
 describe('SmsForm', () => {
   let component: SmsForm;
@@ -760,11 +763,14 @@ describe('SmsForm', () => {
     });
 
     it('should pass angle brackets through without manual stripping', () => {
-      const vi = getViolationInput();
+      vi.useFakeTimers();
+      const violationInput = getViolationInput();
       const inputValue = '<script>alert</script>';
       const event = { target: { value: inputValue } } as unknown as Event;
-      vi['onViolationInput'](event);
-      expect(vi['violationFilter']()).toBe(inputValue);
+      violationInput['onViolationInput'](event);
+      vi.advanceTimersByTime(VIOLATION_FILTER_DEBOUNCE_MS);
+      expect(violationInput['violationFilter']()).toBe(inputValue);
+      vi.useRealTimers();
     });
 
     it('should update violation model on change event', () => {
@@ -787,12 +793,15 @@ describe('SmsForm', () => {
     });
 
     it('should trigger onAddressInput via DOM input event', () => {
+      vi.useFakeTimers();
       fixture.detectChanges();
       const el = queryEl<HTMLInputElement>('input[placeholder="請輸入地址..."]');
       el.value = '臺北市';
       el.dispatchEvent(new Event('input', { bubbles: true }));
+      vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       fixture.detectChanges();
       expect(getLocationInput()['address']()).toBe('臺北市');
+      vi.useRealTimers();
     });
 
     it('should trigger locateUser via DOM click event', async () => {
