@@ -5,7 +5,7 @@
  * DAST 掃描的 URI 是 HTTP URL，但 GitHub Code Scanning 要求相對路徑，
  * 因此將 `http://localhost:4200/path` 轉為 `path`。
  *
- * 用法：node --experimental-strip-types .github/scripts/zap-to-sarif.ts <input.json> <output.sarif>
+ * 用法：node --experimental-strip-types .github/scripts/zap-to-sarif.ts <input.json> <output.sarif> [rules.tsv]
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -116,6 +116,19 @@ function stripHtml(str: string): string {
   return result.trim();
 }
 
+/** 解析 rules.tsv，回傳所有 IGNORE 的 plugin ID */
+function parseIgnoredRules(filePath: string): Set<string> {
+  const ignored = new Set<string>();
+  if (!existsSync(filePath)) return ignored;
+  for (const line of readFileSync(filePath, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const [pluginId, level] = trimmed.split('\t');
+    if (level?.trim() === 'IGNORE') ignored.add(pluginId.trim());
+  }
+  return ignored;
+}
+
 /** 將 HTTP URL 轉為相對路徑（GitHub Code Scanning 不接受 http scheme） */
 function urlToRelativePath(uri: string): string {
   try {
@@ -163,12 +176,13 @@ function toSarifResult(alert: ZapAlert, instance: ZapInstance, ruleId: string): 
 }
 
 /** 轉換 ZAP JSON 報告為 SARIF document */
-function convertZapToSarif(report: ZapReport): SarifDocument {
+function convertZapToSarif(report: ZapReport, ignoredPluginIds: ReadonlySet<string> = new Set()): SarifDocument {
   const ruleMap = new Map<string, SarifRule>();
   const results: SarifResult[] = [];
 
   for (const site of report.site ?? []) {
     for (const alert of site.alerts ?? []) {
+      if (ignoredPluginIds.has(alert.pluginid)) continue;
       const ruleId = `ZAP-${alert.pluginid}`;
 
       if (!ruleMap.has(ruleId)) {
@@ -202,21 +216,24 @@ function convertZapToSarif(report: ZapReport): SarifDocument {
 
 // #region CLI 進入點
 
-const [reportPath = 'report_json.json', outputPath = 'zap-results.sarif'] = process.argv.slice(2);
+const [reportPath = 'report_json.json', outputPath = 'zap-results.sarif', rulesPath] =
+  process.argv.slice(2);
 
 if (!existsSync(reportPath)) {
   console.log(`Report file not found: ${reportPath}`);
   process.exit(0);
 }
 
+const ignoredRules = rulesPath ? parseIgnoredRules(rulesPath) : new Set<string>();
 const report: ZapReport = JSON.parse(readFileSync(reportPath, 'utf8'));
-const sarif = convertZapToSarif(report);
+const sarif = convertZapToSarif(report, ignoredRules);
 
 writeFileSync(outputPath, JSON.stringify(sarif, null, 2));
 
 const { results, tool } = sarif.runs[0];
 console.log(
-  `SARIF report generated: ${results.length} results, ${tool.driver.rules.length} rules → ${outputPath}`,
+  `SARIF report generated: ${results.length} results, ${tool.driver.rules.length} rules` +
+    `${ignoredRules.size > 0 ? `, ${ignoredRules.size} rules ignored` : ''} → ${outputPath}`,
 );
 
 // #endregion
