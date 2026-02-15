@@ -110,8 +110,11 @@ export class LocationInput {
     }
   }
 
+  private districtTouched = signal(false);
+
   markAsTouched(): void {
     this.addressForm.address().markAsTouched();
+    this.districtTouched.set(true);
     queueMicrotask(() => this.cdr.detectChanges());
   }
 
@@ -120,7 +123,7 @@ export class LocationInput {
   }
 
   get districtRequired(): boolean {
-    return this.district() === null;
+    return this.districtTouched() && this.district() === null;
   }
 
   private autoSelectDistrict(address: string): void {

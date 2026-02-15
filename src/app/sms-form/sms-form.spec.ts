@@ -113,9 +113,11 @@ describe('SmsForm', () => {
     expect(getLocationInput().valid).toBe(false);
   });
 
-  it('should require district selection', async () => {
+  it('should require district selection after touched', async () => {
     await renderDeferBlock();
     expect(getLocationInput()['district']()).toBeNull();
+    expect(getLocationInput().districtRequired).toBe(false);
+    getLocationInput().markAsTouched();
     expect(getLocationInput().districtRequired).toBe(true);
   });
 
