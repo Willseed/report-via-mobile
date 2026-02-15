@@ -1,8 +1,6 @@
 name: OWASP ZAP DAST
 
 on:
-  pull_request:
-    branches: ["main"]
   push:
     branches: ["main"]
   schedule:
@@ -23,7 +21,7 @@ permissions:
 
 jobs:
   zap_baseline:
-    if: github.event_name == 'pull_request' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.scan_type == 'baseline')
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.scan_type == 'baseline')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
