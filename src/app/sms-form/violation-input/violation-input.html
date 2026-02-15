@@ -1,0 +1,70 @@
+<mat-form-field appearance="outline">
+  <mat-label>違規事實</mat-label>
+  <input
+    matInput
+    [formField]="violationForm.violation"
+    placeholder="請選擇違規事實..."
+    [matAutocomplete]="autoViolation"
+    (input)="onViolationInput($event)"
+    (change)="onViolationChange()"
+  />
+  <mat-autocomplete
+    #autoViolation="matAutocomplete"
+    requireSelection
+    panelClass="fade-dropdown"
+    (optionSelected)="onViolationChange()"
+  >
+    @for (type of filteredViolations(); track type) {
+      <mat-option [value]="type">{{ type }}</mat-option>
+    }
+  </mat-autocomplete>
+  <mat-icon matPrefix>report</mat-icon>
+  @if (violationForm.violation().touched() && violationForm.violation().invalid()) {
+    @for (error of violationForm.violation().errors(); track error) {
+      <mat-error>{{ error.message }}</mat-error>
+    }
+  }
+</mat-form-field>
+
+@if (!showLicensePlate()) {
+  <button
+    mat-button
+    type="button"
+    class="add-plate-btn"
+    (click)="toggleLicensePlate()"
+    #addPlateButton
+  >
+    <mat-icon>directions_car</mat-icon>
+    新增車牌號碼
+  </button>
+} @else {
+  <mat-form-field appearance="outline">
+    <mat-label>車牌號碼（選填）</mat-label>
+    <input
+      matInput
+      [value]="violationForm.licensePlate().value()"
+      placeholder="例：ABC1234"
+      autocapitalize="characters"
+      inputmode="text"
+      (input)="onLicensePlateInput($event)"
+      (blur)="violationForm.licensePlate().markAsTouched()"
+      #licensePlateInput
+    />
+    <mat-icon matPrefix>directions_car</mat-icon>
+    <button
+      mat-icon-button
+      matSuffix
+      type="button"
+      (click)="clearLicensePlate()"
+      aria-label="移除車牌號碼"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+    <mat-hint>僅限英文及數字，英文將自動轉為大寫。</mat-hint>
+    @if (violationForm.licensePlate().touched() && violationForm.licensePlate().invalid()) {
+      @for (error of violationForm.licensePlate().errors(); track error) {
+        <mat-error>{{ error.message }}</mat-error>
+      }
+    }
+  </mat-form-field>
+}

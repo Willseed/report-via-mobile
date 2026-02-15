@@ -1,0 +1,17 @@
+:host {
+  display: contents;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.add-plate-btn {
+  align-self: flex-start;
+  color: var(--mat-sys-primary);
+  font-size: 0.875rem;
+}
+
+input[formcontrol='licensePlateControl'] {
+  text-transform: uppercase;
+}

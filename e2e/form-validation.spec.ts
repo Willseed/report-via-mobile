@@ -15,11 +15,10 @@ test.describe('表單驗證', () => {
     await expect(page.getByText('請選擇違規事實')).toBeVisible();
   });
 
-  test('地址超過 100 字應顯示錯誤', async ({ page }) => {
+  test('地址超過 100 字應被截斷至 100 字', async ({ page }) => {
     const longAddress = '台'.repeat(101);
     await page.getByLabel('事發地址').fill(longAddress);
-    await page.getByLabel('事發地址').blur();
-    await expect(page.getByText('地址不可超過 100 字')).toBeVisible();
+    await expect(page.getByLabel('事發地址')).toHaveValue('台'.repeat(100));
   });
 
   test('車牌號碼含特殊字元應顯示錯誤', async ({ page }) => {

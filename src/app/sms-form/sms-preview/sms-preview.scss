@@ -1,0 +1,60 @@
+@mixin banner($bg, $fg) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background-color: $bg;
+  color: $fg;
+  font-size: 0.875rem;
+
+  mat-icon {
+    flex-shrink: 0;
+  }
+}
+
+:host {
+  display: contents;
+}
+
+.sms-preview {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background-color: var(--mat-sys-surface-container-low);
+}
+
+.sms-preview-header {
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.sms-bubble {
+  background-color: #34c759;
+  color: #fff;
+  padding: 0.625rem 0.875rem;
+  border-radius: 18px 18px 4px;
+  max-width: 85%;
+  margin-left: auto;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.sms-char-count {
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: right;
+  margin-top: 0.5rem;
+
+  &.over-limit {
+    color: var(--mat-sys-error);
+  }
+}
+
+.sms-length-warning {
+  @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
+}

@@ -68,6 +68,11 @@ describe('GeocodingService', () => {
       await expect(service.getCurrentPosition()).rejects.toThrow('定位逾時');
     });
 
+    it('should reject with default message for unknown error code', async () => {
+      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => err(mockGeoError(99)));
+      await expect(service.getCurrentPosition()).rejects.toThrow('定位失敗，請稍後再試。');
+    });
+
     it('should try fast positioning first, then fall back to high accuracy', async () => {
       const spy = stubGeolocation(
         (success: PositionCallback, error: PositionErrorCallback, options?: PositionOptions) => {
@@ -259,6 +264,30 @@ describe('GeocodingService', () => {
       expect(req.request.headers.has('User-Agent')).toBe(false);
       req.flush({ display_name: 'test' });
       await promise;
+    });
+
+    it('should evict oldest cache entry when cache exceeds max size', async () => {
+      // Fill cache to MAX_CACHE_SIZE (100) with unique coords
+      for (let i = 0; i < 100; i++) {
+        const lat = 20 + i * 0.01;
+        const promise = service.reverseGeocode(lat, 121);
+        const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush({ display_name: `地址${i}`, address: { city: `城市${i}` } });
+        await promise;
+      }
+
+      // Add one more — should evict the first entry (lat=20.0000)
+      const promise = service.reverseGeocode(30, 121);
+      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush({ display_name: '新地址', address: { city: '新城市' } });
+      await promise;
+
+      // The first entry should be evicted — request should go to network
+      const promise2 = service.reverseGeocode(20, 121);
+      const req2 = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req2.flush({ display_name: '舊地址', address: { city: '舊城市' } });
+      const result = await promise2;
+      expect(result).toBe('舊城市');
     });
   });
 });

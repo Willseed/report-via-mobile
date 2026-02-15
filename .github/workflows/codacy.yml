@@ -11,6 +11,7 @@ jobs:
   codacy:
     name: Codacy Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
@@ -27,15 +28,21 @@ jobs:
           format: sarif
           output: ${{ runner.temp }}/results.sarif
           gh-code-scanning-compat: true
+          run-docker-tools: false
+          tool-timeout: 300
 
       - name: Ensure unique SARIF run categories
+        id: sarif
         run: |
           SARIF_FILE="${{ runner.temp }}/results.sarif"
 
           if [ ! -s "$SARIF_FILE" ]; then
             echo "::warning::SARIF file is empty or missing, skipping"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+
+          echo "exists=true" >> "$GITHUB_OUTPUT"
 
           RUN_COUNT=$(jq '.runs | length' "$SARIF_FILE")
           echo "SARIF contains $RUN_COUNT run(s)"
@@ -57,6 +64,7 @@ jobs:
           jq -r '.runs[] | "  - \(.automationDetails.id) (\(.tool.driver.name // "unknown"))"' "$SARIF_FILE"
 
       - name: Upload SARIF results
+        if: steps.sarif.outputs.exists == 'true'
         uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v4
         with:
           sarif_file: ${{ runner.temp }}/results.sarif
