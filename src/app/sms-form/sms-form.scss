@@ -1,3 +1,5 @@
+@use 'banner' as *;
+
 :host {
   display: flex;
   justify-content: center;
@@ -21,21 +23,6 @@ h1 {
   margin: 0 0 1.5rem;
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.875rem;
-}
-
-@mixin banner($bg, $fg) {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  background-color: $bg;
-  color: $fg;
-  font-size: 0.875rem;
-
-  mat-icon {
-    flex-shrink: 0;
-  }
 }
 
 .desktop-warning {

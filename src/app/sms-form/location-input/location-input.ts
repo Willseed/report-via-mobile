@@ -118,13 +118,9 @@ export class LocationInput {
     queueMicrotask(() => this.cdr.detectChanges());
   }
 
-  get valid(): boolean {
-    return this.addressForm().valid() && this.district() !== null;
-  }
+  readonly valid = computed(() => this.addressForm().valid() && this.district() !== null);
 
-  get districtRequired(): boolean {
-    return this.districtTouched() && this.district() === null;
-  }
+  readonly districtRequired = computed(() => this.districtTouched() && this.district() === null);
 
   private autoSelectDistrict(address: string): void {
     const station = findStationByAddress(address);

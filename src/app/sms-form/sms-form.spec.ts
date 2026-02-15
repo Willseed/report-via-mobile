@@ -110,22 +110,22 @@ describe('SmsForm', () => {
 
   it('should have an invalid form when empty', async () => {
     await renderDeferBlock();
-    expect(getLocationInput().valid).toBe(false);
+    expect(getLocationInput().valid()).toBe(false);
   });
 
   it('should require district selection after touched', async () => {
     await renderDeferBlock();
     expect(getLocationInput()['district']()).toBeNull();
-    expect(getLocationInput().districtRequired).toBe(false);
+    expect(getLocationInput().districtRequired()).toBe(false);
     getLocationInput().markAsTouched();
-    expect(getLocationInput().districtRequired).toBe(true);
+    expect(getLocationInput().districtRequired()).toBe(true);
   });
 
   it('should accept valid form values with all required fields', async () => {
     await renderDeferBlock();
     fillValidForm();
-    expect(getLocationInput().valid).toBe(true);
-    expect(getViolationInput().valid).toBe(true);
+    expect(getLocationInput().valid()).toBe(true);
+    expect(getViolationInput().valid()).toBe(true);
   });
 
   it('should return district from location input', async () => {
@@ -662,8 +662,8 @@ describe('SmsForm', () => {
 
     it('should keep form valid when license plate is empty (optional field)', () => {
       fillValidForm();
-      expect(getLocationInput().valid).toBe(true);
-      expect(getViolationInput().valid).toBe(true);
+      expect(getLocationInput().valid()).toBe(true);
+      expect(getViolationInput().valid()).toBe(true);
     });
 
     it('should keep form valid with a valid license plate', () => {
@@ -671,7 +671,7 @@ describe('SmsForm', () => {
       const vi = getViolationInput();
       vi['violationForm'].licensePlate().value.set('ABC1234');
       vi['licensePlate'].set('ABC1234');
-      expect(vi.valid).toBe(true);
+      expect(vi.valid()).toBe(true);
     });
   });
 
@@ -759,13 +759,12 @@ describe('SmsForm', () => {
       expect(vi['violation']()).toBe('汽車於紅線停車');
     });
 
-    it('should strip angle brackets from violation input', () => {
+    it('should pass angle brackets through without manual stripping', () => {
       const vi = getViolationInput();
-      const sanitizeTarget = String.fromCharCode(60) + 'script' + String.fromCharCode(62) +
-        'alert' + String.fromCharCode(60) + '/script' + String.fromCharCode(62);
-      const event = { target: { value: sanitizeTarget } } as unknown as Event;
+      const inputValue = '<script>alert</script>';
+      const event = { target: { value: inputValue } } as unknown as Event;
       vi['onViolationInput'](event);
-      expect(vi['violationFilter']()).toBe('scriptalert/script');
+      expect(vi['violationFilter']()).toBe(inputValue);
     });
 
     it('should update violation model on change event', () => {
