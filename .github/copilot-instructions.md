@@ -110,6 +110,30 @@ Key differences from Karma/Jasmine:
 - Mapping by location (geocoding) and admin district
 - Update this file when adding new districts or changing station info
 
+### PWA Architecture (Angular 21 + @angular/pwa) — ⚠️ Planned, Not Yet Implemented
+
+#### Core UX & Performance
+
+- **Offline-First**: The application must display the App Shell when offline — never a blank page.
+- **Installability**: Never prompt for installation on first load. Design a guided UI (e.g., a settings page or contextual banner) to trigger the install flow.
+- **iOS Compatibility**: Supplement the Web App Manifest for Safari gaps — configure `apple-mobile-web-app-status-bar-style`, provide Apple Touch Icons, and handle back-button UI within the standalone experience.
+
+#### Technical Implementation (`@angular/pwa`)
+
+- **`ngsw-config.json` — AssetGroups**:
+  - Core resources (`index.html`, `main.js`, CSS) must use `installMode: 'prefetch'`.
+  - Non-core resources (lazy-loaded modules, images) must use `installMode: 'lazy'`.
+- **`ngsw-config.json` — DataGroups**:
+  - Frequently changing data (API responses) must use the `freshness` strategy (Network First).
+  - Static or rarely changing content must use the `performance` strategy (Cache First).
+- **Version Updates (`SwUpdate`)**:
+  - **Do NOT** silently update or force-reload the page.
+  - **Must** listen to `versionUpdates` events and notify users via a non-intrusive UI (SnackBar/Toast) with an explicit button to call `activateUpdate()`.
+
+#### Deployment & CI/CD (GitHub Actions)
+
+- **Cache Considerations**: GitHub Pages does not support custom HTTP headers. Rely on content-hash filenames (Angular default with `outputHashing: 'all'`) for cache busting. For `ngsw.json`, consider using a query parameter (e.g., `?v=<timestamp>`) if stale manifest issues occur.
+
 ### Google Geocoding
 - Uses `GeocodingService` to reverse-geocode GPS coordinates to addresses
 - API key should be in environment config (check `src/environments/`)
