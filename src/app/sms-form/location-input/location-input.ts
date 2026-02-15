@@ -4,14 +4,16 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
   model,
   signal,
+  viewChild,
 } from '@angular/core';
 import { form, FormField, required, maxLength } from '@angular/forms/signals';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { POLICE_STATIONS, PoliceStation, findStationByAddress } from '../../police-stations';
@@ -53,12 +55,6 @@ export class LocationInput {
   });
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-  constructor() {
-    this.destroyRef.onDestroy(() => {
-      if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    });
-  }
 
   readonly districtMismatch = computed(() => {
     const address = this.address();
@@ -111,6 +107,21 @@ export class LocationInput {
   }
 
   private districtTouched = signal(false);
+  private districtSelect = viewChild(MatSelect);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    });
+
+    effect(() => {
+      const select = this.districtSelect();
+      if (select) {
+        select.errorState = this.districtRequired();
+        select.stateChanges.next();
+      }
+    });
+  }
 
   markAsTouched(): void {
     this.addressForm.address().markAsTouched();
