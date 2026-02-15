@@ -50,7 +50,7 @@
   @if (station) {
     <mat-hint>承辦單位：{{ station.stationName }}</mat-hint>
   }
-  @if (districtRequired) {
+  @if (districtRequired()) {
     <mat-hint class="district-error">請選擇報案行政區。</mat-hint>
   }
 </mat-form-field>

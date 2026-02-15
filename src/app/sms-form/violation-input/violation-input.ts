@@ -97,7 +97,7 @@ export class ViolationInput {
 
   protected onViolationInput(event: Event): void {
     const target = event.target as EventTarget & { value: string };
-    const value = target.value.replace(/[<>]/g, '');
+    const value = target.value;
     this.violationFilter.set(value);
     this.violationForm.violation().value.set(value);
     this.violation.set(value);
@@ -145,7 +145,5 @@ export class ViolationInput {
     queueMicrotask(() => this.cdr.detectChanges());
   }
 
-  get valid(): boolean {
-    return this.violationForm().valid();
-  }
+  readonly valid = computed(() => this.violationForm().valid());
 }

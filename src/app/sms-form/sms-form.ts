@@ -51,7 +51,7 @@ export class SmsForm {
     const location = this.locationInput();
     const violationComp = this.violationInput();
 
-    if (!location?.valid || !violationComp?.valid || this.districtMismatch()) {
+    if (!location?.valid() || !violationComp?.valid() || this.districtMismatch()) {
       location?.markAsTouched();
       violationComp?.markAsTouched();
       return;
