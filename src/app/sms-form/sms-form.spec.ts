@@ -964,10 +964,10 @@ describe('SmsForm desktop behavior', () => {
     const deferBlock = (await fixture.getDeferBlocks())[0];
     await deferBlock.render(DeferBlockState.Complete);
     fixture.detectChanges();
-    const button = (fixture.nativeElement as HTMLElement).querySelector(
+    const submitButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
       'button[mat-flat-button]',
-    ) as HTMLButtonElement;
-    expect(button.disabled).toBe(true);
+    );
+    expect(submitButton?.disabled).toBe(true);
   });
 });
 
