@@ -5,11 +5,13 @@
 10017	WARN	Cross-Domain JavaScript Source File Inclusion
 10020	IGNORE	X-Frame-Options Header Not Set - Set via Cloudflare (X-Frame-Options: DENY)
 10021	IGNORE	X-Content-Type-Options Header Missing - Set via Cloudflare (X-Content-Type-Options: nosniff)
+10027	IGNORE	Information Disclosure - Suspicious Comments - False positives from Angular Material minified method names (e.g. _isAttachedToDom)
 10035	IGNORE	Strict-Transport-Security Header Not Set - Set via Cloudflare (max-age=63072000; includeSubDomains; preload)
 10038	IGNORE	Content Security Policy (CSP) Header Not Set - Set via Cloudflare with frame-ancestors 'none'
-10049	WARN	Non-Storable Content
+10049	IGNORE	Storable and Cacheable Content / Non-Storable Content - Static assets use content-hash filenames for cache busting; cache-control managed by Cloudflare
 10096	IGNORE	Timestamp Disclosure - Unix
 10098	WARN	Cross-Domain Misconfiguration
-10109	WARN	Modern Web Application
-90033	WARN	Loosely Scoped Cookie
 10103	IGNORE	Cross-Origin-Resource-Policy Header Missing - Set via Cloudflare (same-origin)
+10109	WARN	Modern Web Application
+10110	IGNORE	Dangerous JS Functions - setTimeout/setInterval in Angular/RxJS framework internals, not application code; eval/new Function blocked by eslint.configs.recommended (no-eval, no-implied-eval)
+90033	WARN	Loosely Scoped Cookie
