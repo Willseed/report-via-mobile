@@ -31,6 +31,17 @@ Mobile-first Angular 21 application for reporting traffic violations via SMS. Us
 - `src/app/app.routes.ts` — Single lazy-loaded route at root path
 - `src/app/app.config.ts` — App bootstrap config (hash location, animations, HTTP client)
 
+## Design Principles
+
+- Follow **SOLID** principles:
+  - **Single Responsibility:** Each class/function should have only one reason to change
+  - **Open/Closed:** Open for extension, closed for modification
+  - **Liskov Substitution:** Subtypes must be substitutable for their base types
+  - **Interface Segregation:** Prefer small, focused interfaces over large ones
+  - **Dependency Inversion:** Depend on abstractions, not concretions
+- **High Cohesion, Low Coupling:** Keep related logic together within a module; minimize direct dependencies between modules by interacting through well-defined interfaces
+- **No Over-Engineering:** Keep solutions simple and focused on current requirements; avoid premature abstractions, speculative generality, or unnecessary indirection
+
 ## Code Conventions
 
 - TypeScript strict mode enabled (`strict`, `noImplicitReturns`, `noFallthroughCasesInSwitch`)
