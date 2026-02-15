@@ -19,10 +19,8 @@
     }
   </mat-autocomplete>
   <mat-icon matPrefix>report</mat-icon>
-  @if (violationForm.violation().touched() && violationForm.violation().invalid()) {
-    @for (error of violationForm.violation().errors(); track error) {
-      <mat-error>{{ error.message }}</mat-error>
-    }
+  @for (error of violationForm.violation().errors(); track error) {
+    <mat-error>{{ error.message }}</mat-error>
   }
 </mat-form-field>
 
@@ -42,12 +40,11 @@
     <mat-label>車牌號碼（選填）</mat-label>
     <input
       matInput
-      [value]="violationForm.licensePlate().value()"
+      [formField]="violationForm.licensePlate"
       placeholder="例：ABC1234"
       autocapitalize="characters"
       inputmode="text"
       (input)="onLicensePlateInput($event)"
-      (blur)="violationForm.licensePlate().markAsTouched()"
       #licensePlateInput
     />
     <mat-icon matPrefix>directions_car</mat-icon>
@@ -61,10 +58,8 @@
       <mat-icon>close</mat-icon>
     </button>
     <mat-hint>僅限英文及數字，英文將自動轉為大寫。</mat-hint>
-    @if (violationForm.licensePlate().touched() && violationForm.licensePlate().invalid()) {
-      @for (error of violationForm.licensePlate().errors(); track error) {
-        <mat-error>{{ error.message }}</mat-error>
-      }
+    @for (error of violationForm.licensePlate().errors(); track error) {
+      <mat-error>{{ error.message }}</mat-error>
     }
   </mat-form-field>
 }
