@@ -29,6 +29,17 @@
 - Services are injected using `inject()` in component constructors.
 - State flows through signals and computed properties, not observables (except for async data conversions via `toSignal()`).
 
+## Design Principles
+
+- Follow **SOLID** principles:
+  - **Single Responsibility:** Each class/function should have only one reason to change
+  - **Open/Closed:** Open for extension, closed for modification
+  - **Liskov Substitution:** Subtypes must be substitutable for their base types
+  - **Interface Segregation:** Prefer small, focused interfaces over large ones
+  - **Dependency Inversion:** Depend on abstractions, not concretions
+- **High Cohesion, Low Coupling:** Keep related logic together within a module; minimize direct dependencies between modules by interacting through well-defined interfaces
+- **No Over-Engineering:** Keep solutions simple and focused on current requirements; avoid premature abstractions, speculative generality, or unnecessary indirection
+
 ## Code Conventions
 
 ### Formatting
