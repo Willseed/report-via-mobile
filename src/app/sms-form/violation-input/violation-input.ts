@@ -30,7 +30,11 @@ const VIOLATION_DESCRIPTIONS = [
   '佔用車道影響交通',
 ];
 
-const CAR_ONLY_DESCRIPTIONS = ['違法佔用孕婦及育有六歲以下兒童者停車位', '違法佔用殘障車位'];
+const CAR_ONLY_DESCRIPTIONS = [
+  '違法佔用孕婦及育有六歲以下兒童者停車位',
+  '違法佔用殘障車位',
+  '佔用機車格',
+];
 
 const OTHER_VIOLATIONS = [
   '一般油車佔用電動車停車位',
