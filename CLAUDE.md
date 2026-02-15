@@ -28,6 +28,8 @@ Mobile-first Angular 21 application for reporting traffic violations via SMS. Us
 - `src/app/sms.service.ts` — SMS link generation with Android/iOS URI scheme handling
 - `src/app/geocoding.service.ts` — Geolocation API + OpenStreetMap Nominatim reverse geocoding
 - `src/app/police-stations.ts` — Police station data (District enum, phone numbers, address matching)
+- `src/app/pwa-update.service.ts` — Service Worker 版本更新提示（SwUpdate + SnackBar）
+- `src/app/pwa-install.service.ts` — PWA 安裝提示（beforeinstallprompt + SnackBar）
 - `src/app/app.routes.ts` — Single lazy-loaded route at root path
 - `src/app/app.config.ts` — App bootstrap config (hash location, animations, HTTP client)
 
@@ -52,15 +54,13 @@ Mobile-first Angular 21 application for reporting traffic violations via SMS. Us
 - All user-facing UI text must be in Traditional Chinese (zh_TW)
 - Commit messages in Traditional Chinese following Conventional Commits format (feat, fix, refactor, test, ci, docs)
 
-## PWA Architecture (Planned)
+## PWA Architecture
 
-> ⚠️ **Status: Not yet implemented** — `@angular/pwa` is not installed.
-
-- **Offline-First**: App Shell must display offline; never show a blank page.
-- **Installability**: Use guided UI for install prompts; never auto-prompt on first load.
-- **iOS Compatibility**: Configure Apple Touch Icons and `apple-mobile-web-app-status-bar-style`.
-- **Service Worker Updates**: Listen to `SwUpdate.versionUpdates`; notify users via SnackBar with explicit update button.
-- **Cache Strategy**: Core assets use `prefetch`; lazy assets use `lazy`; API calls use `freshness`.
+- **Offline-First**: App Shell 離線可用，不顯示空白頁面。Service Worker 透過 `@angular/service-worker` 管理快取。
+- **Installability**: 監聽 `beforeinstallprompt` 事件，透過 `PwaInstallService` 以 SnackBar 引導安裝，不在首次載入時自動彈出。
+- **iOS Compatibility**: 設定 Apple Touch Icons、`apple-mobile-web-app-status-bar-style`、`apple-mobile-web-app-capable` meta tags。
+- **Service Worker Updates**: `PwaUpdateService` 監聽 `SwUpdate.versionUpdates`，`VERSION_READY` 時以 SnackBar 通知用戶，提供顯式更新按鈕呼叫 `activateUpdate()`。
+- **Cache Strategy**: 核心資源（index.html、JS、CSS）使用 `prefetch`，圖片/字型使用 `lazy`，Nominatim API 使用 `freshness` 策略。
 
 ## Testing Patterns
 
