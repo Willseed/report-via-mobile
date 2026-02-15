@@ -15,7 +15,6 @@ async function mockGeolocationDenied(page: Page): Promise<void> {
   await page.context().clearPermissions();
   // 注入 geolocation mock 以模擬權限被拒絕
   await page.addInitScript(() => {
-    const originalGetCurrentPosition = navigator.geolocation.getCurrentPosition;
     navigator.geolocation.getCurrentPosition = (
       _success: PositionCallback,
       error?: PositionErrorCallback,
@@ -30,7 +29,6 @@ async function mockGeolocationDenied(page: Page): Promise<void> {
         });
       }
     };
-    return originalGetCurrentPosition;
   });
 }
 
