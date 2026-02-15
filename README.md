@@ -31,6 +31,7 @@
 
 - **Framework:** Angular 21 (Standalone Components, Signals, Strict Mode)
 - **UI:** Angular Material 3 (M3)
+- **PWA:** @angular/pwa（離線支援、安裝提示、版本更新通知）
 - **Styling:** SCSS
 - **Routing:** HashLocationStrategy (GitHub Pages compatible)
 - **Testing:** Vitest + jsdom
