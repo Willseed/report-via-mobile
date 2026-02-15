@@ -39,6 +39,7 @@
   - **Dependency Inversion:** Depend on abstractions, not concretions
 - **High Cohesion, Low Coupling:** Keep related logic together within a module; minimize direct dependencies between modules by interacting through well-defined interfaces
 - **No Over-Engineering:** Keep solutions simple and focused on current requirements; avoid premature abstractions, speculative generality, or unnecessary indirection
+- **Security Rule:** Never assign or pass raw HTML (e.g., <script>) to non-HTML variables or functions in tests or code. If XSS test coverage is needed, use safe string values or document intent with comments.
 
 ## Code Conventions
 

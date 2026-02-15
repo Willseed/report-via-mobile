@@ -16,6 +16,10 @@ describe('SmsPreview', () => {
     return fixture;
   }
 
+  /**
+   * Returns the root HTML element of the test fixture.
+   * This function is only used to query rendered DOM, never to return raw HTML strings.
+   */
   function el(): HTMLElement {
     return fixture.nativeElement as HTMLElement;
   }
