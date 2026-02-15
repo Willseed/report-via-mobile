@@ -138,7 +138,7 @@ describe('SmsForm', () => {
     await renderDeferBlock();
     fillValidForm();
 
-    component['sendSms']();
+    void component['sendSms']();
     expect(dialogSpy.open).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -186,7 +186,7 @@ describe('SmsForm', () => {
 
   it('should not open dialog when form is invalid', async () => {
     await renderDeferBlock();
-    component['sendSms']();
+    void component['sendSms']();
     expect(dialogSpy.open).not.toHaveBeenCalled();
   });
 
@@ -199,7 +199,7 @@ describe('SmsForm', () => {
     getViolationInput()['violation'].set('汽車於紅線停車');
     loc['district'].set(kaohsiungStation);
 
-    component['sendSms']();
+    void component['sendSms']();
     expect(dialogSpy.open).not.toHaveBeenCalled();
   });
 
@@ -611,7 +611,7 @@ describe('SmsForm', () => {
       vi['violationForm'].licensePlate().value.set('XYZ9999');
       vi['licensePlate'].set('XYZ9999');
 
-      component['sendSms']();
+      void component['sendSms']();
       expect(dialogSpy.open).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
@@ -625,7 +625,7 @@ describe('SmsForm', () => {
     it('should not pass licensePlate to dialog when empty', () => {
       fillValidForm();
 
-      component['sendSms']();
+      void component['sendSms']();
       expect(dialogSpy.open).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
