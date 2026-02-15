@@ -18,8 +18,8 @@ jobs:
   analysis:
     name: Scorecard 分析
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
-      # 需要寫入權限以上傳結果至 Security 標籤
       security-events: write
       id-token: write
 

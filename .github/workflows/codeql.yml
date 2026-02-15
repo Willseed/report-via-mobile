@@ -13,6 +13,7 @@ jobs:
   analyze:
     name: 分析程式碼
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       actions: read
       contents: read

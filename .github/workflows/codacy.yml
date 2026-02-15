@@ -11,6 +11,7 @@ jobs:
   codacy:
     name: Codacy Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
@@ -27,6 +28,8 @@ jobs:
           format: sarif
           output: ${{ runner.temp }}/results.sarif
           gh-code-scanning-compat: true
+          run-docker-tools: false
+          tool-timeout: 300
 
       - name: Ensure unique SARIF run categories
         run: |
