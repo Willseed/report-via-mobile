@@ -16,10 +16,6 @@ mat-form-field {
   @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
 }
 
-.district-error {
-  color: var(--mat-sys-error) !important;
-}
-
 .locating-spin {
   animation: spin 1s linear infinite;
 }
