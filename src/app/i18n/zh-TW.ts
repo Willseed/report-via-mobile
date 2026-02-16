@@ -83,6 +83,12 @@ export const ZH_TW = {
     platePrefix: '，車牌號碼：',
   },
 
+  // Theme Toggle
+  theme: {
+    switchToLight: '切換為淺色模式',
+    switchToDark: '切換為深色模式',
+  },
+
   // PWA Services
   pwa: {
     updateAvailable: '有新版本可用',
