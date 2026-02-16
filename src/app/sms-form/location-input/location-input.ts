@@ -18,6 +18,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { POLICE_STATIONS, PoliceStation, normalizeAddress, StationLookupService } from '../../police-stations';
 import { GeocodingService, DEFAULT_GEOLOCATION_ERROR_MSG } from '../../geocoding.service';
+import { ZH_TW } from '../../i18n';
 
 export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
 export const ADDRESS_MAX_LENGTH = 100;
@@ -41,6 +42,7 @@ export class LocationInput {
   private stationLookup = inject(StationLookupService);
   private destroyRef = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
+  protected readonly i18n = ZH_TW;
 
   readonly address = model('');
   readonly district = model<PoliceStation | null>(null);
@@ -52,8 +54,8 @@ export class LocationInput {
 
   private addressModel = signal({ address: '' });
   protected addressForm = form(this.addressModel, (schema) => {
-    required(schema.address, { message: '請輸入事發地址。' });
-    maxLength(schema.address, ADDRESS_MAX_LENGTH, { message: '地址不可超過 100 字。' });
+    required(schema.address, { message: ZH_TW.location.addressRequired });
+    maxLength(schema.address, ADDRESS_MAX_LENGTH, { message: ZH_TW.location.addressMaxLength });
   });
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;

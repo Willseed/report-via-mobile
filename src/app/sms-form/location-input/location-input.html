@@ -1,16 +1,16 @@
 @if (manualInputFallback()) {
   <div class="fallback-hint" role="status">
     <mat-icon>edit</mat-icon>
-    <span>自動定位暫時無法使用，請手動輸入地址與選擇行政區。</span>
+    <span>{{ i18n.location.fallbackHint }}</span>
   </div>
 }
 
 <mat-form-field appearance="outline">
-  <mat-label>事發地址</mat-label>
+  <mat-label>{{ i18n.location.addressLabel }}</mat-label>
   <input
     matInput
     [formField]="addressForm.address"
-    placeholder="請輸入地址..."
+    [placeholder]="i18n.location.addressPlaceholder"
     (input)="onAddressInput($event)"
     (paste)="onAddressPaste($event)"
   />
@@ -21,11 +21,11 @@
     type="button"
     (click)="locateUser()"
     [disabled]="isLocating()"
-    aria-label="使用目前位置"
+    [attr.aria-label]="i18n.location.locateButtonLabel"
   >
     <mat-icon [class.locating-spin]="isLocating()">my_location</mat-icon>
   </button>
-  <mat-hint>輸入地址或按右側按鈕定位，將自動帶入行政區。</mat-hint>
+  <mat-hint>{{ i18n.location.addressHint }}</mat-hint>
   @for (error of addressForm.address().errors(); track error) {
     <mat-error>{{ error.message }}</mat-error>
   }
@@ -39,7 +39,7 @@
 }
 
 <mat-form-field appearance="outline">
-  <mat-label>報案行政區</mat-label>
+  <mat-label>{{ i18n.location.districtLabel }}</mat-label>
   <mat-select
     [value]="district()"
     (selectionChange)="onDistrictChange($event.value)"
@@ -55,7 +55,7 @@
   <mat-icon matPrefix>location_on</mat-icon>
   @let station = district();
   @if (station) {
-    <mat-hint>承辦單位：{{ station.stationName }}</mat-hint>
+    <mat-hint>{{ i18n.location.stationPrefix }}{{ station.stationName }}</mat-hint>
   }
-  <mat-error>請選擇報案行政區。</mat-error>
+  <mat-error>{{ i18n.location.districtRequired }}</mat-error>
 </mat-form-field>

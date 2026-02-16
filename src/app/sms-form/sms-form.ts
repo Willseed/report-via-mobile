@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import { SmsService } from '../sms.service';
 import { PoliceStation } from '../police-stations';
+import { ZH_TW } from '../i18n';
 import { ConfirmDialog, ConfirmDialogData } from './confirm-dialog';
 import { LocationInput } from './location-input/location-input';
 import { ViolationInput } from './violation-input/violation-input';
@@ -23,6 +24,7 @@ export { VIOLATION_MAX_LENGTH, LICENSE_PLATE_MAX_LENGTH, LICENSE_PLATE_PATTERN }
 export class SmsForm {
   private smsService = inject(SmsService);
   private dialog = inject(MatDialog);
+  protected readonly i18n = ZH_TW;
 
   private locationInput = viewChild(LocationInput);
   private violationInput = viewChild(ViolationInput);
@@ -50,7 +52,7 @@ export class SmsForm {
     const violation = this.violation();
     const station = this.district();
     if (!address || !violation || !station) return '';
-    const plateSegment = this.licensePlate() ? `，車牌號碼：${this.licensePlate()}` : '';
+    const plateSegment = this.licensePlate() ? `${ZH_TW.smsMessage.platePrefix}${this.licensePlate()}` : '';
     return `${address}，有${violation}${plateSegment}，請派員處理`;
   });
 
