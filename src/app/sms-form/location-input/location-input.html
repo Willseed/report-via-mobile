@@ -37,6 +37,7 @@
     [value]="district()"
     (selectionChange)="onDistrictChange($event.value)"
     [compareWith]="compareStations"
+    [required]="true"
     panelClass="fade-dropdown"
   >
     <mat-select-trigger>{{ district()?.district }}</mat-select-trigger>
