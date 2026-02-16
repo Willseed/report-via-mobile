@@ -16,8 +16,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { POLICE_STATIONS, PoliceStation, findStationByAddress, normalizeAddress } from '../../police-stations';
+import { POLICE_STATIONS, PoliceStation, normalizeAddress, StationLookupService } from '../../police-stations';
 import { GeocodingService, DEFAULT_GEOLOCATION_ERROR_MSG } from '../../geocoding.service';
+import { ZH_TW } from '../../i18n';
 
 export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
 export const ADDRESS_MAX_LENGTH = 100;
@@ -38,20 +39,24 @@ export const ADDRESS_MAX_LENGTH = 100;
 })
 export class LocationInput {
   private geocodingService = inject(GeocodingService);
+  private stationLookup = inject(StationLookupService);
   private destroyRef = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
+  protected readonly i18n = ZH_TW;
 
   readonly address = model('');
   readonly district = model<PoliceStation | null>(null);
 
   protected isLocating = signal(false);
   protected locationError = signal('');
+  protected locationStatus = signal('');
   protected stations = POLICE_STATIONS;
+  protected manualInputFallback = computed(() => this.geocodingService.fallbackToManualInput?.() ?? false);
 
   private addressModel = signal({ address: '' });
   protected addressForm = form(this.addressModel, (schema) => {
-    required(schema.address, { message: '請輸入事發地址。' });
-    maxLength(schema.address, ADDRESS_MAX_LENGTH, { message: '地址不可超過 100 字。' });
+    required(schema.address, { message: ZH_TW.location.addressRequired });
+    maxLength(schema.address, ADDRESS_MAX_LENGTH, { message: ZH_TW.location.addressMaxLength });
   });
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -59,7 +64,7 @@ export class LocationInput {
   readonly districtMismatch = computed(() => {
     const address = this.address();
     const selected = this.district();
-    const stationFromAddress = findStationByAddress(address);
+    const stationFromAddress = this.stationLookup.findStation(address);
     if (!stationFromAddress || !selected) return false;
     return stationFromAddress.district !== selected.district;
   });
@@ -117,8 +122,10 @@ export class LocationInput {
       this.addressForm.address().value.set(displayName);
       this.address.set(displayName);
       this.autoSelectDistrict(displayName);
+      this.locationStatus.set(`${ZH_TW.location.locateSuccess}${displayName}`);
     } catch (e) {
       this.locationError.set(e instanceof Error ? e.message : DEFAULT_GEOLOCATION_ERROR_MSG);
+      this.locationStatus.set('');
     } finally {
       this.isLocating.set(false);
     }
@@ -152,7 +159,7 @@ export class LocationInput {
   readonly districtRequired = computed(() => this.districtTouched() && this.district() === null);
 
   private autoSelectDistrict(address: string): void {
-    const station = findStationByAddress(address);
+    const station = this.stationLookup.findStation(address);
     if (station) {
       this.district.set(station);
     }

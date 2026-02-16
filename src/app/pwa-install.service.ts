@@ -1,7 +1,8 @@
 import { DestroyRef, inject, Injectable, NgZone, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { fromEvent } from 'rxjs';
+import { fromEvent, take } from 'rxjs';
+import { ZH_TW } from './i18n';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -24,10 +25,10 @@ export class PwaInstallService {
           event.preventDefault();
           this.ngZone.run(() => {
             this.deferredPrompt.set(event);
-            const snackBarRef = this.snackBar.open('可將此應用安裝至主畫面', '安裝', {
+            const snackBarRef = this.snackBar.open(ZH_TW.pwa.installPrompt, ZH_TW.pwa.installAction, {
               duration: 8000,
             });
-            snackBarRef.onAction().subscribe(() => void this.promptInstall());
+            snackBarRef.onAction().pipe(take(1)).subscribe(() => void this.promptInstall());
           });
         });
     });

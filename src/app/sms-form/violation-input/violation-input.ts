@@ -18,6 +18,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { ZH_TW } from '../../i18n';
 
 const VEHICLE_TYPES = ['汽車', '機車'] as const;
 const VIOLATION_DESCRIPTIONS = [
@@ -74,6 +75,7 @@ export class ViolationInput {
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
   private filterDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  protected readonly i18n = ZH_TW;
 
   constructor() {
     this.destroyRef.onDestroy(() => {
@@ -99,13 +101,13 @@ export class ViolationInput {
 
   private formModel = signal({ violation: '', licensePlate: '' });
   protected violationForm = form(this.formModel, (schema) => {
-    required(schema.violation, { message: '請選擇違規事實。' });
-    maxLength(schema.violation, VIOLATION_MAX_LENGTH, { message: '違規事實不可超過 50 字。' });
+    required(schema.violation, { message: ZH_TW.violation.required });
+    maxLength(schema.violation, VIOLATION_MAX_LENGTH, { message: ZH_TW.violation.maxLength });
     maxLength(schema.licensePlate, LICENSE_PLATE_MAX_LENGTH, {
-      message: '車牌號碼不可超過 10 字。',
+      message: ZH_TW.violation.licensePlateMaxLength,
     });
     pattern(schema.licensePlate, LICENSE_PLATE_PATTERN, {
-      message: '車牌號碼僅限英文及數字。',
+      message: ZH_TW.violation.licensePlatePattern,
     });
   });
 

@@ -1,3 +1,6 @@
+import { Injectable } from '@angular/core';
+import { TW_ADDRESS_RULES, type AddressNormalizationRule } from './i18n/address-normalization';
+
 export enum District {
   Taipei = '臺北市',
   NewTaipei = '新北市',
@@ -54,20 +57,28 @@ export const POLICE_STATIONS: readonly PoliceStation[] = [
   { district: District.Lienchiang, stationName: '連江縣警察局', phoneNumber: '0911510932' },
 ];
 
-export function normalizeAddress(raw: string): string {
-  return raw
-    .replace(/台灣|中華民國|Taiwan|ROC/gi, '')
-    .replace(/^\d{3,5}\s*/, '')
-    .trim();
+export function normalizeAddress(raw: string, rules: readonly AddressNormalizationRule[] = TW_ADDRESS_RULES): string {
+  let result = raw;
+  for (const rule of rules) {
+    result = result.replace(rule.pattern, rule.replacement);
+  }
+  return result.trim();
 }
 
-let lastInput: string | undefined;
-let lastResult: PoliceStation | null = null;
-
 export function findStationByAddress(address: string): PoliceStation | null {
-  if (address === lastInput) return lastResult;
-  lastInput = address;
-  const normalized = normalizeAddress(address).replace(/台/g, '臺');
-  lastResult = POLICE_STATIONS.find((s) => normalized.includes(s.district)) ?? null;
-  return lastResult;
+  const normalized = normalizeAddress(address);
+  return POLICE_STATIONS.find((s) => normalized.includes(s.district)) ?? null;
+}
+
+@Injectable({ providedIn: 'root' })
+export class StationLookupService {
+  private lastInput: string | undefined;
+  private lastResult: PoliceStation | null = null;
+
+  findStation(address: string): PoliceStation | null {
+    if (address === this.lastInput) return this.lastResult;
+    this.lastInput = address;
+    this.lastResult = findStationByAddress(address);
+    return this.lastResult;
+  }
 }

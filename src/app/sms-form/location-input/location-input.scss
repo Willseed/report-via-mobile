@@ -16,6 +16,22 @@ mat-form-field {
   @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
 }
 
+.fallback-hint {
+  @include banner(var(--mat-sys-tertiary-container), var(--mat-sys-on-tertiary-container));
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .locating-spin {
   animation: spin 1s linear infinite;
 }

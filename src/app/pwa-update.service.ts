@@ -3,6 +3,7 @@ import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { filter, take } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ZH_TW } from './i18n';
 
 @Injectable({ providedIn: 'root' })
 export class PwaUpdateService {
@@ -19,21 +20,21 @@ export class PwaUpdateService {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => {
-        const snackBarRef = this.snackBar.open('有新版本可用', '更新', {
+        const snackBarRef = this.snackBar.open(ZH_TW.pwa.updateAvailable, ZH_TW.pwa.updateAction, {
           duration: 0,
         });
         snackBarRef.onAction().pipe(take(1)).subscribe(() => {
           void this.swUpdate
             .activateUpdate()
             .then(() => { location.reload(); })
-            .catch(() => this.snackBar.open('更新失敗，請重新整理頁面', '', { duration: 5000 }));
+            .catch(() => this.snackBar.open(ZH_TW.pwa.updateFailed, '', { duration: 5000 }));
         });
       });
 
     this.swUpdate.unrecoverable
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
-        this.snackBar.open('應用程式發生錯誤，將重新載入', '', { duration: 3000 });
+        this.snackBar.open(ZH_TW.pwa.unrecoverableError, '', { duration: 3000 });
         setTimeout(() => { location.reload(); }, 3000);
       });
   }

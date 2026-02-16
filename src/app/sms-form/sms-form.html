@@ -1,17 +1,17 @@
 <main class="sms-form-container">
-  <h1>簡訊報案</h1>
-  <p class="subtitle">填寫以下表單，透過您裝置的簡訊功能傳送報案訊息。</p>
+  <h1>{{ i18n.smsForm.title }}</h1>
+  <p class="subtitle">{{ i18n.smsForm.subtitle }}</p>
 
   @if (isDesktop()) {
     <div class="desktop-warning">
       <mat-icon>warning</mat-icon>
-      <span>簡訊連結可能無法在桌面瀏覽器上使用，請使用行動裝置開啟。</span>
+      <span>{{ i18n.smsForm.desktopWarning }}</span>
     </div>
   }
 
   <div class="info-banner">
     <mat-icon>info</mat-icon>
-    <span>發送此簡訊是免費的。</span>
+    <span>{{ i18n.smsForm.freeNotice }}</span>
   </div>
 
   <form novalidate (submit)="$event.preventDefault(); sendSms()">
@@ -30,31 +30,31 @@
     @if (pendingPreview()) {
       <div class="pending-preview-hint">
         <mat-icon>info</mat-icon>
-        <span>待選擇行政區後顯示簡訊預覽…</span>
+        <span>{{ i18n.smsForm.pendingPreviewHint }}</span>
       </div>
     }
 
     @if (districtMismatch()) {
       <div class="district-mismatch-warning" role="alert">
         <mat-icon>warning</mat-icon>
-        <span>輸入地址與報案行政區不一致，請確認後再發送。</span>
+        <span>{{ i18n.smsForm.districtMismatchWarning }}</span>
       </div>
     }
 
     <div class="notice-banner">
       <mat-icon>gavel</mat-icon>
-      <span>報案的受理與否，最終由該轄區警察局依法審核決定。</span>
+      <span>{{ i18n.smsForm.legalNotice }}</span>
     </div>
 
     <button mat-flat-button type="submit" [disabled]="isDesktop() || districtMismatch()">
       <mat-icon>send</mat-icon>
-      發送簡訊
+      {{ i18n.smsForm.sendButton }}
     </button>
   </form>
 
   <details class="disclaimer">
-    <summary>免責聲明</summary>
-    <p>檢舉是否受理及後續罰鍰裁處，悉依警察機關及相關交通法規辦理；本工具與內政部警政署或各級警察局無官方隸屬關係。</p>
-    <p>免責事項：本工具僅供輔助生成交通違規檢舉簡訊內容，不代表檢舉成功之保證；使用者送出前應自行核對違規時間、地點及事實之正確性。若因輸入資料錯誤致生法律糾紛或行政處分，本站概不負責。</p>
+    <summary>{{ i18n.smsForm.disclaimerTitle }}</summary>
+    <p>{{ i18n.smsForm.disclaimerP1 }}</p>
+    <p>{{ i18n.smsForm.disclaimerP2 }}</p>
   </details>
 </main>

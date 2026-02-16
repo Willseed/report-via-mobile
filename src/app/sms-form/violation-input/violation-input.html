@@ -1,9 +1,9 @@
 <mat-form-field appearance="outline">
-  <mat-label>違規事實</mat-label>
+  <mat-label>{{ i18n.violation.label }}</mat-label>
   <input
     matInput
     [formField]="violationForm.violation"
-    placeholder="請選擇違規事實..."
+    [placeholder]="i18n.violation.placeholder"
     [matAutocomplete]="autoViolation"
     (input)="onViolationInput($event)"
     (change)="onViolationChange()"
@@ -33,15 +33,15 @@
     #addPlateButton
   >
     <mat-icon>directions_car</mat-icon>
-    新增車牌號碼
+    {{ i18n.violation.addLicensePlate }}
   </button>
 } @else {
   <mat-form-field appearance="outline">
-    <mat-label>車牌號碼（選填）</mat-label>
+    <mat-label>{{ i18n.violation.licensePlateLabel }}</mat-label>
     <input
       matInput
       [formField]="violationForm.licensePlate"
-      placeholder="例：ABC1234"
+      [placeholder]="i18n.violation.licensePlatePlaceholder"
       autocapitalize="characters"
       inputmode="text"
       (input)="onLicensePlateInput($event)"
@@ -53,11 +53,11 @@
       matSuffix
       type="button"
       (click)="clearLicensePlate()"
-      aria-label="移除車牌號碼"
+      [attr.aria-label]="i18n.violation.removeLicensePlateLabel"
     >
       <mat-icon>close</mat-icon>
     </button>
-    <mat-hint>僅限英文及數字，英文將自動轉為大寫。</mat-hint>
+    <mat-hint>{{ i18n.violation.licensePlateHint }}</mat-hint>
     @for (error of violationForm.licensePlate().errors(); track error) {
       <mat-error>{{ error.message }}</mat-error>
     }

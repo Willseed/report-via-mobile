@@ -2,7 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { GeocodingService } from './geocoding.service';
+import {
+  GeocodingService,
+  GEOCODE_CIRCUIT_OPEN_MSG,
+  GEOCODE_RATE_LIMITED_MSG,
+  GEOCODE_SERVICE_UNAVAILABLE_MSG,
+} from './geocoding.service';
 
 function mockGeoError(code: number): GeolocationPositionError {
   return { code, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: '' };
@@ -264,6 +269,196 @@ describe('GeocodingService', () => {
       expect(req.request.headers.get('User-Agent')).toBe('report-via-mobile (https://tools.pylot.dev)');
       req.flush({ display_name: 'test' });
       await promise;
+    });
+
+    it('should open circuit after 3 consecutive failures', async () => {
+      vi.useFakeTimers();
+
+      for (let i = 0; i < 3; i++) {
+        const lat = 25 + i * 0.01;
+        const promise = service.reverseGeocode(lat, 121);
+        let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await vi.advanceTimersByTimeAsync(1000);
+        req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await expect(promise).rejects.toThrow('地址查詢失敗');
+      }
+
+      // Circuit is now open — next call should reject immediately
+      await expect(service.reverseGeocode(26, 121)).rejects.toThrow(GEOCODE_CIRCUIT_OPEN_MSG);
+      httpTesting.expectNone((r) => r.url.includes('nominatim'));
+
+      vi.useRealTimers();
+    });
+
+    it('should reject immediately when circuit is open', async () => {
+      vi.useFakeTimers();
+
+      // Open the circuit via 3 failures
+      for (let i = 0; i < 3; i++) {
+        const lat = 25 + i * 0.01;
+        const promise = service.reverseGeocode(lat, 121);
+        let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await vi.advanceTimersByTimeAsync(1000);
+        req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await expect(promise).rejects.toThrow();
+      }
+
+      // Multiple calls should all reject immediately without HTTP requests
+      await expect(service.reverseGeocode(27, 121)).rejects.toThrow(GEOCODE_CIRCUIT_OPEN_MSG);
+      await expect(service.reverseGeocode(28, 121)).rejects.toThrow(GEOCODE_CIRCUIT_OPEN_MSG);
+      httpTesting.expectNone((r) => r.url.includes('nominatim'));
+
+      vi.useRealTimers();
+    });
+
+    it('should allow probe after cooldown (half-open state)', async () => {
+      vi.useFakeTimers();
+
+      // Open the circuit
+      for (let i = 0; i < 3; i++) {
+        const lat = 25 + i * 0.01;
+        const promise = service.reverseGeocode(lat, 121);
+        let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await vi.advanceTimersByTimeAsync(1000);
+        req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await expect(promise).rejects.toThrow();
+      }
+
+      // Advance past cooldown (30 seconds)
+      await vi.advanceTimersByTimeAsync(30_000);
+
+      // Should allow a probe request (half-open)
+      const probePromise = service.reverseGeocode(30, 121);
+      const probeReq = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      probeReq.flush({
+        display_name: '臺北市',
+        address: { city: '臺北市' },
+      });
+      const result = await probePromise;
+      expect(result).toBe('臺北市');
+
+      vi.useRealTimers();
+    });
+
+    it('should reset circuit on success', async () => {
+      vi.useFakeTimers();
+
+      // Accumulate 2 failures (not enough to open)
+      for (let i = 0; i < 2; i++) {
+        const lat = 25 + i * 0.01;
+        const promise = service.reverseGeocode(lat, 121);
+        let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await vi.advanceTimersByTimeAsync(1000);
+        req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await expect(promise).rejects.toThrow();
+      }
+
+      // Succeed — should reset counter
+      const successPromise = service.reverseGeocode(27, 121);
+      const successReq = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      successReq.flush({ display_name: '臺北市', address: { city: '臺北市' } });
+      await successPromise;
+
+      // Two more failures should not open circuit (counter was reset)
+      for (let i = 0; i < 2; i++) {
+        const lat = 28 + i * 0.01;
+        const promise = service.reverseGeocode(lat, 121);
+        let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await vi.advanceTimersByTimeAsync(1000);
+        req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await expect(promise).rejects.toThrow();
+      }
+
+      // Circuit should still be closed — request goes through
+      const verifyPromise = service.reverseGeocode(31, 121);
+      const verifyReq = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      verifyReq.flush({ display_name: '高雄市', address: { city: '高雄市' } });
+      const result = await verifyPromise;
+      expect(result).toBe('高雄市');
+
+      vi.useRealTimers();
+    });
+
+    it('should immediately open circuit on 429 HTTP error', async () => {
+      vi.useFakeTimers();
+
+      const promise = service.reverseGeocode(25.033, 121.565);
+      let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush('Error', { status: 429, statusText: 'Too Many Requests' });
+      await vi.advanceTimersByTimeAsync(1000);
+      req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush('Error', { status: 429, statusText: 'Too Many Requests' });
+      await expect(promise).rejects.toThrow(GEOCODE_RATE_LIMITED_MSG);
+
+      // Circuit should be open now
+      await expect(service.reverseGeocode(26, 121)).rejects.toThrow(GEOCODE_CIRCUIT_OPEN_MSG);
+      httpTesting.expectNone((r) => r.url.includes('nominatim'));
+
+      vi.useRealTimers();
+    });
+
+    it('should immediately open circuit on 503 HTTP error', async () => {
+      vi.useFakeTimers();
+
+      const promise = service.reverseGeocode(25.033, 121.565);
+      let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush('Error', { status: 503, statusText: 'Service Unavailable' });
+      await vi.advanceTimersByTimeAsync(1000);
+      req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      req.flush('Error', { status: 503, statusText: 'Service Unavailable' });
+      await expect(promise).rejects.toThrow(GEOCODE_SERVICE_UNAVAILABLE_MSG);
+
+      // Circuit should be open now
+      await expect(service.reverseGeocode(26, 121)).rejects.toThrow(GEOCODE_CIRCUIT_OPEN_MSG);
+      httpTesting.expectNone((r) => r.url.includes('nominatim'));
+
+      vi.useRealTimers();
+    });
+
+    it('fallbackToManualInput should reflect circuit state', async () => {
+      vi.useFakeTimers();
+
+      // Initially closed
+      expect(service.fallbackToManualInput()).toBe(false);
+
+      // Open the circuit via 3 failures
+      for (let i = 0; i < 3; i++) {
+        const lat = 25 + i * 0.01;
+        const promise = service.reverseGeocode(lat, 121);
+        let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await vi.advanceTimersByTimeAsync(1000);
+        req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+        req.flush('Error', { status: 500, statusText: 'Server Error' });
+        await expect(promise).rejects.toThrow();
+      }
+
+      // Circuit open — fallback should be true
+      expect(service.fallbackToManualInput()).toBe(true);
+
+      // Advance past cooldown
+      await vi.advanceTimersByTimeAsync(30_000);
+
+      // Probe and succeed to close circuit
+      const probePromise = service.reverseGeocode(30, 121);
+      const probeReq = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+      probeReq.flush({ display_name: '臺北市', address: { city: '臺北市' } });
+      await probePromise;
+
+      // Circuit closed — fallback should be false
+      expect(service.fallbackToManualInput()).toBe(false);
+
+      vi.useRealTimers();
     });
 
     it('should evict oldest cache entry when cache exceeds max size', async () => {

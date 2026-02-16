@@ -1,27 +1,27 @@
-<h2 mat-dialog-title>確認發送簡訊</h2>
+<h2 mat-dialog-title>{{ i18n.confirmDialog.title }}</h2>
 
 <mat-dialog-content>
   <dl class="confirm-fields">
-    <dt>收件單位</dt>
+    <dt>{{ i18n.confirmDialog.recipientLabel }}</dt>
     <dd>{{ data.stationName }}</dd>
 
-    <dt>簡訊號碼</dt>
+    <dt>{{ i18n.confirmDialog.phoneLabel }}</dt>
     <dd>{{ data.phoneNumber }}</dd>
 
     @if (data.licensePlate) {
-      <dt>車牌號碼</dt>
+      <dt>{{ i18n.confirmDialog.licensePlateLabel }}</dt>
       <dd>{{ data.licensePlate }}</dd>
     }
 
-    <dt>簡訊內容</dt>
+    <dt>{{ i18n.confirmDialog.messageLabel }}</dt>
     <dd class="message">{{ data.message }}</dd>
   </dl>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button (click)="cancel()">取消</button>
+  <button mat-button (click)="cancel()">{{ i18n.confirmDialog.cancelButton }}</button>
   <button mat-flat-button (click)="confirm()">
     <mat-icon>send</mat-icon>
-    確認發送
+    {{ i18n.confirmDialog.confirmButton }}
   </button>
 </mat-dialog-actions>

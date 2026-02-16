@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -6,6 +7,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { LocationInput, DISTRICT_SEARCH_DEBOUNCE_MS, ADDRESS_MAX_LENGTH } from './location-input';
 import { GeocodingService } from '../../geocoding.service';
 import { POLICE_STATIONS, District } from '../../police-stations';
+import { ZH_TW } from '../../i18n';
 
 describe('LocationInput', () => {
   let fixture: ComponentFixture<LocationInput>;
@@ -13,6 +15,7 @@ describe('LocationInput', () => {
   let mockGeocodingService: {
     getCurrentPosition: ReturnType<typeof vi.fn>;
     reverseGeocode: ReturnType<typeof vi.fn>;
+    fallbackToManualInput: ReturnType<typeof signal<boolean>>;
   };
 
   beforeEach(() => {
@@ -21,6 +24,7 @@ describe('LocationInput', () => {
     mockGeocodingService = {
       getCurrentPosition: vi.fn(),
       reverseGeocode: vi.fn(),
+      fallbackToManualInput: signal(false),
     };
 
     TestBed.configureTestingModule({
@@ -231,6 +235,31 @@ describe('LocationInput', () => {
 
       await vi.advanceTimersByTimeAsync(0);
       expect(component['district']()?.district).toBe(District.Taichung);
+    });
+  });
+
+  describe('manual input fallback', () => {
+    it('should not show fallback hint when circuit is closed', () => {
+      const hint = fixture.debugElement.nativeElement.querySelector('.fallback-hint');
+      expect(hint).toBeNull();
+    });
+
+    it('should show fallback hint when fallbackToManualInput is true', () => {
+      mockGeocodingService.fallbackToManualInput.set(true);
+      fixture.detectChanges();
+      const hint = fixture.debugElement.nativeElement.querySelector('.fallback-hint');
+      expect(hint).not.toBeNull();
+      expect(hint.textContent).toContain(ZH_TW.location.fallbackHint);
+    });
+
+    it('should hide fallback hint when fallbackToManualInput returns to false', () => {
+      mockGeocodingService.fallbackToManualInput.set(true);
+      fixture.detectChanges();
+      expect(fixture.debugElement.nativeElement.querySelector('.fallback-hint')).not.toBeNull();
+
+      mockGeocodingService.fallbackToManualInput.set(false);
+      fixture.detectChanges();
+      expect(fixture.debugElement.nativeElement.querySelector('.fallback-hint')).toBeNull();
     });
   });
 });

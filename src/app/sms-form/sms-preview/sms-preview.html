@@ -1,9 +1,9 @@
 @if (message()) {
   <div class="sms-preview">
-    <div class="sms-preview-header">簡訊預覽</div>
+    <div class="sms-preview-header">{{ i18n.smsPreview.header }}</div>
     <div class="sms-bubble">{{ message() }}</div>
     <div class="sms-char-count" [class.over-limit]="overLimit()">
-      {{ message().length }} / {{ SMS_CHAR_LIMIT }} 字
+      {{ message().length }} / {{ SMS_CHAR_LIMIT }} {{ i18n.smsPreview.charSuffix }}
     </div>
   </div>
   @if (overLimit()) {
