@@ -1,6 +1,8 @@
 @use '../banner' as *;
 
 :host {
+  --sms-bubble-bg: #34c759;
+  --sms-bubble-fg: #fff;
   display: contents;
 }
 
@@ -19,8 +21,8 @@
 }
 
 .sms-bubble {
-  background-color: #34c759;
-  color: #fff;
+  background-color: var(--sms-bubble-bg);
+  color: var(--sms-bubble-fg);
   padding: 0.625rem 0.875rem;
   border-radius: 18px 18px 4px;
   max-width: 85%;

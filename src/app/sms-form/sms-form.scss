@@ -102,3 +102,24 @@ button[mat-flat-button] {
     background-position: -200% 0;
   }
 }
+
+.disclaimer {
+  margin-top: 1.5rem;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+
+  summary {
+    cursor: pointer;
+    text-align: center;
+    padding: 0.5rem;
+
+    &::marker {
+      content: '';
+    }
+  }
+
+  p {
+    margin: 0.5rem 0 0;
+    line-height: 1.6;
+  }
+}

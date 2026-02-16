@@ -1,27 +1,21 @@
 <h2 mat-dialog-title>確認發送簡訊</h2>
 
 <mat-dialog-content>
-  <div class="confirm-field">
-    <span class="confirm-label">收件單位</span>
-    <span class="confirm-value">{{ data.stationName }}</span>
-  </div>
+  <dl class="confirm-fields">
+    <dt>收件單位</dt>
+    <dd>{{ data.stationName }}</dd>
 
-  <div class="confirm-field">
-    <span class="confirm-label">簡訊號碼</span>
-    <span class="confirm-value">{{ data.phoneNumber }}</span>
-  </div>
+    <dt>簡訊號碼</dt>
+    <dd>{{ data.phoneNumber }}</dd>
 
-  @if (data.licensePlate) {
-    <div class="confirm-field">
-      <span class="confirm-label">車牌號碼</span>
-      <span class="confirm-value">{{ data.licensePlate }}</span>
-    </div>
-  }
+    @if (data.licensePlate) {
+      <dt>車牌號碼</dt>
+      <dd>{{ data.licensePlate }}</dd>
+    }
 
-  <div class="confirm-field">
-    <span class="confirm-label">簡訊內容</span>
-    <span class="confirm-value message">{{ data.message }}</span>
-  </div>
+    <dt>簡訊內容</dt>
+    <dd class="message">{{ data.message }}</dd>
+  </dl>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
