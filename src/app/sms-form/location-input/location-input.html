@@ -1,3 +1,10 @@
+@if (manualInputFallback()) {
+  <div class="fallback-hint" role="status">
+    <mat-icon>edit</mat-icon>
+    <span>自動定位暫時無法使用，請手動輸入地址與選擇行政區。</span>
+  </div>
+}
+
 <mat-form-field appearance="outline">
   <mat-label>事發地址</mat-label>
   <input

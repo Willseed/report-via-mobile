@@ -16,7 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { POLICE_STATIONS, PoliceStation, findStationByAddress, normalizeAddress } from '../../police-stations';
+import { POLICE_STATIONS, PoliceStation, normalizeAddress, StationLookupService } from '../../police-stations';
 import { GeocodingService, DEFAULT_GEOLOCATION_ERROR_MSG } from '../../geocoding.service';
 
 export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
@@ -38,6 +38,7 @@ export const ADDRESS_MAX_LENGTH = 100;
 })
 export class LocationInput {
   private geocodingService = inject(GeocodingService);
+  private stationLookup = inject(StationLookupService);
   private destroyRef = inject(DestroyRef);
   private cdr = inject(ChangeDetectorRef);
 
@@ -47,6 +48,7 @@ export class LocationInput {
   protected isLocating = signal(false);
   protected locationError = signal('');
   protected stations = POLICE_STATIONS;
+  protected manualInputFallback = computed(() => this.geocodingService.fallbackToManualInput?.() ?? false);
 
   private addressModel = signal({ address: '' });
   protected addressForm = form(this.addressModel, (schema) => {
@@ -59,7 +61,7 @@ export class LocationInput {
   readonly districtMismatch = computed(() => {
     const address = this.address();
     const selected = this.district();
-    const stationFromAddress = findStationByAddress(address);
+    const stationFromAddress = this.stationLookup.findStation(address);
     if (!stationFromAddress || !selected) return false;
     return stationFromAddress.district !== selected.district;
   });
@@ -152,7 +154,7 @@ export class LocationInput {
   readonly districtRequired = computed(() => this.districtTouched() && this.district() === null);
 
   private autoSelectDistrict(address: string): void {
-    const station = findStationByAddress(address);
+    const station = this.stationLookup.findStation(address);
     if (station) {
       this.district.set(station);
     }

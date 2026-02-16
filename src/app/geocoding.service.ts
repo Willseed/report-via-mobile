@@ -1,5 +1,5 @@
-import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom, timeout, retry } from 'rxjs';
 
 interface NominatimAddress {
@@ -24,6 +24,9 @@ const GEOCODE_REQUEST_TIMEOUT_MS = 8000;
 const GEOCODE_RETRY_DELAY_MS = 1000;
 const INVALID_COORDINATES_MSG = '無效的座標資訊。';
 export const DEFAULT_GEOLOCATION_ERROR_MSG = '定位失敗，請稍後再試。';
+export const GEOCODE_RATE_LIMITED_MSG = '地址查詢服務繁忙，請稍候再試或手動輸入地址。';
+export const GEOCODE_SERVICE_UNAVAILABLE_MSG = '地址查詢服務暫時無法使用，請手動輸入地址。';
+export const GEOCODE_CIRCUIT_OPEN_MSG = '地址查詢服務暫時停用，請手動輸入地址。';
 
 class GeolocationError extends Error {
   readonly PERMISSION_DENIED = 1;
@@ -37,6 +40,41 @@ export class GeocodingService {
   private http = inject(HttpClient);
   private static readonly MAX_CACHE_SIZE = 100;
   private geocodeCache = new Map<string, string>();
+
+  private consecutiveFailures = 0;
+  private circuitOpenUntil = 0;
+  private static readonly MAX_FAILURES = 3;
+  private static readonly CIRCUIT_COOLDOWN_MS = 30_000;
+
+  private _circuitState = signal<'closed' | 'open' | 'half-open'>('closed');
+  readonly fallbackToManualInput = computed(() => this._circuitState() !== 'closed');
+
+  private isCircuitOpen(): boolean {
+    if (this._circuitState() === 'closed') return false;
+    if (Date.now() >= this.circuitOpenUntil) {
+      this._circuitState.set('half-open');
+      return false;
+    }
+    return true;
+  }
+
+  private openCircuit(): void {
+    this._circuitState.set('open');
+    this.circuitOpenUntil = Date.now() + GeocodingService.CIRCUIT_COOLDOWN_MS;
+    this.consecutiveFailures = GeocodingService.MAX_FAILURES;
+  }
+
+  private recordFailure(): void {
+    this.consecutiveFailures++;
+    if (this.consecutiveFailures >= GeocodingService.MAX_FAILURES) {
+      this.openCircuit();
+    }
+  }
+
+  private resetCircuit(): void {
+    this.consecutiveFailures = 0;
+    this._circuitState.set('closed');
+  }
 
   getCurrentPosition(): Promise<GeolocationPosition> {
     if (!('geolocation' in navigator)) {
@@ -89,6 +127,10 @@ export class GeocodingService {
     const cached = this.geocodeCache.get(cacheKey);
     if (cached) return cached;
 
+    if (this.isCircuitOpen()) {
+      throw new Error(GEOCODE_CIRCUIT_OPEN_MSG);
+    }
+
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=zh-TW&addressdetails=1`;
     let data: NominatimResponse;
     try {
@@ -104,8 +146,16 @@ export class GeocodingService {
       );
     } catch (error) {
       console.error('Geocoding error:', error);
+      if (error instanceof HttpErrorResponse) {
+        if (error.status === 429 || error.status === 503) {
+          this.openCircuit();
+          throw new Error(error.status === 429 ? GEOCODE_RATE_LIMITED_MSG : GEOCODE_SERVICE_UNAVAILABLE_MSG);
+        }
+      }
+      this.recordFailure();
       throw new Error('地址查詢失敗，請稍後再試。');
     }
+    this.resetCircuit();
     const a = data.address;
     let result: string | undefined;
     if (a) {
