@@ -19,7 +19,7 @@ describe('SmsPreview', () => {
   /**
    * Returns the root DOM element of the test fixture for querying rendered output.
    */
-  function getDom(): HTMLElement {
+  function getHostElement(): HTMLElement {
     return fixture.nativeElement as HTMLElement;
   }
 
@@ -30,13 +30,13 @@ describe('SmsPreview', () => {
 
   it('should not render when message is empty', () => {
     createComponent('');
-    expect(getDom().querySelector('.sms-preview')).toBeNull();
+    expect(getHostElement().querySelector('.sms-preview')).toBeNull();
   });
 
   it('should display the message in the sms-bubble', () => {
     const msg = '這是一則測試簡訊';
     createComponent(msg);
-    const bubble = getDom().querySelector<HTMLElement>('.sms-bubble');
+    const bubble = getHostElement().querySelector<HTMLElement>('.sms-bubble');
     expect(bubble).toBeTruthy();
     expect(bubble?.textContent?.trim()).toBe(msg);
   });
@@ -44,20 +44,20 @@ describe('SmsPreview', () => {
   it('should show character count', () => {
     const msg = '測試';
     createComponent(msg);
-    const countEl = getDom().querySelector<HTMLElement>('.sms-char-count');
+    const countEl = getHostElement().querySelector<HTMLElement>('.sms-char-count');
     expect(countEl).toBeTruthy();
     expect(countEl?.textContent?.trim()).toBe(`${msg.length} / ${SMS_CHAR_LIMIT} 字`);
   });
 
   it('should not show over-limit warning when under limit', () => {
     createComponent('短訊');
-    expect(getDom().querySelector('.sms-length-warning')).toBeNull();
+    expect(getHostElement().querySelector('.sms-length-warning')).toBeNull();
   });
 
   it('should show over-limit warning when message exceeds 70 chars', () => {
     const msg = '字'.repeat(SMS_CHAR_LIMIT + 1);
     createComponent(msg);
-    const warning = getDom().querySelector<HTMLElement>('.sms-length-warning');
+    const warning = getHostElement().querySelector<HTMLElement>('.sms-length-warning');
     expect(warning).toBeTruthy();
     expect(warning?.getAttribute('role')).toBe('alert');
   });
@@ -65,7 +65,7 @@ describe('SmsPreview', () => {
   it('should add over-limit class to char count when exceeding limit', () => {
     const msg = '字'.repeat(SMS_CHAR_LIMIT + 1);
     createComponent(msg);
-    const countEl = getDom().querySelector<HTMLElement>('.sms-char-count');
+    const countEl = getHostElement().querySelector<HTMLElement>('.sms-char-count');
     expect(countEl).toBeTruthy();
     expect(countEl?.classList.contains('over-limit')).toBe(true);
   });
@@ -74,12 +74,12 @@ describe('SmsPreview', () => {
     // Exactly 70 chars → not over limit
     createComponent('字'.repeat(SMS_CHAR_LIMIT));
     expect(fixture.componentInstance['overLimit']()).toBe(false);
-    expect(getDom().querySelector('.sms-length-warning')).toBeNull();
+    expect(getHostElement().querySelector('.sms-length-warning')).toBeNull();
 
     // 71 chars → over limit
     fixture.componentRef.setInput('message', '字'.repeat(SMS_CHAR_LIMIT + 1));
     fixture.detectChanges();
     expect(fixture.componentInstance['overLimit']()).toBe(true);
-    expect(getDom().querySelector('.sms-length-warning')).not.toBeNull();
+    expect(getHostElement().querySelector('.sms-length-warning')).not.toBeNull();
   });
 });

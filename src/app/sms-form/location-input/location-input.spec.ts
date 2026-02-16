@@ -79,7 +79,7 @@ describe('LocationInput', () => {
 
     const district = component['district']();
     expect(district).not.toBeNull();
-    expect(district!.district).toBe(District.Taipei);
+    expect(district?.district).toBe(District.Taipei);
   });
 
   it('should set district on onDistrictChange', () => {
@@ -92,8 +92,9 @@ describe('LocationInput', () => {
     fireAddressInput('臺北市信義區信義路');
     vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
 
-    const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === District.Kaohsiung)!;
-    component['onDistrictChange'](kaohsiungStation);
+    const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === District.Kaohsiung);
+    expect(kaohsiungStation).toBeDefined();
+    component['onDistrictChange'](kaohsiungStation!);
 
     expect(component.districtMismatch()).toBe(true);
   });
@@ -146,7 +147,7 @@ describe('LocationInput', () => {
 
     expect(component['address']()).toBe('臺北市信義區信義路五段7號');
     expect(component['district']()).not.toBeNull();
-    expect(component['district']()!.district).toBe(District.Taipei);
+    expect(component['district']()?.district).toBe(District.Taipei);
     expect(component['isLocating']()).toBe(false);
   });
 
@@ -160,7 +161,7 @@ describe('LocationInput', () => {
   });
 
   it('should prevent concurrent locateUser calls', async () => {
-    let resolvePosition: (value: unknown) => void;
+    let resolvePosition: ((value: unknown) => void) | undefined;
     const positionPromise = new Promise((resolve) => {
       resolvePosition = resolve;
     });
@@ -173,7 +174,7 @@ describe('LocationInput', () => {
 
     expect(mockGeocodingService.getCurrentPosition).toHaveBeenCalledTimes(1);
 
-    resolvePosition!({ coords: { latitude: 25.033, longitude: 121.565 } });
+    resolvePosition?.({ coords: { latitude: 25.033, longitude: 121.565 } });
     await firstCall;
     await secondCall;
   });
@@ -191,7 +192,7 @@ describe('LocationInput', () => {
       firePasteEvent('臺北市信義區信義路五段7號');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['district']()).not.toBeNull();
-      expect(component['district']()!.district).toBe(District.Taipei);
+      expect(component['district']()?.district).toBe(District.Taipei);
     });
 
     it('should normalize pasted address with 台灣 prefix', async () => {
@@ -229,7 +230,7 @@ describe('LocationInput', () => {
       expect(component['debounceTimer']).toBeNull();
 
       await vi.advanceTimersByTimeAsync(0);
-      expect(component['district']()!.district).toBe(District.Taichung);
+      expect(component['district']()?.district).toBe(District.Taichung);
     });
   });
 });

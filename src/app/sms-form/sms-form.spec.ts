@@ -449,15 +449,15 @@ describe('SmsForm', () => {
     });
 
     it('should include car-only violation for disabled parking space', () => {
-      getViolationInput()['violationFilter'].set('殘障');
+      getViolationInput()['violationFilter'].set('身心障礙');
       const results = getViolationInput()['filteredViolations']();
-      expect(results).toEqual(['汽車違法佔用殘障車位']);
+      expect(results).toEqual(['汽車違法佔用身心障礙者專用停車位']);
     });
 
     it('should not include car-only violations for motorcycles', () => {
       const violations = getViolationInput()['filteredViolations']();
-      expect(violations).not.toContain('機車違法佔用殘障車位');
-      expect(violations).toContain('汽車違法佔用殘障車位');
+      expect(violations).not.toContain('機車違法佔用身心障礙者專用停車位');
+      expect(violations).toContain('汽車違法佔用身心障礙者專用停車位');
     });
   });
 

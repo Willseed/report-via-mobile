@@ -32,7 +32,7 @@ const VIOLATION_DESCRIPTIONS = [
 
 const CAR_ONLY_DESCRIPTIONS = [
   '違法佔用孕婦及育有六歲以下兒童者停車位',
-  '違法佔用殘障車位',
+  '違法佔用身心障礙者專用停車位',
   '佔用機車停車位',
 ];
 
