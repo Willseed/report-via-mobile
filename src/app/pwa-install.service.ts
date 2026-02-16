@@ -1,7 +1,7 @@
 import { DestroyRef, inject, Injectable, NgZone, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { fromEvent } from 'rxjs';
+import { fromEvent, take } from 'rxjs';
 import { ZH_TW } from './i18n';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -28,7 +28,7 @@ export class PwaInstallService {
             const snackBarRef = this.snackBar.open(ZH_TW.pwa.installPrompt, ZH_TW.pwa.installAction, {
               duration: 8000,
             });
-            snackBarRef.onAction().subscribe(() => void this.promptInstall());
+            snackBarRef.onAction().pipe(take(1)).subscribe(() => void this.promptInstall());
           });
         });
     });
