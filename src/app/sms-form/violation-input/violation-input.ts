@@ -33,7 +33,7 @@ const VIOLATION_DESCRIPTIONS = [
 const CAR_ONLY_DESCRIPTIONS = [
   '違法佔用孕婦及育有六歲以下兒童者停車位',
   '違法佔用殘障車位',
-  '佔用機車格',
+  '佔用機車停車位',
 ];
 
 const OTHER_VIOLATIONS = [
@@ -113,10 +113,10 @@ export class ViolationInput {
     const target = event.target as EventTarget & { value: string };
     const value = target.value;
     this.violationForm.violation().value.set(value);
-    this.violation.set(value);
 
     if (this.filterDebounceTimer) clearTimeout(this.filterDebounceTimer);
     this.filterDebounceTimer = setTimeout(() => {
+      this.violation.set(value);
       this.violationFilter.set(value);
     }, VIOLATION_FILTER_DEBOUNCE_MS);
   }

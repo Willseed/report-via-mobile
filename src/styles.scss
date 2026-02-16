@@ -40,7 +40,7 @@ body {
 /* You can add global styles to this file, and also import other style files */
 
 .fade-dropdown {
-  animation: dropdown-fade-in 500ms ease-in;
+  animation: dropdown-fade-in 150ms ease-out;
 }
 
 @keyframes dropdown-fade-in {
