@@ -94,7 +94,9 @@ export class GeocodingService {
     try {
       data = await firstValueFrom(
         this.http
-          .get<NominatimResponse>(url)
+          .get<NominatimResponse>(url, {
+            headers: { 'User-Agent': 'report-via-mobile (https://tools.pylot.dev)' },
+          })
           .pipe(
             timeout(GEOCODE_REQUEST_TIMEOUT_MS),
             retry({ count: 1, delay: GEOCODE_RETRY_DELAY_MS }),

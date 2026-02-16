@@ -980,6 +980,13 @@ describe('SmsForm desktop behavior', () => {
     );
     expect(submitButton?.disabled).toBe(true);
   });
+
+  it('should render disclaimer section outside defer block', () => {
+    const details = (fixture.nativeElement as HTMLElement).querySelector('details.disclaimer');
+    expect(details).not.toBeNull();
+    const summary = details!.querySelector('summary');
+    expect(summary?.textContent).toContain('免責聲明');
+  });
 });
 
 describe('findStationByAddress', () => {

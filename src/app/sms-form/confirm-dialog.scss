@@ -1,26 +1,28 @@
-.confirm-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.5rem 0;
-
-  &:not(:last-child) {
-    border-bottom: 1px solid var(--mat-sys-outline-variant);
-  }
+.confirm-fields {
+  margin: 0;
 }
 
-.confirm-label {
+dt {
   font-size: 0.75rem;
   color: var(--mat-sys-on-surface-variant);
+  padding-top: 0.5rem;
 }
 
-.confirm-value {
+dd {
+  margin-left: 0;
   font-size: 0.9375rem;
   color: var(--mat-sys-on-surface);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
 
   &.message {
     line-height: 1.5;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+  }
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
   }
 }

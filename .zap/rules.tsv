@@ -7,7 +7,7 @@
 10021	IGNORE	X-Content-Type-Options Header Missing - Set via Cloudflare (X-Content-Type-Options: nosniff)
 10027	IGNORE	Information Disclosure - Suspicious Comments - False positives from Angular Material minified method names (e.g. _isAttachedToDom)
 10035	IGNORE	Strict-Transport-Security Header Not Set - Set via Cloudflare (max-age=63072000; includeSubDomains; preload)
-10038	IGNORE	Content Security Policy (CSP) Header Not Set - Set via Cloudflare with frame-ancestors 'none'
+10038	WARN	Content Security Policy (CSP) Header Not Set - Only frame-ancestors 'none' is set via Cloudflare; a full CSP with script-src, style-src, etc. is not yet configured
 10049	IGNORE	Storable and Cacheable Content / Non-Storable Content - Static assets use content-hash filenames for cache busting; cache-control managed by Cloudflare
 10096	IGNORE	Timestamp Disclosure - Unix
 10098	WARN	Cross-Domain Misconfiguration

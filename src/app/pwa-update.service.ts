@@ -1,7 +1,7 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { filter } from 'rxjs';
+import { filter, take } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Injectable({ providedIn: 'root' })
@@ -22,7 +22,7 @@ export class PwaUpdateService {
         const snackBarRef = this.snackBar.open('有新版本可用', '更新', {
           duration: 0,
         });
-        snackBarRef.onAction().subscribe(() => {
+        snackBarRef.onAction().pipe(take(1)).subscribe(() => {
           void this.swUpdate
             .activateUpdate()
             .then(() => { location.reload(); })

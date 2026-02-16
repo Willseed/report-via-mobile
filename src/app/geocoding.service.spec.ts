@@ -258,10 +258,10 @@ describe('GeocodingService', () => {
       vi.useRealTimers();
     });
 
-    it('should not include User-Agent header in request', async () => {
+    it('should include User-Agent header in request', async () => {
       const promise = service.reverseGeocode(25.033, 121.565);
       const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      expect(req.request.headers.has('User-Agent')).toBe(false);
+      expect(req.request.headers.get('User-Agent')).toBe('report-via-mobile (https://tools.pylot.dev)');
       req.flush({ display_name: 'test' });
       await promise;
     });
