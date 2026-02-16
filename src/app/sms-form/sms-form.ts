@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { SmsService } from '../sms.service';
 import { PoliceStation } from '../police-stations';
 import { ZH_TW } from '../i18n';
-import { ConfirmDialog, ConfirmDialogData } from './confirm-dialog';
+import type { ConfirmDialogData } from './confirm-dialog';
 import { LocationInput } from './location-input/location-input';
 import { ViolationInput } from './violation-input/violation-input';
 import { SmsPreview } from './sms-preview/sms-preview';
@@ -76,6 +76,13 @@ export class SmsForm {
       licensePlate: this.licensePlate() || undefined,
     };
 
+    let ConfirmDialog;
+    try {
+      ({ ConfirmDialog } = await import('./confirm-dialog'));
+    } catch {
+      alert(ZH_TW.smsForm.chunkLoadError);
+      return;
+    }
     const confirmed = await firstValueFrom(
       this.dialog
         .open(ConfirmDialog, { data, width: '92vw', maxWidth: '400px' })
