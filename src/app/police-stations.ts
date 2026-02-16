@@ -54,7 +54,14 @@ export const POLICE_STATIONS: readonly PoliceStation[] = [
   { district: District.Lienchiang, stationName: '連江縣警察局', phoneNumber: '0911510932' },
 ];
 
+export function normalizeAddress(raw: string): string {
+  return raw
+    .replace(/台灣|中華民國|Taiwan|ROC/gi, '')
+    .replace(/^\d{3,5}\s*/, '')
+    .trim();
+}
+
 export function findStationByAddress(address: string): PoliceStation | null {
-  const normalized = address.replace(/台/g, '臺');
-  return POLICE_STATIONS.find((s) => normalized.startsWith(s.district)) ?? null;
+  const normalized = normalizeAddress(address).replace(/台/g, '臺');
+  return POLICE_STATIONS.find((s) => normalized.includes(s.district)) ?? null;
 }

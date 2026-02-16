@@ -47,6 +47,13 @@ form {
   @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
 }
 
+.pending-preview-hint {
+  @include banner(var(--mat-sys-surface-container), var(--mat-sys-on-surface-variant));
+
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
 button[mat-flat-button] {
   margin-top: 0.5rem;
   height: 48px;

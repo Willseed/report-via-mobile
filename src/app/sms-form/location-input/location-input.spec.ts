@@ -176,4 +176,42 @@ describe('LocationInput', () => {
     await firstCall;
     await secondCall;
   });
+
+  describe('paste handling', () => {
+    function firePasteEvent(value: string): void {
+      component['address'].set(value);
+      component['addressForm'].address().value.set(value);
+      component['onAddressPaste']({
+        clipboardData: { getData: () => value },
+      } as unknown as ClipboardEvent);
+    }
+
+    it('should immediately match district on paste without debounce', async () => {
+      firePasteEvent('臺北市信義區信義路五段7號');
+      await vi.advanceTimersByTimeAsync(0);
+      expect(component['district']()).not.toBeNull();
+      expect(component['district']()!.district).toBe(District.Taipei);
+    });
+
+    it('should normalize pasted address with 台灣 prefix', async () => {
+      firePasteEvent('台灣臺中市西屯區某路');
+      await vi.advanceTimersByTimeAsync(0);
+      expect(component['address']()).toBe('臺中市西屯區某路');
+      expect(component['district']()!.district).toBe(District.Taichung);
+    });
+
+    it('should normalize pasted address with postal code', async () => {
+      firePasteEvent('242 新北市新莊區某路');
+      await vi.advanceTimersByTimeAsync(0);
+      expect(component['address']()).toBe('新北市新莊區某路');
+      expect(component['district']()!.district).toBe(District.NewTaipei);
+    });
+
+    it('should ignore paste with empty clipboard data', () => {
+      component['onAddressPaste']({
+        clipboardData: { getData: () => '' },
+      } as unknown as ClipboardEvent);
+      expect(component['district']()).toBeNull();
+    });
+  });
 });

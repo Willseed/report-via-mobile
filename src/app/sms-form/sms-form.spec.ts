@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { SmsForm, DISTRICT_SEARCH_DEBOUNCE_MS } from './sms-form';
 import { SmsService } from '../sms.service';
-import { POLICE_STATIONS, findStationByAddress } from '../police-stations';
+import { POLICE_STATIONS, findStationByAddress, normalizeAddress } from '../police-stations';
 import { GeocodingService } from '../geocoding.service';
 import { LocationInput } from './location-input/location-input';
 import {
@@ -334,6 +334,7 @@ describe('SmsForm', () => {
       const loc = getLocationInput();
       loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
       loc['address'].set('臺北市信義區信義路五段7號');
+      loc['district'].set(POLICE_STATIONS[0]);
       const vi = getViolationInput();
       vi['violationForm'].violation().value.set('汽車於紅線停車');
       vi['violation'].set('汽車於紅線停車');
@@ -355,6 +356,39 @@ describe('SmsForm', () => {
       loc['address'].set('臺北市信義區信義路五段7號');
       expect(component['composedMessage']()).toBe('');
     });
+
+    it('should return empty string when district is not set', () => {
+      const loc = getLocationInput();
+      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
+      loc['address'].set('臺北市信義區信義路五段7號');
+      const vi = getViolationInput();
+      vi['violationForm'].violation().value.set('汽車於紅線停車');
+      vi['violation'].set('汽車於紅線停車');
+      expect(component['composedMessage']()).toBe('');
+    });
+  });
+
+  describe('pendingPreview', () => {
+    beforeEach(async () => {
+      await renderDeferBlock();
+    });
+
+    it('should show pending hint when address is set but district is null', () => {
+      const loc = getLocationInput();
+      loc['address'].set('某地址');
+      expect(component['pendingPreview']()).toBe(true);
+    });
+
+    it('should not show pending hint when district is set', () => {
+      const loc = getLocationInput();
+      loc['address'].set('臺北市信義區');
+      loc['district'].set(POLICE_STATIONS[0]);
+      expect(component['pendingPreview']()).toBe(false);
+    });
+
+    it('should not show pending hint when nothing is entered', () => {
+      expect(component['pendingPreview']()).toBe(false);
+    });
   });
 
   describe('sms preview', () => {
@@ -363,6 +397,7 @@ describe('SmsForm', () => {
       const loc = getLocationInput();
       loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
       loc['address'].set('臺北市信義區信義路五段7號');
+      loc['district'].set(POLICE_STATIONS[0]);
       const vi = getViolationInput();
       vi['violationForm'].violation().value.set('汽車於紅線停車');
       vi['violation'].set('汽車於紅線停車');
@@ -396,6 +431,7 @@ describe('SmsForm', () => {
       const loc = getLocationInput();
       loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
       loc['address'].set('臺北市信義區信義路五段7號');
+      loc['district'].set(POLICE_STATIONS[0]);
       const vi = getViolationInput();
       vi['violationForm'].violation().value.set('汽車於紅線停車');
       vi['violation'].set('汽車於紅線停車');
@@ -460,6 +496,7 @@ describe('SmsForm', () => {
       const loc = getLocationInput();
       loc['addressForm'].address().value.set(longAddress);
       loc['address'].set(longAddress);
+      loc['district'].set(POLICE_STATIONS[0]);
       const vi = getViolationInput();
       vi['violationForm'].violation().value.set('汽車於紅線停車');
       vi['violation'].set('汽車於紅線停車');
@@ -470,6 +507,7 @@ describe('SmsForm', () => {
       const loc = getLocationInput();
       loc['addressForm'].address().value.set('臺北市信義路');
       loc['address'].set('臺北市信義路');
+      loc['district'].set(POLICE_STATIONS[0]);
       const vi = getViolationInput();
       vi['violationForm'].violation().value.set('汽車於紅線停車');
       vi['violation'].set('汽車於紅線停車');
@@ -588,6 +626,7 @@ describe('SmsForm', () => {
       const loc = getLocationInput();
       loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
       loc['address'].set('臺北市信義區信義路五段7號');
+      loc['district'].set(POLICE_STATIONS[0]);
       const vi = getViolationInput();
       vi['violationForm'].violation().value.set('汽車於紅線停車');
       vi['violation'].set('汽車於紅線停車');
@@ -602,6 +641,7 @@ describe('SmsForm', () => {
       const loc = getLocationInput();
       loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
       loc['address'].set('臺北市信義區信義路五段7號');
+      loc['district'].set(POLICE_STATIONS[0]);
       const vi = getViolationInput();
       vi['violationForm'].violation().value.set('汽車於紅線停車');
       vi['violation'].set('汽車於紅線停車');
@@ -686,6 +726,7 @@ describe('SmsForm', () => {
       const loc = getLocationInput();
       loc['addressForm'].address().value.set(longAddress);
       loc['address'].set(longAddress);
+      loc['district'].set(POLICE_STATIONS[0]);
       const vi = getViolationInput();
       vi['violationForm'].violation().value.set('汽車於紅線停車');
       vi['violation'].set('汽車於紅線停車');
@@ -1011,5 +1052,59 @@ describe('findStationByAddress', () => {
     const result = findStationByAddress('台東縣太麻里鄉');
     expect(result).not.toBeNull();
     expect(result?.district).toBe('臺東縣');
+  });
+
+  it('should match district anywhere in address using includes', () => {
+    const result = findStationByAddress('中華民國臺北市信義區信義路');
+    expect(result).not.toBeNull();
+    expect(result?.district).toBe('臺北市');
+  });
+
+  it('should strip 台灣 prefix before matching', () => {
+    const result = findStationByAddress('台灣台中市西屯區');
+    expect(result).not.toBeNull();
+    expect(result?.district).toBe('臺中市');
+  });
+
+  it('should strip 中華民國 prefix before matching', () => {
+    const result = findStationByAddress('中華民國高雄市前鎮區');
+    expect(result).not.toBeNull();
+    expect(result?.district).toBe('高雄市');
+  });
+
+  it('should strip postal code before matching', () => {
+    const result = findStationByAddress('242 新北市新莊區某路');
+    expect(result).not.toBeNull();
+    expect(result?.district).toBe('新北市');
+  });
+});
+
+describe('normalizeAddress', () => {
+  it('should strip 台灣', () => {
+    expect(normalizeAddress('台灣臺北市信義區')).toBe('臺北市信義區');
+  });
+
+  it('should strip 中華民國', () => {
+    expect(normalizeAddress('中華民國高雄市前鎮區')).toBe('高雄市前鎮區');
+  });
+
+  it('should strip Taiwan (case-insensitive)', () => {
+    expect(normalizeAddress('Taiwan 臺北市')).toBe('臺北市');
+  });
+
+  it('should strip ROC', () => {
+    expect(normalizeAddress('ROC臺中市')).toBe('臺中市');
+  });
+
+  it('should strip postal code at start', () => {
+    expect(normalizeAddress('242 新北市新莊區')).toBe('新北市新莊區');
+  });
+
+  it('should strip 5-digit postal code', () => {
+    expect(normalizeAddress('24205 新北市新莊區')).toBe('新北市新莊區');
+  });
+
+  it('should return trimmed string when no prefix found', () => {
+    expect(normalizeAddress('臺北市信義區')).toBe('臺北市信義區');
   });
 });
