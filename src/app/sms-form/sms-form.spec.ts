@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, DeferBlockBehavior, DeferBlockState, TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { of } from 'rxjs';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -50,6 +50,7 @@ describe('SmsForm', () => {
 
     await TestBed.configureTestingModule({
       imports: [SmsForm],
+      deferBlockBehavior: DeferBlockBehavior.Manual,
       providers: [
         { provide: SmsService, useValue: smsServiceSpy },
         { provide: GeocodingService, useValue: geocodingServiceSpy },
@@ -59,6 +60,12 @@ describe('SmsForm', () => {
 
     fixture = TestBed.createComponent(SmsForm);
     component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const deferBlocks = await fixture.getDeferBlocks();
+    for (const block of deferBlocks) {
+      await block.render(DeferBlockState.Complete);
+    }
     fixture.detectChanges();
   });
 
@@ -133,7 +140,7 @@ describe('SmsForm', () => {
   it('should open confirm dialog on valid submit', async () => {
     fillValidForm();
 
-    void component['sendSms']();
+    await component['sendSms']();
     expect(dialogSpy.open).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -623,13 +630,13 @@ describe('SmsForm', () => {
       );
     });
 
-    it('should pass licensePlate to confirm dialog when present', () => {
+    it('should pass licensePlate to confirm dialog when present', async () => {
       fillValidForm();
       const vi = getViolationInput();
       vi['violationForm'].licensePlate().value.set('XYZ9999');
       vi['licensePlate'].set('XYZ9999');
 
-      void component['sendSms']();
+      await component['sendSms']();
       expect(dialogSpy.open).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
@@ -640,10 +647,10 @@ describe('SmsForm', () => {
       );
     });
 
-    it('should not pass licensePlate to dialog when empty', () => {
+    it('should not pass licensePlate to dialog when empty', async () => {
       fillValidForm();
 
-      void component['sendSms']();
+      await component['sendSms']();
       expect(dialogSpy.open).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
@@ -939,6 +946,7 @@ describe('SmsForm desktop behavior', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SmsForm],
+      deferBlockBehavior: DeferBlockBehavior.Manual,
       providers: [
         {
           provide: SmsService,
@@ -965,6 +973,12 @@ describe('SmsForm desktop behavior', () => {
 
     fixture = TestBed.createComponent(SmsForm);
     fixture.detectChanges();
+
+    const deferBlocks = await fixture.getDeferBlocks();
+    for (const block of deferBlocks) {
+      await block.render(DeferBlockState.Complete);
+    }
+    fixture.detectChanges();
   });
 
   it('should show desktop warning when on desktop', () => {
@@ -981,7 +995,7 @@ describe('SmsForm desktop behavior', () => {
     expect(submitButton?.disabled).toBe(true);
   });
 
-  it('should render disclaimer section outside defer block', () => {
+  it('should render disclaimer section in defer block', () => {
     const details = (fixture.nativeElement as HTMLElement).querySelector('details.disclaimer');
     expect(details).not.toBeNull();
     const summary = details?.querySelector('summary');

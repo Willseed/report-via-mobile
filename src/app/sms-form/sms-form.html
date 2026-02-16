@@ -52,9 +52,13 @@
     </button>
   </form>
 
-  <details class="disclaimer">
-    <summary>{{ i18n.smsForm.disclaimerTitle }}</summary>
-    <p>{{ i18n.smsForm.disclaimerP1 }}</p>
-    <p>{{ i18n.smsForm.disclaimerP2 }}</p>
-  </details>
+  @defer (on viewport) {
+    <details class="disclaimer">
+      <summary>{{ i18n.smsForm.disclaimerTitle }}</summary>
+      <p>{{ i18n.smsForm.disclaimerP1 }}</p>
+      <p>{{ i18n.smsForm.disclaimerP2 }}</p>
+    </details>
+  } @placeholder {
+    <div class="disclaimer-placeholder" style="min-height: 2.5rem"></div>
+  }
 </main>
