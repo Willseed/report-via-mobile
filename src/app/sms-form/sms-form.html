@@ -29,6 +29,13 @@
 
       <app-sms-preview [message]="composedMessage()" />
 
+      @if (pendingPreview()) {
+        <div class="pending-preview-hint">
+          <mat-icon>info</mat-icon>
+          <span>待選擇行政區後顯示簡訊預覽…</span>
+        </div>
+      }
+
       @if (districtMismatch()) {
         <div class="district-mismatch-warning" role="alert">
           <mat-icon>warning</mat-icon>

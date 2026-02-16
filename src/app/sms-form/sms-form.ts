@@ -38,12 +38,19 @@ export class SmsForm {
     return this.locationInput()?.districtMismatch() ?? false;
   });
 
+  protected pendingPreview = computed(() => {
+    const address = this.address();
+    const violation = this.violation();
+    const station = this.district();
+    return (!!address || !!violation) && !station;
+  });
+
   protected composedMessage = computed(() => {
     const address = this.address();
     const violation = this.violation();
-    const plate = this.licensePlate();
-    if (!address || !violation) return '';
-    const plateSegment = plate ? `，車牌號碼：${plate}` : '';
+    const station = this.district();
+    if (!address || !violation || !station) return '';
+    const plateSegment = this.licensePlate() ? `，車牌號碼：${this.licensePlate()}` : '';
     return `${address}，有${violation}${plateSegment}，請派員處理`;
   });
 

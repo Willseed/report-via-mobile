@@ -16,7 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { POLICE_STATIONS, PoliceStation, findStationByAddress } from '../../police-stations';
+import { POLICE_STATIONS, PoliceStation, findStationByAddress, normalizeAddress } from '../../police-stations';
 import { GeocodingService, DEFAULT_GEOLOCATION_ERROR_MSG } from '../../geocoding.service';
 
 export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
@@ -73,6 +73,24 @@ export class LocationInput {
     this.debounceTimer = setTimeout(() => {
       this.autoSelectDistrict(value);
     }, DISTRICT_SEARCH_DEBOUNCE_MS);
+  }
+
+  protected onAddressPaste(event: ClipboardEvent): void {
+    const pasted = event.clipboardData?.getData('text') ?? '';
+    if (!pasted) return;
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+    // Let the DOM update first, then normalize and match immediately
+    queueMicrotask(() => {
+      const normalized = normalizeAddress(this.address());
+      if (normalized !== this.address()) {
+        this.addressForm.address().value.set(normalized);
+        this.address.set(normalized);
+      }
+      this.autoSelectDistrict(normalized);
+    });
   }
 
   protected onDistrictChange(station: PoliceStation): void {
