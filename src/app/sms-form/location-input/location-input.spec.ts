@@ -213,5 +213,18 @@ describe('LocationInput', () => {
       } as unknown as ClipboardEvent);
       expect(component['district']()).toBeNull();
     });
+
+    it('should cancel pending debounce timer when pasting', async () => {
+      // Start typing to trigger debounce timer
+      fireAddressInput('臺北');
+      expect(component['debounceTimer']).not.toBeNull();
+
+      // Paste before debounce fires — should cancel the timer
+      firePasteEvent('臺中市西屯區某路');
+      expect(component['debounceTimer']).toBeNull();
+
+      await vi.advanceTimersByTimeAsync(0);
+      expect(component['district']()!.district).toBe(District.Taichung);
+    });
   });
 });
