@@ -44,15 +44,15 @@ describe('normalizeAddress', () => {
 describe('findStationByAddress', () => {
   it('should find station by district name in address', () => {
     const result = findStationByAddress('臺北市信義區信義路五段7號');
-    expect(result).not.toBeNull();
-    expect(result!.district).toBe(District.Taipei);
-    expect(result!.stationName).toBe('臺北市政府警察局');
+    expect(result).toBeDefined();
+    expect(result?.district).toBe(District.Taipei);
+    expect(result?.stationName).toBe('臺北市政府警察局');
   });
 
   it('should normalize 台 to 臺 and match', () => {
     const result = findStationByAddress('台中市西區');
-    expect(result).not.toBeNull();
-    expect(result!.district).toBe(District.Taichung);
+    expect(result).toBeDefined();
+    expect(result?.district).toBe(District.Taichung);
   });
 
   it('should return null for unrecognized address', () => {
@@ -62,15 +62,15 @@ describe('findStationByAddress', () => {
   it('should match all defined districts', () => {
     for (const station of POLICE_STATIONS) {
       const result = findStationByAddress(station.district + '某路100號');
-      expect(result).not.toBeNull();
-      expect(result!.district).toBe(station.district);
+      expect(result).toBeDefined();
+      expect(result?.district).toBe(station.district);
     }
   });
 
   it('should strip postal code before matching', () => {
     const result = findStationByAddress('110 臺北市信義區');
-    expect(result).not.toBeNull();
-    expect(result!.district).toBe(District.Taipei);
+    expect(result).toBeDefined();
+    expect(result?.district).toBe(District.Taipei);
   });
 });
 
@@ -84,8 +84,8 @@ describe('StationLookupService', () => {
 
   it('should find a station by address', () => {
     const result = service.findStation('臺北市信義區信義路五段7號');
-    expect(result).not.toBeNull();
-    expect(result!.district).toBe(District.Taipei);
+    expect(result).toBeDefined();
+    expect(result?.district).toBe(District.Taipei);
   });
 
   it('should return cached result for same input', () => {
@@ -96,10 +96,10 @@ describe('StationLookupService', () => {
 
   it('should update cache when input changes', () => {
     const result1 = service.findStation('臺北市信義區');
-    expect(result1!.district).toBe(District.Taipei);
+    expect(result1?.district).toBe(District.Taipei);
 
     const result2 = service.findStation('高雄市前鎮區');
-    expect(result2!.district).toBe(District.Kaohsiung);
+    expect(result2?.district).toBe(District.Kaohsiung);
   });
 
   it('should cache null result for unrecognized address', () => {
