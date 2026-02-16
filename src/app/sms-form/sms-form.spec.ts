@@ -984,7 +984,7 @@ describe('SmsForm desktop behavior', () => {
   it('should render disclaimer section outside defer block', () => {
     const details = (fixture.nativeElement as HTMLElement).querySelector('details.disclaimer');
     expect(details).not.toBeNull();
-    const summary = details!.querySelector('summary');
+    const summary = details?.querySelector('summary');
     expect(summary?.textContent).toContain('免責聲明');
   });
 });
