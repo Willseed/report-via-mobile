@@ -49,6 +49,7 @@ export class LocationInput {
 
   protected isLocating = signal(false);
   protected locationError = signal('');
+  protected locationStatus = signal('');
   protected stations = POLICE_STATIONS;
   protected manualInputFallback = computed(() => this.geocodingService.fallbackToManualInput?.() ?? false);
 
@@ -121,8 +122,10 @@ export class LocationInput {
       this.addressForm.address().value.set(displayName);
       this.address.set(displayName);
       this.autoSelectDistrict(displayName);
+      this.locationStatus.set(`${ZH_TW.location.locateSuccess}${displayName}`);
     } catch (e) {
       this.locationError.set(e instanceof Error ? e.message : DEFAULT_GEOLOCATION_ERROR_MSG);
+      this.locationStatus.set('');
     } finally {
       this.isLocating.set(false);
     }
