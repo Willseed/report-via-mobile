@@ -197,14 +197,18 @@ describe('LocationInput', () => {
       firePasteEvent('台灣臺中市西屯區某路');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['address']()).toBe('臺中市西屯區某路');
-      expect(component['district']()!.district).toBe(District.Taichung);
+      const result = component['district']();
+      expect(result).not.toBeNull();
+      expect(result?.district).toBe(District.Taichung);
     });
 
     it('should normalize pasted address with postal code', async () => {
       firePasteEvent('242 新北市新莊區某路');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['address']()).toBe('新北市新莊區某路');
-      expect(component['district']()!.district).toBe(District.NewTaipei);
+      const result = component['district']();
+      expect(result).not.toBeNull();
+      expect(result?.district).toBe(District.NewTaipei);
     });
 
     it('should ignore paste with empty clipboard data', () => {
