@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
+import { SmsForm } from './sms-form/sms-form';
 
-export const routes: Routes = [
-  { path: '', loadComponent: () => import('./sms-form/sms-form').then((m) => m.SmsForm) },
-];
+export const routes: Routes = [{ path: '', component: SmsForm }];
