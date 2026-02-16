@@ -9,59 +9,48 @@
     </div>
   }
 
-  @defer (on idle) {
+  <div class="info-banner">
+    <mat-icon>info</mat-icon>
+    <span>發送此簡訊是免費的。</span>
+  </div>
 
-    <div class="info-banner">
-      <mat-icon>info</mat-icon>
-      <span>發送此簡訊是免費的。</span>
-    </div>
+  <form novalidate (submit)="$event.preventDefault(); sendSms()">
+    <app-location-input
+      [(address)]="address"
+      [(district)]="district"
+    />
 
-    <form novalidate (submit)="$event.preventDefault(); sendSms()">
-      <app-location-input
-        [(address)]="address"
-        [(district)]="district"
-      />
+    <app-violation-input
+      [(violation)]="violation"
+      [(licensePlate)]="licensePlate"
+    />
 
-      <app-violation-input
-        [(violation)]="violation"
-        [(licensePlate)]="licensePlate"
-      />
+    <app-sms-preview [message]="composedMessage()" />
 
-      <app-sms-preview [message]="composedMessage()" />
-
-      @if (pendingPreview()) {
-        <div class="pending-preview-hint">
-          <mat-icon>info</mat-icon>
-          <span>待選擇行政區後顯示簡訊預覽…</span>
-        </div>
-      }
-
-      @if (districtMismatch()) {
-        <div class="district-mismatch-warning" role="alert">
-          <mat-icon>warning</mat-icon>
-          <span>輸入地址與報案行政區不一致，請確認後再發送。</span>
-        </div>
-      }
-
-      <div class="notice-banner">
-        <mat-icon>gavel</mat-icon>
-        <span>報案的受理與否，最終由該轄區警察局依法審核決定。</span>
+    @if (pendingPreview()) {
+      <div class="pending-preview-hint">
+        <mat-icon>info</mat-icon>
+        <span>待選擇行政區後顯示簡訊預覽…</span>
       </div>
+    }
 
-      <button mat-flat-button type="submit" [disabled]="isDesktop() || districtMismatch()">
-        <mat-icon>send</mat-icon>
-        發送簡訊
-      </button>
-    </form>
-  } @placeholder {
-    <div class="form-skeleton" aria-hidden="true">
-      <div class="skeleton-banner"></div>
-      <div class="skeleton-field"></div>
-      <div class="skeleton-field"></div>
-      <div class="skeleton-field"></div>
-      <div class="skeleton-button"></div>
+    @if (districtMismatch()) {
+      <div class="district-mismatch-warning" role="alert">
+        <mat-icon>warning</mat-icon>
+        <span>輸入地址與報案行政區不一致，請確認後再發送。</span>
+      </div>
+    }
+
+    <div class="notice-banner">
+      <mat-icon>gavel</mat-icon>
+      <span>報案的受理與否，最終由該轄區警察局依法審核決定。</span>
     </div>
-  }
+
+    <button mat-flat-button type="submit" [disabled]="isDesktop() || districtMismatch()">
+      <mat-icon>send</mat-icon>
+      發送簡訊
+    </button>
+  </form>
 
   <details class="disclaimer">
     <summary>免責聲明</summary>

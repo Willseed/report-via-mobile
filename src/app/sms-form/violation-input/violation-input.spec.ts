@@ -5,6 +5,7 @@ import {
   ViolationInput,
   VIOLATION_MAX_LENGTH,
   LICENSE_PLATE_MAX_LENGTH,
+  VIOLATION_FILTER_DEBOUNCE_MS,
 } from './violation-input';
 
 describe('ViolationInput', () => {
@@ -41,6 +42,7 @@ describe('ViolationInput', () => {
 
   it('should update violation on input', () => {
     component['onViolationInput'](mockInputEvent('汽車於紅線停車'));
+    vi.advanceTimersByTime(VIOLATION_FILTER_DEBOUNCE_MS);
     expect(component.violation()).toBe('汽車於紅線停車');
   });
 
@@ -49,6 +51,7 @@ describe('ViolationInput', () => {
   it('should not strip < or > characters from input', () => {
     const testValue = '<測試>'; // Use safe string with angle brackets, not executable HTML
     component['onViolationInput'](mockInputEvent(testValue));
+    vi.advanceTimersByTime(VIOLATION_FILTER_DEBOUNCE_MS);
     expect(component.violation()).toBe(testValue);
     expect(component['violationForm'].violation().value()).toBe(testValue);
   });

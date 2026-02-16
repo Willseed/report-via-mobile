@@ -67,10 +67,10 @@ export class LocationInput {
   protected onAddressInput(event: Event): void {
     const value = (event.target as EventTarget & { value: string }).value;
     this.addressForm.address().value.set(value);
-    this.address.set(value);
 
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
+      this.address.set(value);
       this.autoSelectDistrict(value);
     }, DISTRICT_SEARCH_DEBOUNCE_MS);
   }

@@ -1,4 +1,4 @@
-import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { of } from 'rxjs';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -91,11 +91,6 @@ describe('SmsForm', () => {
     return { target: { value } } as unknown as Event;
   }
 
-  async function renderDeferBlock() {
-    const deferBlock = (await fixture.getDeferBlocks())[0];
-    await deferBlock.render(DeferBlockState.Complete);
-    fixture.detectChanges();
-  }
 
   function mockPendingPosition() {
     let resolvePosition!: (value: GeolocationPosition) => void;
@@ -112,12 +107,10 @@ describe('SmsForm', () => {
   });
 
   it('should have an invalid form when empty', async () => {
-    await renderDeferBlock();
     expect(getLocationInput().valid()).toBe(false);
   });
 
   it('should require district selection after touched', async () => {
-    await renderDeferBlock();
     expect(getLocationInput()['district']()).toBeNull();
     expect(getLocationInput().districtRequired()).toBe(false);
     getLocationInput().markAsTouched();
@@ -125,14 +118,12 @@ describe('SmsForm', () => {
   });
 
   it('should accept valid form values with all required fields', async () => {
-    await renderDeferBlock();
     fillValidForm();
     expect(getLocationInput().valid()).toBe(true);
     expect(getViolationInput().valid()).toBe(true);
   });
 
   it('should return district from location input', async () => {
-    await renderDeferBlock();
     expect(component['district']()).toBeNull();
 
     getLocationInput()['district'].set(POLICE_STATIONS[0]);
@@ -140,7 +131,6 @@ describe('SmsForm', () => {
   });
 
   it('should open confirm dialog on valid submit', async () => {
-    await renderDeferBlock();
     fillValidForm();
 
     void component['sendSms']();
@@ -157,7 +147,6 @@ describe('SmsForm', () => {
   });
 
   it('should call sendSms after dialog is confirmed', async () => {
-    await renderDeferBlock();
     fillValidForm();
     mockDialogResult(true);
 
@@ -170,7 +159,6 @@ describe('SmsForm', () => {
   });
 
   it('should not call sendSms when dialog is cancelled', async () => {
-    await renderDeferBlock();
     fillValidForm();
     mockDialogResult(false);
 
@@ -180,7 +168,6 @@ describe('SmsForm', () => {
   });
 
   it('should not call sendSms when dialog is dismissed (backdrop click)', async () => {
-    await renderDeferBlock();
     fillValidForm();
     mockDialogResult(undefined);
 
@@ -190,13 +177,11 @@ describe('SmsForm', () => {
   });
 
   it('should not open dialog when form is invalid', async () => {
-    await renderDeferBlock();
     void component['sendSms']();
     expect(dialogSpy.open).not.toHaveBeenCalled();
   });
 
   it('should not open dialog when district mismatches even if form is valid', async () => {
-    await renderDeferBlock();
     const loc = getLocationInput();
     loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
     loc['address'].set('臺北市信義區信義路五段7號');
@@ -211,7 +196,6 @@ describe('SmsForm', () => {
   describe('address input and auto-select district', () => {
     beforeEach(async () => {
       vi.useFakeTimers();
-      await renderDeferBlock();
     });
 
     afterEach(() => {
@@ -254,7 +238,6 @@ describe('SmsForm', () => {
 
   describe('districtMismatch', () => {
     beforeEach(async () => {
-      await renderDeferBlock();
     });
 
     it('should detect mismatch when address district differs from selected district', () => {
@@ -327,7 +310,6 @@ describe('SmsForm', () => {
 
   describe('composedMessage', () => {
     beforeEach(async () => {
-      await renderDeferBlock();
     });
 
     it('should compose message from address and violation', () => {
@@ -370,7 +352,6 @@ describe('SmsForm', () => {
 
   describe('pendingPreview', () => {
     beforeEach(async () => {
-      await renderDeferBlock();
     });
 
     it('should show pending hint when address is set but district is null', () => {
@@ -393,7 +374,6 @@ describe('SmsForm', () => {
 
   describe('sms preview', () => {
     it('should show preview when address and violation are filled', async () => {
-      await renderDeferBlock();
       const loc = getLocationInput();
       loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
       loc['address'].set('臺北市信義區信義路五段7號');
@@ -407,7 +387,6 @@ describe('SmsForm', () => {
     });
 
     it('should hide preview when address is empty', async () => {
-      await renderDeferBlock();
       const vi = getViolationInput();
       vi['violationForm'].violation().value.set('汽車於紅線停車');
       vi['violation'].set('汽車於紅線停車');
@@ -417,7 +396,6 @@ describe('SmsForm', () => {
     });
 
     it('should hide preview when violation is empty', async () => {
-      await renderDeferBlock();
       const loc = getLocationInput();
       loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
       loc['address'].set('臺北市信義區信義路五段7號');
@@ -427,7 +405,6 @@ describe('SmsForm', () => {
     });
 
     it('should display composed message in bubble', async () => {
-      await renderDeferBlock();
       const loc = getLocationInput();
       loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
       loc['address'].set('臺北市信義區信義路五段7號');
@@ -445,7 +422,6 @@ describe('SmsForm', () => {
 
   describe('filteredViolations', () => {
     beforeEach(async () => {
-      await renderDeferBlock();
     });
 
     it('should return all violations when filter is empty', () => {
@@ -487,7 +463,6 @@ describe('SmsForm', () => {
 
   describe('smsOverLimit', () => {
     beforeEach(async () => {
-      await renderDeferBlock();
     });
 
     it('should detect when message exceeds 70 characters', () => {
@@ -517,7 +492,6 @@ describe('SmsForm', () => {
 
   describe('locateUser', () => {
     beforeEach(async () => {
-      await renderDeferBlock();
     });
 
     it('should fill address and auto-select district on success', async () => {
@@ -582,7 +556,6 @@ describe('SmsForm', () => {
 
   describe('licensePlate', () => {
     beforeEach(async () => {
-      await renderDeferBlock();
     });
 
     it('should not show license plate field by default', () => {
@@ -720,7 +693,6 @@ describe('SmsForm', () => {
 
   describe('sms preview over-limit warning', () => {
     it('should show over-limit warning when message exceeds 70 chars', async () => {
-      await renderDeferBlock();
       const longAddress =
         '臺北市信義區信義路五段某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某號';
       const loc = getLocationInput();
@@ -737,7 +709,6 @@ describe('SmsForm', () => {
     });
 
     it('should not show over-limit warning when message is within limit', async () => {
-      await renderDeferBlock();
       const loc = getLocationInput();
       loc['addressForm'].address().value.set('臺北市信義路');
       loc['address'].set('臺北市信義路');
@@ -752,7 +723,6 @@ describe('SmsForm', () => {
 
   describe('onDistrictChange', () => {
     it('should update district when selection changes', async () => {
-      await renderDeferBlock();
       const loc = getLocationInput();
       loc['onDistrictChange'](POLICE_STATIONS[0]);
       expect(loc['district']()).toBe(POLICE_STATIONS[0]);
@@ -762,7 +732,6 @@ describe('SmsForm', () => {
   describe('locateUser clears pending debounce', () => {
     beforeEach(async () => {
       vi.useFakeTimers();
-      await renderDeferBlock();
     });
 
     afterEach(() => {
@@ -792,15 +761,17 @@ describe('SmsForm', () => {
 
   describe('violation input events', () => {
     beforeEach(async () => {
-      await renderDeferBlock();
     });
 
     it('should update violation model on input event', () => {
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
+      vi.useFakeTimers();
+      const violationInput = getViolationInput();
+      violationInput['violationForm'].violation().value.set('汽車於紅線停車');
       const event = { target: { value: '汽車於紅線停車' } } as unknown as Event;
-      vi['onViolationInput'](event);
-      expect(vi['violation']()).toBe('汽車於紅線停車');
+      violationInput['onViolationInput'](event);
+      vi.advanceTimersByTime(VIOLATION_FILTER_DEBOUNCE_MS);
+      expect(violationInput['violation']()).toBe('汽車於紅線停車');
+      vi.useRealTimers();
     });
 
     // This test ensures angle brackets are handled as plain text, not HTML. Use a safe string to avoid XSS warnings.
@@ -832,7 +803,6 @@ describe('SmsForm', () => {
     }
 
     beforeEach(async () => {
-      await renderDeferBlock();
     });
 
     it('should trigger onAddressInput via DOM input event', () => {
@@ -959,16 +929,7 @@ describe('SmsForm', () => {
       expect(errors.length).toBeGreaterThan(0);
     });
 
-    it('should render @defer placeholder skeleton', async () => {
-      const freshFixture = TestBed.createComponent(SmsForm);
-      freshFixture.detectChanges();
-      const skeleton = (freshFixture.nativeElement as HTMLElement).querySelector('.form-skeleton');
-      expect(skeleton).toBeTruthy();
-      const skeletonFields = (freshFixture.nativeElement as HTMLElement).querySelectorAll(
-        '.skeleton-field',
-      );
-      expect(skeletonFields.length).toBeGreaterThan(0);
-    });
+
   });
 });
 
@@ -1013,8 +974,6 @@ describe('SmsForm desktop behavior', () => {
   });
 
   it('should disable submit button when on desktop', async () => {
-    const deferBlock = (await fixture.getDeferBlocks())[0];
-    await deferBlock.render(DeferBlockState.Complete);
     fixture.detectChanges();
     const submitButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
       'button[mat-flat-button]',

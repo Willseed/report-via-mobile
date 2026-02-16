@@ -61,7 +61,13 @@ export function normalizeAddress(raw: string): string {
     .trim();
 }
 
+let lastInput: string | undefined;
+let lastResult: PoliceStation | null = null;
+
 export function findStationByAddress(address: string): PoliceStation | null {
+  if (address === lastInput) return lastResult;
+  lastInput = address;
   const normalized = normalizeAddress(address).replace(/台/g, '臺');
-  return POLICE_STATIONS.find((s) => normalized.includes(s.district)) ?? null;
+  lastResult = POLICE_STATIONS.find((s) => normalized.includes(s.district)) ?? null;
+  return lastResult;
 }

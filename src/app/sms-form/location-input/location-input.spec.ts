@@ -57,6 +57,7 @@ describe('LocationInput', () => {
 
   it('should update address on input event', () => {
     fireAddressInput('測試地址');
+    vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
     expect(component['address']()).toBe('測試地址');
   });
 
