@@ -1,7 +1,6 @@
 import {
   afterNextRender,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   computed,
   DestroyRef,
@@ -72,7 +71,6 @@ export const LICENSE_PLATE_PATTERN = /^[A-Z0-9]*$/;
 })
 export class ViolationInput {
   private injector = inject(Injector);
-  private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
   private filterDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   protected readonly i18n = ZH_TW;
@@ -168,7 +166,6 @@ export class ViolationInput {
   markAsTouched(): void {
     this.violationForm.violation().markAsTouched();
     this.violationForm.licensePlate().markAsTouched();
-    queueMicrotask(() => this.cdr.detectChanges());
   }
 
   readonly valid = computed(() => this.violationForm().valid());
