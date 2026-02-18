@@ -15,15 +15,19 @@
   </div>
 
   <form novalidate (submit)="$event.preventDefault(); sendSms()">
-    <app-location-input
-      [(address)]="address"
-      [(district)]="district"
-    />
+    @defer (on immediate) {
+      <app-location-input
+        [(address)]="address"
+        [(district)]="district"
+      />
 
-    <app-violation-input
-      [(violation)]="violation"
-      [(licensePlate)]="licensePlate"
-    />
+      <app-violation-input
+        [(violation)]="violation"
+        [(licensePlate)]="licensePlate"
+      />
+    } @placeholder {
+      <div class="form-skeleton" style="min-height: 20rem"></div>
+    }
 
     <app-sms-preview [message]="composedMessage()" />
 

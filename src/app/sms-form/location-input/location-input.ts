@@ -1,6 +1,5 @@
 import {
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   computed,
   DestroyRef,
@@ -41,7 +40,6 @@ export class LocationInput {
   private geocodingService = inject(GeocodingService);
   private stationLookup = inject(StationLookupService);
   private destroyRef = inject(DestroyRef);
-  private cdr = inject(ChangeDetectorRef);
   protected readonly i18n = ZH_TW;
 
   readonly address = model('');
@@ -151,7 +149,6 @@ export class LocationInput {
   markAsTouched(): void {
     this.addressForm.address().markAsTouched();
     this.districtTouched.set(true);
-    queueMicrotask(() => this.cdr.detectChanges());
   }
 
   readonly valid = computed(() => this.addressForm().valid() && this.district() !== null);
