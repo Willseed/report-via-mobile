@@ -18,9 +18,9 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
 
 const needsLocalStorage =
   typeof globalThis.localStorage === 'undefined' ||
-  typeof globalThis.localStorage?.getItem !== 'function' ||
-  typeof globalThis.localStorage?.setItem !== 'function' ||
-  typeof globalThis.localStorage?.clear !== 'function';
+  typeof globalThis.localStorage.getItem !== 'function' ||
+  typeof globalThis.localStorage.setItem !== 'function' ||
+  typeof globalThis.localStorage.clear !== 'function';
 
 if (needsLocalStorage) {
   const store = new Map<string, string>();
@@ -53,10 +53,9 @@ if (needsLocalStorage) {
 
 const needsSessionStorage =
   typeof globalThis.sessionStorage === 'undefined' ||
-  typeof globalThis.sessionStorage?.getItem !== 'function' ||
-  typeof globalThis.sessionStorage?.setItem !== 'function' ||
-  typeof globalThis.sessionStorage?.clear !== 'function';
-
+  typeof globalThis.sessionStorage.getItem !== 'function' ||
+  typeof globalThis.sessionStorage.setItem !== 'function' ||
+  typeof globalThis.sessionStorage.clear !== 'function';
 if (needsSessionStorage) {
   const store = new Map<string, string>();
   const storage = {
