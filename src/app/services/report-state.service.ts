@@ -1,14 +1,14 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { form, maxLength, pattern, required } from '@angular/forms/signals';
-import { DEFAULT_GEOLOCATION_ERROR_MSG, GeocodingService } from './geocoding.service';
-import { StationLookupService } from './police-stations';
-import { ZH_TW } from './i18n';
+import { DEFAULT_GEOLOCATION_ERROR_MSG, GeocodingService } from '../geocoding.service';
+import { StationLookupService } from '../police-stations';
+import { ZH_TW } from '../i18n';
 import {
   ADDRESS_MAX_LENGTH,
   areStationsEqual,
   normalizeAddress,
-} from './domain/address.utils';
-import { POLICE_STATIONS, type PoliceStation } from './domain/police-stations';
+} from '../domain/address.utils';
+import { POLICE_STATIONS, type PoliceStation } from '../domain/police-stations';
 import {
   cleanLicensePlate,
   filterViolations,
@@ -16,7 +16,7 @@ import {
   LICENSE_PLATE_PATTERN,
   VIOLATION_MAX_LENGTH,
   VIOLATION_TYPES,
-} from './domain/violation.utils';
+} from '../domain/violation.utils';
 
 @Injectable({ providedIn: 'root' })
 export class ReportStateService {
@@ -232,6 +232,9 @@ export class ReportStateService {
       const displayName = await this.geocodingService.reverseGeocode(latitude, longitude);
       this.setAddress(displayName);
       this.autoSelectDistrict(displayName);
+      if (typeof navigator !== 'undefined') {
+        navigator.vibrate?.(50);
+      }
       this.locationStatusState.set(`${ZH_TW.location.locateSuccess}${displayName}`);
     } catch (e) {
       this.locationErrorState.set(e instanceof Error ? e.message : DEFAULT_GEOLOCATION_ERROR_MSG);

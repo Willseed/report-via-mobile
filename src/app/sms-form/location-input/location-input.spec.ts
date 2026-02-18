@@ -8,7 +8,7 @@ import { LocationInput, DISTRICT_SEARCH_DEBOUNCE_MS, ADDRESS_MAX_LENGTH } from '
 import { GeocodingService } from '../../geocoding.service';
 import { POLICE_STATIONS, District } from '../../police-stations';
 import { ZH_TW } from '../../i18n';
-import { ReportStateService } from '../../report-state.service';
+import { ReportStateService } from '../../services/report-state.service';
 
 describe('LocationInput', () => {
   let fixture: ComponentFixture<LocationInput>;

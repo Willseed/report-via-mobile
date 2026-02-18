@@ -9,7 +9,7 @@ import type { ConfirmDialogData } from './confirm-dialog';
 import { LocationInput } from './location-input/location-input';
 import { ViolationInput } from './violation-input/violation-input';
 import { SmsPreview } from './sms-preview/sms-preview';
-import { ReportStateService } from '../report-state.service';
+import { ReportStateService } from '../services/report-state.service';
 
 export { DISTRICT_SEARCH_DEBOUNCE_MS } from './location-input/location-input';
 export {

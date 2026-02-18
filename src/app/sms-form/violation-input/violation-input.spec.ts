@@ -7,7 +7,7 @@ import {
   LICENSE_PLATE_MAX_LENGTH,
   VIOLATION_FILTER_DEBOUNCE_MS,
 } from './violation-input';
-import { ReportStateService } from '../../report-state.service';
+import { ReportStateService } from '../../services/report-state.service';
 
 describe('ViolationInput', () => {
   let fixture: ComponentFixture<ViolationInput>;

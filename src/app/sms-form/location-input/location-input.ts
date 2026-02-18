@@ -14,7 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { type PoliceStation } from '../../domain/police-stations';
 import { ZH_TW } from '../../i18n';
-import { ReportStateService } from '../../report-state.service';
+import { ReportStateService } from '../../services/report-state.service';
 
 export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
 export { ADDRESS_MAX_LENGTH } from '../../domain/address.utils';

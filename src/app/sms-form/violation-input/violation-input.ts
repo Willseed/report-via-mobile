@@ -15,7 +15,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ZH_TW } from '../../i18n';
-import { ReportStateService } from '../../report-state.service';
+import { ReportStateService } from '../../services/report-state.service';
 import {
   LICENSE_PLATE_MAX_LENGTH,
   LICENSE_PLATE_PATTERN,

@@ -1,6 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { Platform } from '@angular/cdk/platform';
+import { ZH_TW } from './i18n';
+
+const IOS_SMS_RECOMMENDED_LIMIT = 1600;
 
 @Injectable({ providedIn: 'root' })
 export class SmsService {
@@ -8,6 +11,7 @@ export class SmsService {
   private platform = inject(Platform);
 
   sendSms(phone: string, body: string): void {
+    if (!this.isMessageLengthRecommended(body)) return;
     const link = this.generateSmsLink(phone, body);
     this.document.location.assign(link);
   }
@@ -26,5 +30,12 @@ export class SmsService {
 
   private sanitizePhone(phone: string): string {
     return phone.replace(/[^0-9+]/g, '');
+  }
+
+  private isMessageLengthRecommended(body: string): boolean {
+    if (!this.platform.IOS) return true;
+    if (body.length < IOS_SMS_RECOMMENDED_LIMIT) return true;
+    globalThis.alert?.(ZH_TW.smsForm.iosLengthWarning);
+    return false;
   }
 }
