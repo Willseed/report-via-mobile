@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   effect,
   inject,
   viewChild,
@@ -38,7 +37,6 @@ const readInputValue = (event: Event): string =>
 })
 export class LocationInput {
   private state = inject(ReportStateService);
-  private destroyRef = inject(DestroyRef);
   private districtSelect = viewChild(MatSelect);
 
   protected readonly i18n = ZH_TW;
@@ -57,8 +55,6 @@ export class LocationInput {
   readonly districtRequired = this.state.districtRequired;
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.state.clearAddressDebounce());
-
     effect(() => {
       const select = this.districtSelect();
       if (select) {
