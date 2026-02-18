@@ -61,6 +61,12 @@ describe('SmsService', () => {
       expect(link).toBe('sms:0912345678?body=Hello%20World%20%26%20Goodbye');
     });
 
+    it('should filter control characters in body', () => {
+      const service = createService({ ANDROID: true });
+      const link = service.generateSmsLink('0912345678', 'Hello\nWorld');
+      expect(link).toBe('sms:0912345678?body=Hello%20World');
+    });
+
     it('should handle empty body', () => {
       const service = createService({ ANDROID: true });
       const link = service.generateSmsLink('0912345678', '');

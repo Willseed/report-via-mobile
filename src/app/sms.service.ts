@@ -11,14 +11,15 @@ export class SmsService {
   private platform = inject(Platform);
 
   sendSms(phone: string, body: string): void {
-    if (!this.isMessageLengthRecommended(body)) return;
-    const link = this.generateSmsLink(phone, body);
+    const sanitizedBody = this.sanitizeBody(body);
+    if (!this.isMessageLengthRecommended(sanitizedBody)) return;
+    const link = this.generateSmsLink(phone, sanitizedBody);
     this.document.location.assign(link);
   }
 
   generateSmsLink(phone: string, body: string): string {
     const sanitizedPhone = this.sanitizePhone(phone);
-    const encodedBody = encodeURIComponent(body);
+    const encodedBody = encodeURIComponent(this.sanitizeBody(body));
     const separator = this.platform.IOS ? '&' : '?';
 
     return `sms:${sanitizedPhone}${separator}body=${encodedBody}`;
@@ -30,6 +31,10 @@ export class SmsService {
 
   private sanitizePhone(phone: string): string {
     return phone.replace(/[^0-9+]/g, '');
+  }
+
+  private sanitizeBody(body: string): string {
+    return body.replace(/[\u0000-\u001F\u007F]/g, ' ');
   }
 
   private isMessageLengthRecommended(body: string): boolean {

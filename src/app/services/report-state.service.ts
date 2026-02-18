@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import type { PoliceStation } from '../domain/police-stations';
 import { LocationResolverService } from './location-resolver.service';
 import { MessageComposerService } from './message-composer.service';
@@ -9,6 +9,13 @@ export class ReportStateService {
   private form = inject(ReportFormService);
   private location = inject(LocationResolverService);
   private composer = inject(MessageComposerService);
+  private destroyRef = inject(DestroyRef);
+
+  private isOnlineState = signal(navigator.onLine);
+  readonly isOnline = this.isOnlineState.asReadonly();
+
+  private handleOnline = () => this.isOnlineState.set(true);
+  private handleOffline = () => this.isOnlineState.set(false);
 
   readonly addressForm = this.form.addressForm;
   readonly violationForm = this.form.violationForm;
@@ -39,6 +46,17 @@ export class ReportStateService {
   readonly violationFormValid = this.form.violationFormValid;
 
   readonly compareStations = this.form.compareStations;
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', this.handleOnline);
+      window.addEventListener('offline', this.handleOffline);
+      this.destroyRef.onDestroy(() => {
+        window.removeEventListener('online', this.handleOnline);
+        window.removeEventListener('offline', this.handleOffline);
+      });
+    }
+  }
 
   setSelectedStation(station: PoliceStation | null): void {
     this.form.setSelectedStation(station);

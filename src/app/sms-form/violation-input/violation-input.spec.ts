@@ -8,6 +8,7 @@ import {
   VIOLATION_FILTER_DEBOUNCE_MS,
 } from './violation-input';
 import { ReportStateService } from '../../services/report-state.service';
+import { NOMINATIM_USER_AGENT } from '../../app.config';
 
 describe('ViolationInput', () => {
   let fixture: ComponentFixture<ViolationInput>;
@@ -18,7 +19,10 @@ describe('ViolationInput', () => {
     vi.useFakeTimers();
     TestBed.configureTestingModule({
       imports: [ViolationInput],
-      providers: [provideNoopAnimations()],
+      providers: [
+        provideNoopAnimations(),
+        { provide: NOMINATIM_USER_AGENT, useValue: 'report-via-mobile (https://tools.pylot.dev)' },
+      ],
     });
     fixture = TestBed.createComponent(ViolationInput);
     component = fixture.componentInstance;

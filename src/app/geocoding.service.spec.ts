@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { NOMINATIM_USER_AGENT } from './app.config';
 import {
   GeocodingService,
   GEOCODE_CIRCUIT_OPEN_MSG,
@@ -31,7 +32,11 @@ describe('GeocodingService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: NOMINATIM_USER_AGENT, useValue: 'report-via-mobile (https://tools.pylot.dev)' },
+      ],
     });
     service = TestBed.inject(GeocodingService);
     httpTesting = TestBed.inject(HttpTestingController);

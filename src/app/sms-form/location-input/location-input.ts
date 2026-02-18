@@ -44,6 +44,7 @@ export class LocationInput {
   protected stations = this.state.stations;
   protected manualInputFallback = this.state.manualInputFallback;
   protected isLocating = this.state.isLocating;
+  protected isOnline = this.state.isOnline;
   protected locationError = this.state.locationError;
   protected locationStatus = this.state.locationStatus;
   protected compareStations = this.state.compareStations;
