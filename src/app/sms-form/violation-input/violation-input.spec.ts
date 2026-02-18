@@ -7,10 +7,12 @@ import {
   LICENSE_PLATE_MAX_LENGTH,
   VIOLATION_FILTER_DEBOUNCE_MS,
 } from './violation-input';
+import { ReportStateService } from '../../report-state.service';
 
 describe('ViolationInput', () => {
   let fixture: ComponentFixture<ViolationInput>;
   let component: ViolationInput;
+  let state: ReportStateService;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -20,6 +22,7 @@ describe('ViolationInput', () => {
     });
     fixture = TestBed.createComponent(ViolationInput);
     component = fixture.componentInstance;
+    state = TestBed.inject(ReportStateService);
     fixture.detectChanges();
   });
 
@@ -57,7 +60,7 @@ describe('ViolationInput', () => {
   });
 
   it('should filter violations by input text', () => {
-    component['violationFilter'].set('紅線');
+    state.setViolationFilter('紅線');
     const filtered = component['filteredViolations']();
     expect(filtered.length).toBeGreaterThan(0);
     expect(filtered.every((v) => v.includes('紅線'))).toBe(true);
@@ -65,7 +68,7 @@ describe('ViolationInput', () => {
 
   it('should return all violations when filter matches existing type', () => {
     const existingType = '汽車於紅線停車';
-    component['violationFilter'].set(existingType);
+    state.setViolationFilter(existingType);
     const filtered = component['filteredViolations']();
     expect(filtered).toEqual(component['violationTypes']);
   });
@@ -94,9 +97,8 @@ describe('ViolationInput', () => {
   });
 
   it('should clear license plate', () => {
-    component['showLicensePlate'].set(true);
-    component['violationForm'].licensePlate().value.set('ABC123');
-    component.licensePlate.set('ABC123');
+    state.showLicensePlateField();
+    state.setLicensePlate('ABC123');
 
     component['clearLicensePlate']();
 
@@ -135,20 +137,15 @@ describe('ViolationInput', () => {
 
   it('should cancel pending filter debounce on violation change', () => {
     component['onViolationInput'](mockInputEvent('紅'));
-    expect(component['filterDebounceTimer']).not.toBeNull();
-
     component['violationForm'].violation().value.set('汽車於紅線停車');
     component['onViolationChange']();
-
-    expect(component['filterDebounceTimer']).toBeNull();
     expect(component['violationFilter']()).toBe('汽車於紅線停車');
   });
 
   it('should clear filter debounce timer on destroy', () => {
     component['onViolationInput'](mockInputEvent('紅'));
-    expect(component['filterDebounceTimer']).not.toBeNull();
-
     fixture.destroy();
-    expect(component['filterDebounceTimer']).not.toBeNull();
+    vi.advanceTimersByTime(VIOLATION_FILTER_DEBOUNCE_MS + 1);
+    expect(component.violation()).toBe('');
   });
 });

@@ -6,6 +6,7 @@ import { SmsForm, DISTRICT_SEARCH_DEBOUNCE_MS } from './sms-form';
 import { SmsService } from '../sms.service';
 import { POLICE_STATIONS, findStationByAddress, normalizeAddress } from '../police-stations';
 import { GeocodingService } from '../geocoding.service';
+import { ReportStateService } from '../report-state.service';
 import { LocationInput } from './location-input/location-input';
 import {
   ViolationInput,
@@ -25,6 +26,7 @@ describe('SmsForm', () => {
     reverseGeocode: ReturnType<typeof vi.fn>;
   };
   let dialogSpy: { open: ReturnType<typeof vi.fn> };
+  let state: ReportStateService;
 
   function mockDialogResult(result: boolean | undefined): void {
     dialogSpy.open.mockReturnValue({
@@ -60,6 +62,7 @@ describe('SmsForm', () => {
 
     fixture = TestBed.createComponent(SmsForm);
     component = fixture.componentInstance;
+    state = TestBed.inject(ReportStateService);
     fixture.detectChanges();
 
     const deferBlocks = await fixture.getDeferBlocks();
@@ -85,13 +88,9 @@ describe('SmsForm', () => {
   }
 
   function fillValidForm(station = POLICE_STATIONS[0]) {
-    const loc = getLocationInput();
-    loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-    loc['address'].set('臺北市信義區信義路五段7號');
-    loc['district'].set(station);
-    const vi = getViolationInput();
-    vi['violationForm'].violation().value.set('汽車於紅線停車');
-    vi['violation'].set('汽車於紅線停車');
+    state.setAddress('臺北市信義區信義路五段7號');
+    state.setSelectedStation(station);
+    state.setViolation('汽車於紅線停車');
   }
 
   function mockInputEvent(value: string): Event {
@@ -131,10 +130,10 @@ describe('SmsForm', () => {
   });
 
   it('should return district from location input', async () => {
-    expect(component['district']()).toBeNull();
+    expect(state.station()).toBeNull();
 
-    getLocationInput()['district'].set(POLICE_STATIONS[0]);
-    expect(component['district']()).toBe(POLICE_STATIONS[0]);
+    state.setSelectedStation(POLICE_STATIONS[0]);
+    expect(state.station()).toBe(POLICE_STATIONS[0]);
   });
 
   it('should open confirm dialog on valid submit', async () => {
@@ -189,12 +188,9 @@ describe('SmsForm', () => {
   });
 
   it('should not open dialog when district mismatches even if form is valid', async () => {
-    const loc = getLocationInput();
-    loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-    loc['address'].set('臺北市信義區信義路五段7號');
-    getViolationInput()['violationForm'].violation().value.set('汽車於紅線停車');
-    getViolationInput()['violation'].set('汽車於紅線停車');
-    loc['district'].set(kaohsiungStation);
+    state.setAddress('臺北市信義區信義路五段7號');
+    state.setViolation('汽車於紅線停車');
+    state.setSelectedStation(kaohsiungStation);
 
     void component['sendSms']();
     expect(dialogSpy.open).not.toHaveBeenCalled();
@@ -248,41 +244,31 @@ describe('SmsForm', () => {
     });
 
     it('should detect mismatch when address district differs from selected district', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['district'].set(kaohsiungStation);
-      expect(loc.districtMismatch()).toBe(true);
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(kaohsiungStation);
+      expect(getLocationInput().districtMismatch()).toBe(true);
     });
 
     it('should not detect mismatch when address and district match', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['district'].set(POLICE_STATIONS[0]);
-      expect(loc.districtMismatch()).toBe(false);
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(POLICE_STATIONS[0]);
+      expect(getLocationInput().districtMismatch()).toBe(false);
     });
 
     it('should not detect mismatch when address has no recognizable district', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('某個不存在的地方');
-      loc['address'].set('某個不存在的地方');
-      loc['district'].set(POLICE_STATIONS[0]);
-      expect(loc.districtMismatch()).toBe(false);
+      state.setAddress('某個不存在的地方');
+      state.setSelectedStation(POLICE_STATIONS[0]);
+      expect(getLocationInput().districtMismatch()).toBe(false);
     });
 
     it('should not detect mismatch when no district is selected', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      expect(loc.districtMismatch()).toBe(false);
+      state.setAddress('臺北市信義區信義路五段7號');
+      expect(getLocationInput().districtMismatch()).toBe(false);
     });
 
     it('should disable submit button when district mismatches', async () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['district'].set(kaohsiungStation);
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(kaohsiungStation);
       fixture.detectChanges();
       const buttonDebug = fixture.debugElement.query(
         (el) => el.name === 'button' && el.attributes['mat-flat-button'] !== undefined,
@@ -291,10 +277,8 @@ describe('SmsForm', () => {
     });
 
     it('should show warning message when district mismatches', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['district'].set(kaohsiungStation);
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(kaohsiungStation);
       fixture.detectChanges();
       const warning = (fixture.nativeElement as HTMLElement).querySelector(
         '.district-mismatch-warning',
@@ -303,10 +287,8 @@ describe('SmsForm', () => {
     });
 
     it('should not show warning when district matches', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['district'].set(POLICE_STATIONS[0]);
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(POLICE_STATIONS[0]);
       fixture.detectChanges();
       const warning = (fixture.nativeElement as HTMLElement).querySelector(
         '.district-mismatch-warning',
@@ -320,39 +302,28 @@ describe('SmsForm', () => {
     });
 
     it('should compose message from address and violation', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['district'].set(POLICE_STATIONS[0]);
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(POLICE_STATIONS[0]);
+      state.setViolation('汽車於紅線停車');
       expect(component['composedMessage']()).toBe(
         '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
       );
     });
 
     it('should return empty string when address is missing', () => {
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setViolation('汽車於紅線停車');
       expect(component['composedMessage']()).toBe('');
     });
 
     it('should return empty string when violation is missing', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(POLICE_STATIONS[0]);
       expect(component['composedMessage']()).toBe('');
     });
 
     it('should return empty string when district is not set', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setViolation('汽車於紅線停車');
       expect(component['composedMessage']()).toBe('');
     });
   });
@@ -362,15 +333,13 @@ describe('SmsForm', () => {
     });
 
     it('should show pending hint when address is set but district is null', () => {
-      const loc = getLocationInput();
-      loc['address'].set('某地址');
+      state.setAddress('某地址');
       expect(component['pendingPreview']()).toBe(true);
     });
 
     it('should not show pending hint when district is set', () => {
-      const loc = getLocationInput();
-      loc['address'].set('臺北市信義區');
-      loc['district'].set(POLICE_STATIONS[0]);
+      state.setAddress('臺北市信義區');
+      state.setSelectedStation(POLICE_STATIONS[0]);
       expect(component['pendingPreview']()).toBe(false);
     });
 
@@ -381,44 +350,32 @@ describe('SmsForm', () => {
 
   describe('sms preview', () => {
     it('should show preview when address and violation are filled', async () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['district'].set(POLICE_STATIONS[0]);
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(POLICE_STATIONS[0]);
+      state.setViolation('汽車於紅線停車');
       fixture.detectChanges();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeTruthy();
     });
 
     it('should hide preview when address is empty', async () => {
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setViolation('汽車於紅線停車');
       fixture.detectChanges();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeNull();
     });
 
     it('should hide preview when violation is empty', async () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
+      state.setAddress('臺北市信義區信義路五段7號');
       fixture.detectChanges();
       const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
       expect(preview).toBeNull();
     });
 
     it('should display composed message in bubble', async () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['district'].set(POLICE_STATIONS[0]);
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(POLICE_STATIONS[0]);
+      state.setViolation('汽車於紅線停車');
       fixture.detectChanges();
       const bubble = (fixture.nativeElement as HTMLElement).querySelector('.sms-bubble');
       expect(bubble?.textContent?.trim()).toBe(
@@ -436,7 +393,7 @@ describe('SmsForm', () => {
     });
 
     it('should filter violations by keyword', () => {
-      getViolationInput()['violationFilter'].set('紅線');
+      state.setViolationFilter('紅線');
       expect(getViolationInput()['filteredViolations']()).toEqual([
         '汽車於紅線停車',
         '機車於紅線停車',
@@ -444,19 +401,19 @@ describe('SmsForm', () => {
     });
 
     it('should filter by vehicle type', () => {
-      const vi = getViolationInput();
-      vi['violationFilter'].set('機車');
-      expect(vi['filteredViolations']().length).toBe(8);
-      expect(vi['filteredViolations']().every((v) => v.includes('機車'))).toBe(true);
+      state.setViolationFilter('機車');
+      const filtered = getViolationInput()['filteredViolations']();
+      expect(filtered.length).toBe(8);
+      expect(filtered.every((v) => v.includes('機車'))).toBe(true);
     });
 
     it('should return all violations when filter matches an exact option', () => {
-      getViolationInput()['violationFilter'].set('汽車於紅線停車');
+      state.setViolationFilter('汽車於紅線停車');
       expect(getViolationInput()['filteredViolations']().length).toBe(22);
     });
 
     it('should include car-only violation for disabled parking space', () => {
-      getViolationInput()['violationFilter'].set('身心障礙');
+      state.setViolationFilter('身心障礙');
       const results = getViolationInput()['filteredViolations']();
       expect(results).toEqual(['汽車違法佔用身心障礙者專用停車位']);
     });
@@ -475,24 +432,16 @@ describe('SmsForm', () => {
     it('should detect when message exceeds 70 characters', () => {
       const longAddress =
         '臺北市信義區信義路五段某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某號';
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set(longAddress);
-      loc['address'].set(longAddress);
-      loc['district'].set(POLICE_STATIONS[0]);
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setAddress(longAddress);
+      state.setSelectedStation(POLICE_STATIONS[0]);
+      state.setViolation('汽車於紅線停車');
       expect(component['composedMessage']().length).toBeGreaterThan(70);
     });
 
     it('should not flag when message is within limit', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義路');
-      loc['address'].set('臺北市信義路');
-      loc['district'].set(POLICE_STATIONS[0]);
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setAddress('臺北市信義路');
+      state.setSelectedStation(POLICE_STATIONS[0]);
+      state.setViolation('汽車於紅線停車');
       expect(component['composedMessage']().length).toBeLessThanOrEqual(70);
     });
   });
@@ -577,8 +526,7 @@ describe('SmsForm', () => {
     it('should hide field and clear value on clearLicensePlate', () => {
       const vi = getViolationInput();
       vi['toggleLicensePlate']();
-      vi['violationForm'].licensePlate().value.set('ABC1234');
-      vi['licensePlate'].set('ABC1234');
+      state.setLicensePlate('ABC1234');
       vi['clearLicensePlate']();
       expect(vi['showLicensePlate']()).toBe(false);
       expect(vi['violationForm'].licensePlate().value()).toBe('');
@@ -595,36 +543,26 @@ describe('SmsForm', () => {
     it('should not modify value when input is already clean uppercase', () => {
       const vi = getViolationInput();
       vi['toggleLicensePlate']();
-      vi['violationForm'].licensePlate().value.set('ABC1234');
-      vi['licensePlate'].set('ABC1234');
+      state.setLicensePlate('ABC1234');
       const event = { target: { value: 'ABC1234' } } as unknown as Event;
       vi['onLicensePlateInput'](event);
       expect(vi['violationForm'].licensePlate().value()).toBe('ABC1234');
     });
 
     it('should include plate in composed message when provided', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['district'].set(POLICE_STATIONS[0]);
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
-      vi['violationForm'].licensePlate().value.set('ABC1234');
-      vi['licensePlate'].set('ABC1234');
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(POLICE_STATIONS[0]);
+      state.setViolation('汽車於紅線停車');
+      state.setLicensePlate('ABC1234');
       expect(component['composedMessage']()).toBe(
         '臺北市信義區信義路五段7號，有汽車於紅線停車，車牌號碼：ABC1234，請派員處理',
       );
     });
 
     it('should not include plate segment when plate is empty', () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義區信義路五段7號');
-      loc['address'].set('臺北市信義區信義路五段7號');
-      loc['district'].set(POLICE_STATIONS[0]);
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setAddress('臺北市信義區信義路五段7號');
+      state.setSelectedStation(POLICE_STATIONS[0]);
+      state.setViolation('汽車於紅線停車');
       expect(component['composedMessage']()).toBe(
         '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
       );
@@ -632,9 +570,7 @@ describe('SmsForm', () => {
 
     it('should pass licensePlate to confirm dialog when present', async () => {
       fillValidForm();
-      const vi = getViolationInput();
-      vi['violationForm'].licensePlate().value.set('XYZ9999');
-      vi['licensePlate'].set('XYZ9999');
+      state.setLicensePlate('XYZ9999');
 
       await component['sendSms']();
       expect(dialogSpy.open).toHaveBeenCalledWith(
@@ -691,10 +627,8 @@ describe('SmsForm', () => {
 
     it('should keep form valid with a valid license plate', () => {
       fillValidForm();
-      const vi = getViolationInput();
-      vi['violationForm'].licensePlate().value.set('ABC1234');
-      vi['licensePlate'].set('ABC1234');
-      expect(vi.valid()).toBe(true);
+      state.setLicensePlate('ABC1234');
+      expect(getViolationInput().valid()).toBe(true);
     });
   });
 
@@ -702,13 +636,9 @@ describe('SmsForm', () => {
     it('should show over-limit warning when message exceeds 70 chars', async () => {
       const longAddress =
         '臺北市信義區信義路五段某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某號';
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set(longAddress);
-      loc['address'].set(longAddress);
-      loc['district'].set(POLICE_STATIONS[0]);
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setAddress(longAddress);
+      state.setSelectedStation(POLICE_STATIONS[0]);
+      state.setViolation('汽車於紅線停車');
       fixture.detectChanges();
       const warning = (fixture.nativeElement as HTMLElement).querySelector('.sms-length-warning');
       expect(warning).toBeTruthy();
@@ -716,12 +646,8 @@ describe('SmsForm', () => {
     });
 
     it('should not show over-limit warning when message is within limit', async () => {
-      const loc = getLocationInput();
-      loc['addressForm'].address().value.set('臺北市信義路');
-      loc['address'].set('臺北市信義路');
-      const vi = getViolationInput();
-      vi['violationForm'].violation().value.set('汽車於紅線停車');
-      vi['violation'].set('汽車於紅線停車');
+      state.setAddress('臺北市信義路');
+      state.setViolation('汽車於紅線停車');
       fixture.detectChanges();
       const warning = (fixture.nativeElement as HTMLElement).querySelector('.sms-length-warning');
       expect(warning).toBeNull();
