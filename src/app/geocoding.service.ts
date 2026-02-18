@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom, timeout, retry } from 'rxjs';
+import { NOMINATIM_USER_AGENT } from './app.config';
 import { ZH_TW } from './i18n';
 
 interface NominatimAddress {
@@ -39,6 +40,7 @@ class GeolocationError extends Error {
 @Injectable({ providedIn: 'root' })
 export class GeocodingService {
   private http = inject(HttpClient);
+  private nominatimUserAgent = inject(NOMINATIM_USER_AGENT);
   private static readonly MAX_CACHE_SIZE = 100;
   private geocodeCache = new Map<string, string>();
 
@@ -138,7 +140,7 @@ export class GeocodingService {
       data = await firstValueFrom(
         this.http
           .get<NominatimResponse>(url, {
-            headers: { 'User-Agent': 'report-via-mobile (https://tools.pylot.dev)' },
+            headers: { 'User-Agent': this.nominatimUserAgent },
           })
           .pipe(
             timeout(GEOCODE_REQUEST_TIMEOUT_MS),

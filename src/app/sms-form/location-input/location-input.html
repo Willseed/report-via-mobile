@@ -5,6 +5,13 @@
   </div>
 }
 
+@if (!isOnline()) {
+  <div class="offline-hint" role="status">
+    <mat-icon>cloud_off</mat-icon>
+    <span>{{ i18n.location.offlineHint }}</span>
+  </div>
+}
+
 <mat-form-field appearance="outline">
   <mat-label>{{ i18n.location.addressLabel }}</mat-label>
   <input
@@ -20,7 +27,7 @@
     matSuffix
     type="button"
     (click)="locateUser()"
-    [disabled]="isLocating()"
+    [disabled]="isLocating() || !isOnline()"
     [attr.aria-label]="i18n.location.locateButtonLabel"
   >
     <mat-icon [class.locating-spin]="isLocating()">my_location</mat-icon>

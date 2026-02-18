@@ -53,3 +53,7 @@ export const POLICE_STATIONS: readonly PoliceStation[] = [
   { district: District.Kinmen, stationName: '金門縣警察局', phoneNumber: '0911510931' },
   { district: District.Lienchiang, stationName: '連江縣警察局', phoneNumber: '0911510932' },
 ];
+
+export const STATION_MAP = new Map<District, PoliceStation>(
+  POLICE_STATIONS.map((station) => [station.district, station]),
+);

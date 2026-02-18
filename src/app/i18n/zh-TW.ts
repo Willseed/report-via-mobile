@@ -27,6 +27,7 @@ export const ZH_TW = {
     locateButtonLabel: '使用目前位置',
     locateSuccess: '已定位：',
     fallbackHint: '自動定位暫時無法使用，請手動輸入地址與選擇行政區。',
+    offlineHint: '目前為離線狀態，無法使用定位功能。',
   },
 
   // Violation Input
