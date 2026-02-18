@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { findStationByAddress } from './domain/address.utils';
-import { POLICE_STATIONS, type PoliceStation } from './domain/police-stations';
+import type { PoliceStation } from './domain/police-stations';
 
 export { District, POLICE_STATIONS } from './domain/police-stations';
 export type { PoliceStation } from './domain/police-stations';

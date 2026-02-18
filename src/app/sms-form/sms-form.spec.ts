@@ -6,7 +6,7 @@ import { SmsForm, DISTRICT_SEARCH_DEBOUNCE_MS } from './sms-form';
 import { SmsService } from '../sms.service';
 import { POLICE_STATIONS, findStationByAddress, normalizeAddress } from '../police-stations';
 import { GeocodingService } from '../geocoding.service';
-import { ReportStateService } from '../report-state.service';
+import { ReportStateService } from '../services/report-state.service';
 import { LocationInput } from './location-input/location-input';
 import {
   ViolationInput,
@@ -240,9 +240,6 @@ describe('SmsForm', () => {
   });
 
   describe('districtMismatch', () => {
-    beforeEach(async () => {
-    });
-
     it('should detect mismatch when address district differs from selected district', () => {
       state.setAddress('臺北市信義區信義路五段7號');
       state.setSelectedStation(kaohsiungStation);
@@ -298,9 +295,6 @@ describe('SmsForm', () => {
   });
 
   describe('composedMessage', () => {
-    beforeEach(async () => {
-    });
-
     it('should compose message from address and violation', () => {
       state.setAddress('臺北市信義區信義路五段7號');
       state.setSelectedStation(POLICE_STATIONS[0]);
@@ -329,9 +323,6 @@ describe('SmsForm', () => {
   });
 
   describe('pendingPreview', () => {
-    beforeEach(async () => {
-    });
-
     it('should show pending hint when address is set but district is null', () => {
       state.setAddress('某地址');
       expect(component['pendingPreview']()).toBe(true);
@@ -385,9 +376,6 @@ describe('SmsForm', () => {
   });
 
   describe('filteredViolations', () => {
-    beforeEach(async () => {
-    });
-
     it('should return all violations when filter is empty', () => {
       expect(getViolationInput()['filteredViolations']().length).toBe(22);
     });
@@ -426,9 +414,6 @@ describe('SmsForm', () => {
   });
 
   describe('smsOverLimit', () => {
-    beforeEach(async () => {
-    });
-
     it('should detect when message exceeds 70 characters', () => {
       const longAddress =
         '臺北市信義區信義路五段某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某號';
@@ -447,9 +432,6 @@ describe('SmsForm', () => {
   });
 
   describe('locateUser', () => {
-    beforeEach(async () => {
-    });
-
     it('should fill address and auto-select district on success', async () => {
       const mockPosition = {
         coords: { latitude: 25.033, longitude: 121.565 },
@@ -511,9 +493,6 @@ describe('SmsForm', () => {
   });
 
   describe('licensePlate', () => {
-    beforeEach(async () => {
-    });
-
     it('should not show license plate field by default', () => {
       expect(getViolationInput()['showLicensePlate']()).toBe(false);
     });
@@ -693,9 +672,6 @@ describe('SmsForm', () => {
   });
 
   describe('violation input events', () => {
-    beforeEach(async () => {
-    });
-
     it('should update violation model on input event', () => {
       vi.useFakeTimers();
       const violationInput = getViolationInput();
@@ -734,9 +710,6 @@ describe('SmsForm', () => {
       if (!el) throw new Error(`Element not found: ${selector}`);
       return el;
     }
-
-    beforeEach(async () => {
-    });
 
     it('should trigger onAddressInput via DOM input event', () => {
       vi.useFakeTimers();
