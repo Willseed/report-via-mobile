@@ -8,9 +8,14 @@
 - **Production build:** `ng build --configuration production`
 
 ### Testing
-- **Run all tests:** `npm test` or `ng test`
+- **Run all unit tests:** `npm test` or `ng test`
 - **Run single test file:** `ng test --include src/app/app.spec.ts`
-- **Run tests in watch mode:** `ng test`
+- **Run tests with coverage:** `ng test --coverage`
+- **E2E tests:** `npm run e2e` or `npm run e2e:ui` (Playwright)
+
+### Linting
+- **Lint TypeScript:** `npm run lint` (ESLint + angular-eslint)
+- **Lint styles:** `npm run lint:styles` (Stylelint)
 
 ### Other
 - **Watch mode build:** `ng build --watch --configuration development`
@@ -19,15 +24,35 @@
 
 ### Project Structure
 - **Standalone components** — No NgModules. Components declare `imports: []` directly in `@Component()`.
-- **Signals for state** — Use `signal()` and `computed()` for reactive state. Avoid RxJS subjects in components; prefer `toSignal()` for conversions.
-- **Routing** — Configured in `src/app/app.routes.ts` using standalone routing with `HashLocationStrategy` (required for GitHub Pages).
-- **Services** — Dependency injection via `inject()`. Examples: `GeocodingService` (Google Geocoding API), `SmsService` (SMS URI handling).
+- **Signals for state** — Use `signal()` and `computed()` for reactive state. Avoid RxJS subjects in components. Use `toSignal()` if bridging an Observable to a signal is needed (currently unused in the codebase).
+- **Routing** — Configured in `src/app/app.routes.ts` using `HashLocationStrategy` (required for GitHub Pages). `SmsForm` is loaded directly. `ConfirmDialog` is lazy-loaded at call-site via dynamic `import()`.
+- **Services** — Dependency injection via `inject()`.
 - **Material 3** — Angular Material components with CSS custom properties theming.
+- **i18n** — All user-facing strings live in `src/app/i18n/zh-TW.ts`; import `ZH_TW` where needed.
+
+### Component Tree
+```
+App (app.ts)
+├── ThemeToggle (theme-toggle/)
+└── RouterOutlet → SmsForm (sms-form/)
+    ├── LocationInput (location-input/)
+    ├── ViolationInput (violation-input/)
+    ├── SmsPreview (sms-preview/)
+    └── ConfirmDialog (confirm-dialog.ts, lazy-loaded on submit)
+```
+
+### Key Services
+- `GeocodingService` — Geolocation API + OpenStreetMap Nominatim reverse geocoding; includes circuit breaker, retry logic, and LRU cache
+- `SmsService` — SMS URI generation (`sms:` scheme), Android/iOS handling, desktop detection
+- `StationLookupService` — Memoized address-to-police-station lookup (lives in `police-stations.ts`)
+- `ThemeService` — Light/dark/auto theme management, signal-based, persisted in localStorage
+- `PwaUpdateService` — Listens to `SwUpdate.versionUpdates`, notifies user via SnackBar on `VERSION_READY`
+- `PwaInstallService` — Listens to `beforeinstallprompt`, guides install via SnackBar
 
 ### Data Flow
 - Components use standalone `imports` array instead of module declarations.
-- Services are injected using `inject()` in component constructors.
-- State flows through signals and computed properties, not observables (except for async data conversions via `toSignal()`).
+- Services are injected using `inject()` in component constructors or class bodies.
+- State flows through signals and computed properties. Async data (e.g., geocoding) uses `Promise` via `firstValueFrom()`, not Observables directly in components.
 
 ## Design Principles
 
@@ -62,17 +87,21 @@
 
 ### Localization
 - **UI text:** All user-facing strings must be in Traditional Chinese (zh_TW)
-- **Avoid:** Hard-coded English labels in templates
+- **Where to add strings:** `src/app/i18n/zh-TW.ts` — import via `import { ZH_TW } from './i18n'` (adjust relative path based on file depth)
+- **Avoid:** Hard-coded Chinese or English labels in templates
 
 ### Bundle Size
-- **Production warning:** 500kB
+- **Production warning:** 750kB
 - **Production error:** 1MB
 - **Component style warning:** 4kB
 - **Component style error:** 8kB
 
+### Package Manager
+- **Use `npm`** (npm@11.x, Node 24); do not use yarn or pnpm
+
 ## Testing with Vitest
 
-Tests use **Vitest + jsdom** (not Karma/Jasmine). Files follow the pattern `*.spec.ts`.
+Unit tests use **Vitest + jsdom** (not Karma/Jasmine). Files follow the pattern `*.spec.ts`.
 
 ```typescript
 import { TestBed } from '@angular/core/testing';
@@ -86,18 +115,29 @@ describe('MyComponent', () => {
 });
 ```
 
-Key differences from Karma/Jasmine:
-- Use `describe`/`it`/`expect` (same API)
-- `TestBed` works the same
+Key patterns:
+- Use `provideNoopAnimations()` and `provideHttpClientTesting()` in TestBed providers
+- Mock browser APIs with `vi.spyOn()` / `vi.fn()` (e.g., `navigator.geolocation`, `navigator.userAgent`)
 - No Karma configuration needed
+
+## E2E Testing with Playwright
+
+E2E tests live in `e2e/` and use **Playwright**.
+
+```bash
+npm run e2e        # headless
+npm run e2e:ui     # interactive UI
+```
 
 ## Deployment
 
 - **Hosting:** GitHub Pages (static)
 - **Routing:** Hash-based (`#/route`) to work without server rewrites
-- **CI/CD:** GitHub Actions runs on push to `main` (see `.github/workflows/deploy.yml`)
-  - Runs tests before building
-  - Copies `index.html` to `404.html` for SPA routing
+- **CI/CD:** GitHub Actions workflows:
+  - `ci.yml` — Runs on PRs to `main`: unit tests + production build
+  - `deploy.yml` — Runs on push to `main`: tests → build → copy `404.html` → deploy
+  - `e2e.yml` — Playwright e2e tests
+  - `codeql.yml`, `scorecard.yml`, `zap-baseline.yml`, `zap-full.yml`, `codacy.yml` — Security & quality scans
 
 ## Special Considerations
 
@@ -107,35 +147,31 @@ Key differences from Karma/Jasmine:
 - Desktop detection via `SmsService.isDesktop()` to show limitations
 
 ### Police Station Mapping
-- Hard-coded police station data in `src/app/police-stations.ts`
-- Mapping by location (geocoding) and admin district
+- Data in `src/app/police-stations.ts`: `District` enum (22 counties/cities), `POLICE_STATIONS` array, `StationLookupService`
+- Matching by district name extracted from reverse-geocoded address
 - Update this file when adding new districts or changing station info
 
-### PWA Architecture (Angular 21 + @angular/pwa) — ⚠️ Planned, Not Yet Implemented
+### Geocoding
+- Uses `GeocodingService` to reverse-geocode GPS coordinates via **OpenStreetMap Nominatim**
+- Includes circuit breaker (3 failures → 30s cooldown), 1-retry, and LRU cache (max 100 entries)
+- No API key required; sends `User-Agent` header per Nominatim policy
+
+### PWA Architecture (`@angular/pwa`)
 
 #### Core UX & Performance
+- **Offline-First**: App Shell is available offline — never a blank page.
+- **Installability**: `PwaInstallService` listens to `beforeinstallprompt`; shows SnackBar install prompt (not on first load).
+- **iOS Compatibility**: Apple Touch Icons, `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-capable` configured in `index.html`.
 
-- **Offline-First**: The application must display the App Shell when offline — never a blank page.
-- **Installability**: Never prompt for installation on first load. Design a guided UI (e.g., a settings page or contextual banner) to trigger the install flow.
-- **iOS Compatibility**: Supplement the Web App Manifest for Safari gaps — configure `apple-mobile-web-app-status-bar-style`, provide Apple Touch Icons, and handle back-button UI within the standalone experience.
-
-#### Technical Implementation (`@angular/pwa`)
-
+#### Technical Implementation
 - **`ngsw-config.json` — AssetGroups**:
-  - Core resources (`index.html`, `main.js`, CSS) must use `installMode: 'prefetch'`.
-  - Non-core resources (lazy-loaded modules, images) must use `installMode: 'lazy'`.
+  - Core resources (`index.html`, JS, CSS): `installMode: 'prefetch'`
+  - Images/fonts: `installMode: 'lazy'`, `updateMode: 'prefetch'`
 - **`ngsw-config.json` — DataGroups**:
-  - Frequently changing data (API responses) must use the `freshness` strategy (Network First).
-  - Static or rarely changing content must use the `performance` strategy (Cache First).
+  - Nominatim API (`nominatim-api`): `strategy: 'freshness'`, max 50 entries, 1d TTL, 5s timeout
 - **Version Updates (`SwUpdate`)**:
   - **Do NOT** silently update or force-reload the page.
-  - **Must** listen to `versionUpdates` events and notify users via a non-intrusive UI (SnackBar/Toast) with an explicit button to call `activateUpdate()`.
+  - `PwaUpdateService` listens to `versionUpdates`, shows SnackBar with explicit button calling `activateUpdate()`.
 
-#### Deployment & CI/CD (GitHub Actions)
-
-- **Cache Considerations**: GitHub Pages does not support custom HTTP headers. Rely on content-hash filenames (Angular default with `outputHashing: 'all'`) for cache busting. For `ngsw.json`, consider using a query parameter (e.g., `?v=<timestamp>`) if stale manifest issues occur.
-
-### Google Geocoding
-- Uses `GeocodingService` to reverse-geocode GPS coordinates to addresses
-- API key should be in environment config (check `src/environments/`)
-- Errors handled with user-facing feedback signals
+#### Deployment & CI/CD
+- GitHub Pages does not support custom HTTP headers. Rely on content-hash filenames (`outputHashing: 'all'`) for cache busting.
