@@ -1,18 +1,22 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import { SmsService } from '../sms.service';
-import { PoliceStation } from '../police-stations';
 import { ZH_TW } from '../i18n';
 import type { ConfirmDialogData } from './confirm-dialog';
 import { LocationInput } from './location-input/location-input';
 import { ViolationInput } from './violation-input/violation-input';
 import { SmsPreview } from './sms-preview/sms-preview';
+import { ReportStateService } from '../report-state.service';
 
-export { DISTRICT_SEARCH_DEBOUNCE_MS, ADDRESS_MAX_LENGTH } from './location-input/location-input';
-export { VIOLATION_MAX_LENGTH, LICENSE_PLATE_MAX_LENGTH, LICENSE_PLATE_PATTERN } from './violation-input/violation-input';
+export { DISTRICT_SEARCH_DEBOUNCE_MS } from './location-input/location-input';
+export {
+  VIOLATION_MAX_LENGTH,
+  LICENSE_PLATE_MAX_LENGTH,
+  LICENSE_PLATE_PATTERN,
+} from './violation-input/violation-input';
 
 @Component({
   selector: 'app-sms-form',
@@ -24,37 +28,16 @@ export { VIOLATION_MAX_LENGTH, LICENSE_PLATE_MAX_LENGTH, LICENSE_PLATE_PATTERN }
 export class SmsForm {
   private smsService = inject(SmsService);
   private dialog = inject(MatDialog);
+  private state = inject(ReportStateService);
   protected readonly i18n = ZH_TW;
 
   private locationInput = viewChild(LocationInput);
   private violationInput = viewChild(ViolationInput);
 
   protected isDesktop = signal(this.smsService.isDesktop());
-
-  protected address = signal('');
-  protected district = signal<PoliceStation | null>(null);
-  protected violation = signal('');
-  protected licensePlate = signal('');
-
-  protected districtMismatch = computed(() => {
-    return this.locationInput()?.districtMismatch() ?? false;
-  });
-
-  protected pendingPreview = computed(() => {
-    const address = this.address();
-    const violation = this.violation();
-    const station = this.district();
-    return (!!address || !!violation) && !station;
-  });
-
-  protected composedMessage = computed(() => {
-    const address = this.address();
-    const violation = this.violation();
-    const station = this.district();
-    if (!address || !violation || !station) return '';
-    const plateSegment = this.licensePlate() ? `${ZH_TW.smsMessage.platePrefix}${this.licensePlate()}` : '';
-    return `${address}，有${violation}${plateSegment}，請派員處理`;
-  });
+  protected composedMessage = this.state.composedMessage;
+  protected pendingPreview = this.state.pendingPreview;
+  protected districtMismatch = this.state.districtMismatch;
 
   protected async sendSms(): Promise<void> {
     const location = this.locationInput();
@@ -66,14 +49,14 @@ export class SmsForm {
       return;
     }
 
-    const station = this.district();
+    const station = this.state.station();
     if (!station) return;
 
     const data: ConfirmDialogData = {
       stationName: station.stationName,
       phoneNumber: station.phoneNumber,
       message: this.composedMessage(),
-      licensePlate: this.licensePlate() || undefined,
+      licensePlate: this.state.licensePlate() || undefined,
     };
 
     let ConfirmDialog;

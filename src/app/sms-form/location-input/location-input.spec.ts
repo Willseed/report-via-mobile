@@ -8,10 +8,12 @@ import { LocationInput, DISTRICT_SEARCH_DEBOUNCE_MS, ADDRESS_MAX_LENGTH } from '
 import { GeocodingService } from '../../geocoding.service';
 import { POLICE_STATIONS, District } from '../../police-stations';
 import { ZH_TW } from '../../i18n';
+import { ReportStateService } from '../../report-state.service';
 
 describe('LocationInput', () => {
   let fixture: ComponentFixture<LocationInput>;
   let component: LocationInput;
+  let state: ReportStateService;
   let mockGeocodingService: {
     getCurrentPosition: ReturnType<typeof vi.fn>;
     reverseGeocode: ReturnType<typeof vi.fn>;
@@ -39,6 +41,7 @@ describe('LocationInput', () => {
 
     fixture = TestBed.createComponent(LocationInput);
     component = fixture.componentInstance;
+    state = TestBed.inject(ReportStateService);
     fixture.detectChanges();
   });
 
@@ -107,7 +110,7 @@ describe('LocationInput', () => {
     fireAddressInput('臺北市信義區信義路');
     vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
     // Reset district to null
-    component['district'].set(null);
+    state.setSelectedStation(null);
 
     expect(component.districtMismatch()).toBe(false);
   });
@@ -185,8 +188,7 @@ describe('LocationInput', () => {
 
   describe('paste handling', () => {
     function firePasteEvent(value: string): void {
-      component['address'].set(value);
-      component['addressForm'].address().value.set(value);
+      state.setAddress(value);
       component['onAddressPaste']({
         clipboardData: { getData: () => value },
       } as unknown as ClipboardEvent);
@@ -227,14 +229,12 @@ describe('LocationInput', () => {
     it('should cancel pending debounce timer when pasting', async () => {
       // Start typing to trigger debounce timer
       fireAddressInput('臺北');
-      expect(component['debounceTimer']).not.toBeNull();
-
       // Paste before debounce fires — should cancel the timer
       firePasteEvent('臺中市西屯區某路');
-      expect(component['debounceTimer']).toBeNull();
-
       await vi.advanceTimersByTimeAsync(0);
       expect(component['district']()?.district).toBe(District.Taichung);
+      vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS + 50);
+      expect(component['address']()).toBe('臺中市西屯區某路');
     });
   });
 

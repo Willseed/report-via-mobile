@@ -1,26 +1,26 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   DestroyRef,
   effect,
   inject,
-  model,
-  signal,
   viewChild,
 } from '@angular/core';
-import { form, FormField, required, maxLength } from '@angular/forms/signals';
+import { FormField } from '@angular/forms/signals';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { POLICE_STATIONS, PoliceStation, normalizeAddress, StationLookupService } from '../../police-stations';
-import { GeocodingService, DEFAULT_GEOLOCATION_ERROR_MSG } from '../../geocoding.service';
+import { type PoliceStation } from '../../domain/police-stations';
 import { ZH_TW } from '../../i18n';
+import { ReportStateService } from '../../report-state.service';
 
 export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
-export const ADDRESS_MAX_LENGTH = 100;
+export { ADDRESS_MAX_LENGTH } from '../../domain/address.utils';
+
+const readInputValue = (event: Event): string =>
+  (event.target as EventTarget & { value: string }).value;
 
 @Component({
   selector: 'app-location-input',
@@ -37,105 +37,27 @@ export const ADDRESS_MAX_LENGTH = 100;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LocationInput {
-  private geocodingService = inject(GeocodingService);
-  private stationLookup = inject(StationLookupService);
+  private state = inject(ReportStateService);
   private destroyRef = inject(DestroyRef);
-  protected readonly i18n = ZH_TW;
-
-  readonly address = model('');
-  readonly district = model<PoliceStation | null>(null);
-
-  protected isLocating = signal(false);
-  protected locationError = signal('');
-  protected locationStatus = signal('');
-  protected stations = POLICE_STATIONS;
-  protected manualInputFallback = computed(() => this.geocodingService.fallbackToManualInput?.() ?? false);
-
-  private addressModel = signal({ address: '' });
-  protected addressForm = form(this.addressModel, (schema) => {
-    required(schema.address, { message: ZH_TW.location.addressRequired });
-    maxLength(schema.address, ADDRESS_MAX_LENGTH, { message: ZH_TW.location.addressMaxLength });
-  });
-
-  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-  readonly districtMismatch = computed(() => {
-    const address = this.address();
-    const selected = this.district();
-    const stationFromAddress = this.stationLookup.findStation(address);
-    if (!stationFromAddress || !selected) return false;
-    return stationFromAddress.district !== selected.district;
-  });
-
-  protected onAddressInput(event: Event): void {
-    const value = (event.target as EventTarget & { value: string }).value;
-    this.addressForm.address().value.set(value);
-
-    if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => {
-      this.address.set(value);
-      this.autoSelectDistrict(value);
-    }, DISTRICT_SEARCH_DEBOUNCE_MS);
-  }
-
-  protected onAddressPaste(event: ClipboardEvent): void {
-    const pasted = event.clipboardData?.getData('text') ?? '';
-    if (!pasted) return;
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-      this.debounceTimer = null;
-    }
-    // Let the DOM update first, then normalize and match immediately
-    queueMicrotask(() => {
-      const normalized = normalizeAddress(this.address());
-      if (normalized !== this.address()) {
-        this.addressForm.address().value.set(normalized);
-        this.address.set(normalized);
-      }
-      this.autoSelectDistrict(normalized);
-    });
-  }
-
-  protected onDistrictChange(station: PoliceStation): void {
-    this.district.set(station);
-  }
-
-  protected compareStations(a: PoliceStation | null, b: PoliceStation | null): boolean {
-    if (!a || !b) return a === b;
-    return a.district === b.district && a.phoneNumber === b.phoneNumber;
-  }
-
-  protected async locateUser(): Promise<void> {
-    if (this.isLocating()) return;
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-      this.debounceTimer = null;
-    }
-    this.isLocating.set(true);
-    this.locationError.set('');
-    try {
-      const position = await this.geocodingService.getCurrentPosition();
-      const { latitude, longitude } = position.coords;
-      const displayName = await this.geocodingService.reverseGeocode(latitude, longitude);
-      this.addressForm.address().value.set(displayName);
-      this.address.set(displayName);
-      this.autoSelectDistrict(displayName);
-      this.locationStatus.set(`${ZH_TW.location.locateSuccess}${displayName}`);
-    } catch (e) {
-      this.locationError.set(e instanceof Error ? e.message : DEFAULT_GEOLOCATION_ERROR_MSG);
-      this.locationStatus.set('');
-    } finally {
-      this.isLocating.set(false);
-    }
-  }
-
-  private districtTouched = signal(false);
   private districtSelect = viewChild(MatSelect);
 
+  protected readonly i18n = ZH_TW;
+  protected addressForm = this.state.addressForm;
+  protected stations = this.state.stations;
+  protected manualInputFallback = this.state.manualInputFallback;
+  protected isLocating = this.state.isLocating;
+  protected locationError = this.state.locationError;
+  protected locationStatus = this.state.locationStatus;
+  protected compareStations = this.state.compareStations;
+
+  readonly address = this.state.address;
+  readonly district = this.state.station;
+  readonly districtMismatch = this.state.districtMismatch;
+  readonly valid = this.state.locationValid;
+  readonly districtRequired = this.state.districtRequired;
+
   constructor() {
-    this.destroyRef.onDestroy(() => {
-      if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    });
+    this.destroyRef.onDestroy(() => this.state.clearAddressDebounce());
 
     effect(() => {
       const select = this.districtSelect();
@@ -146,19 +68,24 @@ export class LocationInput {
     });
   }
 
-  markAsTouched(): void {
-    this.addressForm.address().markAsTouched();
-    this.districtTouched.set(true);
+  protected onAddressInput(event: Event): void {
+    this.state.handleAddressInput(readInputValue(event), DISTRICT_SEARCH_DEBOUNCE_MS);
   }
 
-  readonly valid = computed(() => this.addressForm().valid() && this.district() !== null);
+  protected onAddressPaste(event: ClipboardEvent): void {
+    const pasted = event.clipboardData?.getData('text') ?? '';
+    this.state.handleAddressPaste(pasted);
+  }
 
-  readonly districtRequired = computed(() => this.districtTouched() && this.district() === null);
+  protected onDistrictChange(station: PoliceStation): void {
+    this.state.setSelectedStation(station);
+  }
 
-  private autoSelectDistrict(address: string): void {
-    const station = this.stationLookup.findStation(address);
-    if (station) {
-      this.district.set(station);
-    }
+  protected locateUser(): Promise<void> {
+    return this.state.locateUser();
+  }
+
+  markAsTouched(): void {
+    this.state.markLocationTouched();
   }
 }
