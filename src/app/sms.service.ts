@@ -34,7 +34,7 @@ export class SmsService {
   }
 
   private sanitizeBody(body: string): string {
-    return body.replace(/[\u0000-\u001F\u007F]/g, ' ');
+    return body.replace(/\p{Cc}/gu, ' ');
   }
 
   private isMessageLengthRecommended(body: string): boolean {
