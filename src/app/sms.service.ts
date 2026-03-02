@@ -40,7 +40,7 @@ export class SmsService {
   private isMessageLengthRecommended(body: string): boolean {
     if (!this.platform.IOS) return true;
     if (body.length < IOS_SMS_RECOMMENDED_LIMIT) return true;
-    globalThis.alert?.(ZH_TW.smsForm.iosLengthWarning);
+    globalThis.alert(ZH_TW.smsForm.iosLengthWarning);
     return false;
   }
 }

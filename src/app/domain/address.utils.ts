@@ -1,11 +1,12 @@
 import { TW_ADDRESS_RULES, type AddressNormalizationRule } from '../i18n/address-normalization';
 import { STATION_MAP, type PoliceStation } from './police-stations';
 
-const DISTRICT_MATCHER = new RegExp(
-  Array.from(STATION_MAP.keys())
-    .sort((a, b) => b.length - a.length)
-    .join('|'),
-);
+const DISTRICT_PATTERN = [
+  '臺北市', '新北市', '桃園市', '臺中市', '臺南市', '高雄市', '基隆市', '新竹市', '嘉義市',
+  '新竹縣', '苗栗縣', '彰化縣', '南投縣', '雲林縣', '嘉義縣', '屏東縣', '宜蘭縣', '花蓮縣',
+  '臺東縣', '澎湖縣', '金門縣', '連江縣',
+].sort((a, b) => b.length - a.length).join('|');
+const DISTRICT_MATCHER = new RegExp(DISTRICT_PATTERN);
 
 export const ADDRESS_MAX_LENGTH = 100;
 
