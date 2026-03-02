@@ -78,7 +78,9 @@ export class LocationResolverService {
       this.formService.setAddress(displayName);
       this.autoSelectDistrict(displayName);
       if (typeof navigator !== 'undefined') {
-        navigator.vibrate?.(50);
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
       }
       this.locationStatusState.set(`${ZH_TW.location.locateSuccess}${displayName}`);
     } catch (e) {
