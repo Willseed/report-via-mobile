@@ -3,7 +3,7 @@
   position: relative;
 }
 
-:host ::ng-deep app-theme-toggle {
+:host .theme-toggle {
   position: fixed;
   top: 0.5rem;
   right: 0.5rem;
