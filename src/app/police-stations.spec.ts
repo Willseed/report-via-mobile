@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import fc from 'fast-check';
 import {
   normalizeAddress,
   findStationByAddress,
@@ -8,6 +9,22 @@ import {
   POLICE_STATIONS,
 } from './police-stations';
 import type { AddressNormalizationRule } from './i18n/address-normalization';
+
+const ADDRESS_PROPERTY_CONFIG = {
+  numRuns: 100,
+  seed: 44055101,
+};
+
+const COUNTRY_ALIASES = ['台灣', '中華民國', 'Taiwan', 'ROC'] as const;
+
+function buildVariantAddress(
+  district: District,
+  alias: (typeof COUNTRY_ALIASES)[number],
+  postalCode: number,
+): string {
+  const districtVariant = district.replaceAll('臺', '台');
+  return `${String(postalCode).padStart(3, '0')} ${alias}${districtVariant}某路100號`;
+}
 
 describe('normalizeAddress', () => {
   it('should replace 台 with 臺 using default rules', () => {
@@ -38,6 +55,32 @@ describe('normalizeAddress', () => {
 
   it('should return empty string for empty input with default rules', () => {
     expect(normalizeAddress('')).toBe('');
+  });
+
+  it('should remain idempotent under repeated normalization', () => {
+    fc.assert(
+      fc.property(fc.string({ unit: 'grapheme', maxLength: 60 }), (raw) => {
+        const normalized = normalizeAddress(raw);
+        expect(normalizeAddress(normalized)).toBe(normalized);
+      }),
+      ADDRESS_PROPERTY_CONFIG,
+    );
+  });
+
+  it('should trim postal-code and country-prefix variants consistently', () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(...POLICE_STATIONS.map((station) => station.district)),
+        fc.constantFrom(...COUNTRY_ALIASES),
+        fc.integer({ min: 0, max: 99999 }),
+        (district, alias, postalCode) => {
+          expect(normalizeAddress(buildVariantAddress(district, alias, postalCode))).toBe(
+            `${district}某路100號`,
+          );
+        },
+      ),
+      { ...ADDRESS_PROPERTY_CONFIG, seed: 44055102 },
+    );
   });
 });
 
@@ -71,6 +114,22 @@ describe('findStationByAddress', () => {
     const result = findStationByAddress('110 臺北市信義區');
     expect(result).toBeDefined();
     expect(result?.district).toBe(District.Taipei);
+  });
+
+  it('should resolve normalized address variants to the same station', () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(...POLICE_STATIONS),
+        fc.constantFrom(...COUNTRY_ALIASES),
+        fc.integer({ min: 0, max: 99999 }),
+        (station, alias, postalCode) => {
+          expect(findStationByAddress(buildVariantAddress(station.district, alias, postalCode))).toBe(
+            station,
+          );
+        },
+      ),
+      { ...ADDRESS_PROPERTY_CONFIG, seed: 44055103 },
+    );
   });
 });
 
@@ -109,5 +168,38 @@ describe('StationLookupService', () => {
     const result2 = service.findStation('unknown');
     expect(result2).toBeNull();
     expect(result1).toBe(result2); // both null, referentially same
+  });
+
+  it('should memoize successful lookups for repeated normalized variants', () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(...POLICE_STATIONS),
+        fc.constantFrom(...COUNTRY_ALIASES),
+        fc.integer({ min: 0, max: 99999 }),
+        (station, alias, postalCode) => {
+          const address = buildVariantAddress(station.district, alias, postalCode);
+
+          const first = service.findStation(address);
+          const second = service.findStation(address);
+
+          expect(first).toBe(station);
+          expect(second).toBe(first);
+        },
+      ),
+      { ...ADDRESS_PROPERTY_CONFIG, seed: 44055104 },
+    );
+  });
+
+  it('should memoize null lookups for repeated unknown inputs', () => {
+    fc.assert(
+      fc.property(fc.uuid(), (unknownAddress) => {
+        const first = service.findStation(unknownAddress);
+        const second = service.findStation(unknownAddress);
+
+        expect(first).toBeNull();
+        expect(second).toBe(first);
+      }),
+      { ...ADDRESS_PROPERTY_CONFIG, seed: 44055105 },
+    );
   });
 });

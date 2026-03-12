@@ -1,14 +1,30 @@
 import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { Platform } from '@angular/cdk/platform';
+import fc from 'fast-check';
 import { SmsService } from './sms.service';
+
+const SMS_PROPERTY_CONFIG = {
+  numRuns: 100,
+  seed: 51753101,
+};
+
+function sanitizePhoneForExpectation(phone: string): string {
+  return phone.replace(/[^0-9+]/g, '');
+}
+
+function sanitizeBodyForExpectation(body: string): string {
+  return body.replace(/\p{Cc}/gu, ' ');
+}
 
 describe('SmsService', () => {
   function createService(
     platformOverrides: Partial<Platform> = {},
     mockDocument?: { location: { assign: ReturnType<typeof import('vitest').vi.fn> } },
   ) {
+    TestBed.resetTestingModule();
+
     const mockPlatform = {
       ANDROID: false,
       IOS: false,
@@ -71,6 +87,50 @@ describe('SmsService', () => {
       const service = createService({ ANDROID: true });
       const link = service.generateSmsLink('0912345678', '');
       expect(link).toBe('sms:0912345678?body=');
+    });
+
+    it('should preserve phone sanitization invariants for Android links', () => {
+      const service = createService({ ANDROID: true });
+
+      fc.assert(
+        fc.property(
+          fc.string({ unit: 'grapheme', maxLength: 40 }),
+          fc.string({ unit: 'grapheme', maxLength: 80 }),
+          (phone, body) => {
+            const expectedPhone = sanitizePhoneForExpectation(phone);
+            const link = service.generateSmsLink(phone, body);
+            const [, remainder] = link.split('sms:');
+            const [phonePart, encodedBody] = remainder.split('?body=');
+
+            expect(phonePart).toBe(expectedPhone);
+            expect(phonePart).toMatch(/^[0-9+]*$/);
+            expect(decodeURIComponent(encodedBody)).toBe(sanitizeBodyForExpectation(body));
+          },
+        ),
+        SMS_PROPERTY_CONFIG,
+      );
+    });
+
+    it('should keep platform-specific separators deterministic', () => {
+      const androidService = createService({ ANDROID: true });
+      const iosService = createService({ IOS: true });
+
+      fc.assert(
+        fc.property(
+          fc.string({ unit: 'grapheme', maxLength: 40 }),
+          fc.string({ unit: 'grapheme', maxLength: 80 }),
+          (phone, body) => {
+            const androidLink = androidService.generateSmsLink(phone, body);
+            const iosLink = iosService.generateSmsLink(phone, body);
+
+            expect(androidLink).toContain('?body=');
+            expect(androidLink).not.toContain('&body=');
+            expect(iosLink).toContain('&body=');
+            expect(iosLink).not.toContain('?body=');
+          },
+        ),
+        { ...SMS_PROPERTY_CONFIG, seed: 51753102 },
+      );
     });
   });
 
