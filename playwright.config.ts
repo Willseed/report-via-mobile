@@ -32,7 +32,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npx ng serve --configuration production',
+    command: 'npx ng serve --configuration production --hmr=false --prebundle=false',
     url: 'http://localhost:4200',
     reuseExistingServer: !process.env['CI'],
     timeout: 120000,
