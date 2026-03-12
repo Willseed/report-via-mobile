@@ -60,6 +60,16 @@ ng build
 
 Output: `dist/report-via-mobile/browser`
 
+For local/CI bundle inspection without changing the deployed production build:
+
+```bash
+npm run build:analyze
+```
+
+This runs `ng build --configuration production,analyze`, keeps the normal production build
+source-map free, and writes the analysis-only output (including `.map` files) to
+`dist/report-via-mobile-analysis`.
+
 ## Testing
 
 ```bash

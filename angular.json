@@ -58,6 +58,16 @@
               "outputHashing": "all",
               "serviceWorker": "ngsw-config.json"
             },
+            "analyze": {
+              "outputPath": "dist/report-via-mobile-analysis",
+              "sourceMap": {
+                "scripts": true,
+                "styles": true,
+                "vendor": true,
+                "hidden": true,
+                "sourcesContent": false
+              }
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
