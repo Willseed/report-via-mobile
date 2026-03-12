@@ -377,7 +377,7 @@ describe('SmsForm', () => {
 
   describe('filteredViolations', () => {
     it('should return all violations when filter is empty', () => {
-      expect(getViolationInput()['filteredViolations']().length).toBe(25);
+      expect(getViolationInput()['filteredViolations']().length).toBe(27);
     });
 
     it('should filter violations by keyword', () => {
@@ -391,13 +391,13 @@ describe('SmsForm', () => {
     it('should filter by vehicle type', () => {
       state.setViolationFilter('機車');
       const filtered = getViolationInput()['filteredViolations']();
-      expect(filtered.length).toBe(8);
+      expect(filtered.length).toBe(9);
       expect(filtered.every((v) => v.includes('機車'))).toBe(true);
     });
 
     it('should return all violations when filter matches an exact option', () => {
       state.setViolationFilter('汽車於紅線停車');
-      expect(getViolationInput()['filteredViolations']().length).toBe(25);
+      expect(getViolationInput()['filteredViolations']().length).toBe(27);
     });
 
     it('should include car-only violation for disabled parking space', () => {
@@ -410,6 +410,14 @@ describe('SmsForm', () => {
       const violations = getViolationInput()['filteredViolations']();
       expect(violations).not.toContain('機車違法佔用身心障礙者專用停車位');
       expect(violations).toContain('汽車違法佔用身心障礙者專用停車位');
+    });
+
+    it('should include the shared sidewalk and crosswalk temporary parking violation', () => {
+      state.setViolationFilter('行人穿越道');
+      expect(getViolationInput()['filteredViolations']()).toEqual([
+        '汽車於人行道、行人穿越道違規臨停',
+        '機車於人行道、行人穿越道違規臨停',
+      ]);
     });
   });
 
