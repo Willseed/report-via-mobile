@@ -70,6 +70,14 @@ describe('ViolationInput', () => {
     expect(filtered.every((v) => v.includes('紅線'))).toBe(true);
   });
 
+  it('should include the shared sidewalk and crosswalk temporary parking violation', () => {
+    state.setViolationFilter('行人穿越道');
+    expect(component['filteredViolations']()).toEqual([
+      '汽車於人行道、行人穿越道違規臨停',
+      '機車於人行道、行人穿越道違規臨停',
+    ]);
+  });
+
   it('should return all violations when filter matches existing type', () => {
     const existingType = '汽車於紅線停車';
     state.setViolationFilter(existingType);
