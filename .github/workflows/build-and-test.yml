@@ -39,6 +39,12 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run style lint
+        run: npm run lint:styles
+
       - name: Run Tests
         run: npx ng test --coverage --coverage-reporters lcovonly --coverage-reporters text-summary
 
@@ -49,8 +55,11 @@ jobs:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: coverage/report-via-mobile/lcov.info
 
+      - name: Set reproducible build timestamp
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)" >> "$GITHUB_ENV"
+
       - name: Build
-        run: npx ng build --configuration production
+        run: npm run build -- --configuration production
 
       - name: Save Angular CLI artifacts
         if: ${{ !cancelled() }}

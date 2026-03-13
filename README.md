@@ -7,90 +7,97 @@
 ![License](https://img.shields.io/github/license/Willseed/report-via-mobile)
 ![Dependabot](https://img.shields.io/badge/dependabot-enabled-blue?logo=dependabot)
 
-行動裝置簡訊報案應用程式。使用者填寫事發地址、選擇行政區與違規事實後，自動組合簡訊內容並透過裝置原生簡訊功能（`sms:` URI scheme）發送至對應警局。
+行動裝置簡訊報案應用程式。使用者輸入事發地址或使用 GPS 定位後，應用程式會協助查找承辦警局、組合簡訊內容，並透過裝置原生簡訊功能（`sms:` URI scheme）交由使用者送出。
 
-## 專案特色
+**工具網址：** [https://tools.pylot.dev](https://tools.pylot.dev)
 
-- 無需手動輸入地址——GPS 一鍵定位自動填入
-- 無需查詢警局電話——根據地點自動對應承辦警局
-- 無需自組簡訊——APP 自動產生通順的報案內容
-- 支援行動裝置原生簡訊功能（`sms:` URI）直接發送
+## Quick links / 快速連結
 
-**工具網址：** [簡訊報案](https://tools.pylot.dev)
+| Topic | Link |
+| --- | --- |
+| Quick start | [Local development](#local-development) |
+| Contribution process | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+| Code of conduct | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) |
+| Governance | [GOVERNANCE.md](./GOVERNANCE.md) |
+| Architecture | [docs/architecture.md](./docs/architecture.md) |
+| 12-month roadmap | [docs/roadmap.md](./docs/roadmap.md) |
+| Security requirements | [docs/security-requirements.md](./docs/security-requirements.md) |
+| Assurance case | [docs/assurance-case.md](./docs/assurance-case.md) |
+| Vulnerability reporting | [SECURITY.md](./SECURITY.md) |
 
-## 功能特色
+## What the app does
 
-- **GPS 定位** — 一鍵取得目前位置，自動填入地址並帶入對應行政區
-- **行政區自動對應** — 根據地址自動選擇承辦警局與簡訊號碼
-- **違規事實篩選** — 以 autocomplete 輸入框快速篩選違規類型（汽車/機車 × 各類違規）
-- **簡訊自動組合** — 依據地址與違規事實自動產生語句通順的簡訊內容（如：「○○路100號，有機車於紅線停車，請派員處理」）
-- **即時預覽** — 填寫完成後即時顯示簡訊氣泡預覽
-- **Mobile-first** — 針對行動裝置最佳化的 UI 設計
+- **GPS 定位**：可取得目前位置並反查地址
+- **行政區／警局對應**：依地址對應承辦警局與簡訊號碼
+- **違規事實輸入**：支援快速篩選違規類型與車牌欄位
+- **簡訊內容組合**：依地址、違規事實與車牌組成報案訊息
+- **原生簡訊交接**：由使用者在裝置的 SMS App 中確認與發送
+- **PWA**：支援安裝提示、版本更新通知與基本離線能力
 
-## Tech Stack
+## Tech stack
 
-- **Framework:** Angular 21 (Standalone Components, Signals, Strict Mode)
-- **UI:** Angular Material 3 (M3)
-- **PWA:** @angular/pwa（離線支援、安裝提示、版本更新通知）
-- **Styling:** SCSS
-- **Routing:** HashLocationStrategy (GitHub Pages compatible)
-- **Testing:** Vitest + jsdom
-- **Hosting:** GitHub Pages (static)
-- **Geocoding API:** OpenStreetMap Nominatim
+- **Framework:** Angular 21 (standalone components, signals, strict mode)
+- **UI:** Angular Material 3
+- **State:** Angular signals + injectable services
+- **Testing:** Vitest + jsdom, Playwright
+- **Hosting:** GitHub Pages (static site)
+- **Geocoding:** OpenStreetMap Nominatim
 
-## 安裝環境需求
+## Local development
 
-- Node.js >= 20.19.0 (Angular 21 requirement)
-- npm >= 11.6.2
+### Requirements
 
-## Development
+- Node.js 24.x recommended (matches CI); Angular 21 minimum is Node.js 20.19+
+- npm 11.x
+
+### Start the app
 
 ```bash
 npm install
-ng serve
+npm start
 ```
 
-Open http://localhost:4200/
+Open <http://localhost:4200/>.
 
-## Build
+### Common commands
 
 ```bash
-ng build
+npm test
+npm run lint
+npm run lint:styles
+npm run e2e
+npm run build
 ```
 
-Output: `dist/report-via-mobile/browser`
+Production build output: `dist/report-via-mobile/browser`
 
-For local/CI bundle inspection without changing the deployed production build:
+For local bundle inspection without changing the deployed production build:
 
 ```bash
 npm run build:analyze
 ```
 
-This runs `ng build --configuration production,analyze`, keeps the normal production build
-source-map free, and writes the analysis-only output (including `.map` files) to
-`dist/report-via-mobile-analysis`.
+## Contribution and review
 
-## Testing
+Contributions are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
 
-```bash
-ng test
-```
+Highlights:
+
+- New functionality and bug fixes should include tests, or explain why automated tests are not practical.
+- Pull requests are expected to pass CI and receive code-owner review before merge.
+- Security-sensitive reports should **not** be filed publicly; use [SECURITY.md](./SECURITY.md).
+
+## Architecture and security notes
+
+- High-level design: [docs/architecture.md](./docs/architecture.md)
+- Security requirements and non-goals: [docs/security-requirements.md](./docs/security-requirements.md)
+- Threat model and mitigations: [docs/assurance-case.md](./docs/assurance-case.md)
+- Project direction: [docs/roadmap.md](./docs/roadmap.md)
 
 ## Deployment
 
-Deployment is automated via GitHub Actions on push to `main`. See `.github/workflows/deploy.yml`.
-
-## 貢獻方式
-
-歡迎提出 Issue 或 Pull Request。請遵循專案規範與 commit 格式（Conventional Commits，中文提交訊息）。
-
-有安全漏洞發現？請參閱 [SECURITY.md](./SECURITY.md) 進行私下回報。
+Deployment is automated from `main` via GitHub Actions. The site is served as a static build on GitHub Pages.
 
 ## License
 
-本專案採用 MIT License，詳見 LICENSE 檔案。
-
-## 相關連結
-
-- [Package Dependencies](./package.json)
-- [Security Policy](./SECURITY.md)
+This project is licensed under the MIT License. See [LICENSE](./LICENSE).

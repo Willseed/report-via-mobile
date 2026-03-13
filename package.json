@@ -4,8 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
-    "build:analyze": "ng build --configuration production,analyze",
+    "build": "node scripts/build-with-normalized-ngsw.js",
+    "normalize:ngsw": "node scripts/normalize-ngsw.js",
+    "build:analyze": "node scripts/build-with-normalized-ngsw.js --configuration production,analyze",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "e2e": "playwright test",
