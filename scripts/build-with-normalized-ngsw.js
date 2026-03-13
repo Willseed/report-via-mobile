@@ -9,6 +9,8 @@ const angularCliPath = path.resolve(workspaceRoot, 'node_modules/@angular/cli/bi
 const normalizeScriptPath = path.resolve(__dirname, 'normalize-ngsw.js');
 const buildArgs = process.argv.slice(2);
 
+process.chdir(workspaceRoot);
+
 try {
   execFileSync(process.execPath, [angularCliPath, 'build', ...buildArgs], {
     cwd: workspaceRoot,
@@ -26,9 +28,7 @@ try {
 }
 
 function resolveManifestDirectory(args) {
-  const workspace = JSON.parse(
-    fs.readFileSync(path.resolve(workspaceRoot, 'angular.json'), 'utf8'),
-  );
+  const workspace = JSON.parse(fs.readFileSync('angular.json', 'utf8'));
   const cliOptions = parseCliOptions(args);
   const projectName = resolveProjectName(workspace, cliOptions);
   const project = findNamedValue(workspace.projects, projectName);
@@ -60,12 +60,16 @@ function parseCliOptions(args) {
     positionals: [],
   };
 
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
+  const iterator = args[Symbol.iterator]();
+
+  for (const arg of iterator) {
+    const nextValue = () => {
+      const result = iterator.next();
+      return result.done ? undefined : result.value;
+    };
 
     if (arg === '--configuration' || arg === '-c') {
-      cliOptions.configuration = args[index + 1];
-      index += 1;
+      cliOptions.configuration = nextValue();
       continue;
     }
 
@@ -75,8 +79,7 @@ function parseCliOptions(args) {
     }
 
     if (arg === '--output-path' || arg === '-o') {
-      cliOptions.outputPath = args[index + 1];
-      index += 1;
+      cliOptions.outputPath = nextValue();
       continue;
     }
 
@@ -86,8 +89,7 @@ function parseCliOptions(args) {
     }
 
     if (arg === '--project') {
-      cliOptions.project = args[index + 1];
-      index += 1;
+      cliOptions.project = nextValue();
       continue;
     }
 
