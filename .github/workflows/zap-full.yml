@@ -24,6 +24,15 @@ jobs:
         with:
           node-version: "24"
           cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Restore Angular CLI artifacts
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .angular/cache
+          key: ${{ runner.os }}-angular-${{ hashFiles('package-lock.json', 'angular.json', 'ngsw-config.json', 'tsconfig*.json') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-angular-${{ hashFiles('package-lock.json', 'angular.json', 'ngsw-config.json', 'tsconfig*.json') }}-
 
       - name: Install dependencies
         run: npm ci
@@ -31,9 +40,16 @@ jobs:
       - name: Build production
         run: npx ng build --configuration production
 
+      - name: Save Angular CLI artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .angular/cache
+          key: ${{ runner.os }}-angular-${{ hashFiles('package-lock.json', 'angular.json', 'ngsw-config.json', 'tsconfig*.json') }}-${{ github.sha }}
+
       - name: Start static file server
         run: |
-          npx -y serve -s dist/report-via-mobile/browser -l tcp://0.0.0.0:4200 > /tmp/serve.log 2>&1 &
+          python3 -m http.server 4200 --directory dist/report-via-mobile/browser > /tmp/serve.log 2>&1 &
           echo $! > /tmp/serve.pid
 
       - name: Wait for server ready

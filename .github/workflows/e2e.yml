@@ -20,6 +20,23 @@ jobs:
         with:
           node-version: "24"
           cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Restore Angular CLI artifacts
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .angular/cache
+          key: ${{ runner.os }}-angular-${{ hashFiles('package-lock.json', 'angular.json', 'ngsw-config.json', 'tsconfig*.json') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-angular-${{ hashFiles('package-lock.json', 'angular.json', 'ngsw-config.json', 'tsconfig*.json') }}-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
       - name: Install dependencies
         run: npm ci
@@ -29,6 +46,13 @@ jobs:
 
       - name: Run E2E tests
         run: npm run e2e -- --project=chromium --project=mobile-chrome --project=webkit --project=mobile-safari
+
+      - name: Save Angular CLI artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .angular/cache
+          key: ${{ runner.os }}-angular-${{ hashFiles('package-lock.json', 'angular.json', 'ngsw-config.json', 'tsconfig*.json') }}-${{ github.sha }}
 
       - name: Upload test results
         if: always()
