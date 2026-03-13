@@ -27,6 +27,8 @@ This document describes the security properties the project is trying to preserv
 - Keep `package-lock.json` and dependencies under review.
 - Keep police-station contact data traceable to public, authoritative sources.
 - Review deployment, branch-protection, and repository-access settings in GitHub periodically.
+- Keep `main` branch protection aligned with the required CI, E2E, and security
+  workflows when workflow names or review policy change.
 - Update documentation when trust boundaries or security assumptions change.
 
 ## Non-goals
@@ -41,8 +43,7 @@ This project is **not** trying to provide:
 
 ## Known areas needing admin follow-up
 
-Some Silver-related controls are outside the repository content itself and need administrator action, for example:
+Some Silver-related controls are outside the repository content itself and need
+administrator action, for example:
 
-- required status checks / branch protection enforcement
-- repository access review and backup maintainers
 - platform security settings such as secret-scanning enablement

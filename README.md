@@ -84,7 +84,7 @@ Contributions are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) befo
 Highlights:
 
 - New functionality and bug fixes should include tests, or explain why automated tests are not practical.
-- Pull requests are expected to pass CI and receive code-owner review before merge.
+- Pull requests to `main` must pass the required checks and receive an approving review before merge; while `main` does not enforce `require_code_owner_reviews`, maintainers should also ensure the review satisfies the documented `CODEOWNERS` policy.
 - Security-sensitive reports should **not** be filed publicly; use [SECURITY.md](./SECURITY.md).
 
 ## Architecture and security notes

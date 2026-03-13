@@ -65,12 +65,21 @@ Each pull request should include:
 
 ## Review and merge expectations
 
-- `CODEOWNERS` currently routes repository review to `@Willseed`.
+- `CODEOWNERS` currently routes repository review to `@Willseed` and `@SayMyNameTW`.
+- `@Willseed` remains the primary repository admin / release maintainer.
 - Pull requests to `main` run CI in `.github/workflows/ci.yml`.
 - End-to-end checks also run on pull requests in `.github/workflows/e2e.yml`.
-- Maintainers should merge only after relevant checks are green and code-owner review is complete.
-- If GitHub branch protection is not enforcing those checks automatically, maintainers must follow the same rule manually.
+- GitHub `main` protection now enforces pull-request merges with one approving review,
+  dismissal of stale approvals, and the required checks `build / build`, `e2e`,
+  `Codacy Analysis`, and `分析程式碼`.
+- While `main` branch protection is not enforcing `require_code_owner_reviews`
+  automatically, maintainers should make sure the approving review also satisfies the
+  documented code-owner policy.
 
 ## Continuity note
 
-This repository currently has a single active maintainer. Review and release capacity may therefore be limited. Adding another maintainer is recommended and requires repository-admin follow-up outside this file.
+This repository now has a second documented code owner / reviewer (`@SayMyNameTW`) to
+reduce single-reviewer risk and share day-to-day review coverage. Because this is a
+personal-account repository, collaborators do not receive owner-equivalent admin control;
+owner-only recovery of branch protection, Pages settings, or repository ownership would
+require a repository transfer or ownership change rather than a repo-file update.

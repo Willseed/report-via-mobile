@@ -4,7 +4,10 @@
 
 `report-via-mobile` is currently a **maintainer-led** project. It does not have a formal steering committee or foundation-owned governance body.
 
-Today, the primary repository owner and code owner is `@Willseed`.
+Today, the primary repository owner and admin maintainer is `@Willseed`.
+Repository access also currently includes `@SayMyNameTW` with write permission, and
+`.github/CODEOWNERS` documents that account as a secondary code owner / reviewer for
+pull-request continuity.
 
 ## Roles and responsibilities
 
@@ -29,7 +32,10 @@ Contributors are expected to:
 
 ### Future maintainers
 
-Additional maintainers may be added over time. When that happens, this file and `.github/CODEOWNERS` should be updated so responsibilities are visible in-repo.
+Additional maintainers may be added over time. Review continuity is now shared by the
+documented code owners, but a second admin- or maintain-level maintainer is still not
+documented. When that changes, this file and `.github/CODEOWNERS` should be updated so
+responsibilities are visible in-repo.
 
 ## How decisions are made
 
@@ -41,16 +47,27 @@ Additional maintainers may be added over time. When that happens, this file and 
 
 - Code review should follow `CODEOWNERS` and relevant CI results.
 - Changes are expected to merge through pull requests, not undocumented direct pushes.
+- GitHub `main` protection now enforces pull-request merges with one approving review,
+  dismissal of stale approvals, and the required checks `build / build`, `e2e`,
+  `Codacy Analysis`, and `分析程式碼`.
+- While `main` branch protection is not enforcing `require_code_owner_reviews`
+  automatically, maintainers should make sure the approving review also satisfies the
+  documented code-owner policy.
 - Production deployment is automated from `main` through GitHub Actions after build and test steps complete.
 
 ## Continuity and access note
 
-This repository currently has a **single active maintainer and a single documented code owner**. That is a real continuity and resiliency limitation.
+This repository no longer has a single documented code owner:
+`.github/CODEOWNERS` now names both `@Willseed` and `@SayMyNameTW` for review coverage.
+That reduces single-reviewer risk and provides a documented backup reviewer for normal
+pull-request flow.
 
-Known gaps that require repository-admin or organizational follow-up:
+Because this repository is hosted under a personal GitHub account, collaborators do not
+receive owner-equivalent admin control over branch protection, Pages settings, or
+repository ownership. If shared owner-level settings continuity is ever required, it
+would need a repository transfer or ownership change rather than a role change inside
+this repository.
 
-- appoint at least one additional maintainer with enough access to review and recover the project if needed
-- ensure branch protection and required status checks reflect the documented review policy
-- periodically review who has administrative access to the repository and Pages deployment
-
-Until those actions are completed, continuity depends heavily on the availability of the current owner account.
+Maintainers should periodically review who has collaborator access, who is listed in
+`CODEOWNERS`, and whether the personal-repository ownership model is still appropriate
+for the project.
