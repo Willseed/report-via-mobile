@@ -25,6 +25,8 @@
 | Assurance case | [docs/assurance-case.md](./docs/assurance-case.md) |
 | Vulnerability reporting | [SECURITY.md](./SECURITY.md) |
 
+## Current release: 1.0.0 (2026-03-13)
+
 ## What the app does
 
 - **GPS 定位**：可取得目前位置並反查地址
