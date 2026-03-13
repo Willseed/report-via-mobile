@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest an improvement to the reporting workflow, docs, tests, or project operations.
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What user or maintainer problem are you trying to solve?
+      placeholder: It is difficult to ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the smallest change that would help.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional, but useful for larger changes.
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Area impacted
+      options:
+        - SMS/reporting flow
+        - Geolocation or address lookup
+        - Police-station data
+        - PWA / install / update UX
+        - Tests / CI / release process
+        - Documentation / governance / security
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Mockups, examples, policy references, or related issues.
