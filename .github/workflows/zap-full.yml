@@ -49,7 +49,7 @@ jobs:
 
       - name: Start static file server
         run: |
-          python3 -m http.server 4200 --directory dist/report-via-mobile/browser > /tmp/serve.log 2>&1 &
+          python3 .github/scripts/serve-static-no-server-header.py --port 4200 --directory dist/report-via-mobile/browser > /tmp/serve.log 2>&1 &
           echo $! > /tmp/serve.pid
 
       - name: Wait for server ready
