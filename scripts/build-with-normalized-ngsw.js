@@ -60,16 +60,17 @@ function parseCliOptions(args) {
     positionals: [],
   };
 
-  const iterator = args[Symbol.iterator]();
+  const pendingArgs = [...args];
 
-  for (const arg of iterator) {
-    const nextValue = () => {
-      const result = iterator.next();
-      return result.done ? undefined : result.value;
-    };
+  while (pendingArgs.length > 0) {
+    const arg = pendingArgs.shift();
+
+    if (arg === undefined) {
+      break;
+    }
 
     if (arg === '--configuration' || arg === '-c') {
-      cliOptions.configuration = nextValue();
+      cliOptions.configuration = pendingArgs.shift();
       continue;
     }
 
@@ -79,7 +80,7 @@ function parseCliOptions(args) {
     }
 
     if (arg === '--output-path' || arg === '-o') {
-      cliOptions.outputPath = nextValue();
+      cliOptions.outputPath = pendingArgs.shift();
       continue;
     }
 
@@ -89,7 +90,7 @@ function parseCliOptions(args) {
     }
 
     if (arg === '--project') {
-      cliOptions.project = nextValue();
+      cliOptions.project = pendingArgs.shift();
       continue;
     }
 
