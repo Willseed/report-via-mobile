@@ -28,11 +28,6 @@ class _NoServerHeaderHandler(http.server.SimpleHTTPRequestHandler):
             return
         super().send_header(keyword, value)
 
-    def log_message(self, fmt, *args):  # noqa: override
-        # Keep standard access logging so CI logs remain useful.
-        super().log_message(fmt, *args)
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Serve static files without leaking version info in the Server header."
