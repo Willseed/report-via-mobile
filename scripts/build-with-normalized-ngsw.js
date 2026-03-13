@@ -4,9 +4,9 @@ const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const workspaceRoot = process.cwd();
+const workspaceRoot = path.resolve(__dirname, '..');
 const angularCliPath = path.resolve(workspaceRoot, 'node_modules/@angular/cli/bin/ng.js');
-const normalizeScriptPath = path.resolve(workspaceRoot, 'scripts/normalize-ngsw.js');
+const normalizeScriptPath = path.resolve(__dirname, 'normalize-ngsw.js');
 const buildArgs = process.argv.slice(2);
 
 try {
@@ -16,8 +16,8 @@ try {
     stdio: 'inherit',
   });
 
-  execFileSync(process.execPath, [normalizeScriptPath, resolveManifestPath(buildArgs)], {
-    cwd: workspaceRoot,
+  execFileSync(process.execPath, [normalizeScriptPath], {
+    cwd: resolveManifestDirectory(buildArgs),
     env: process.env,
     stdio: 'inherit',
   });
@@ -25,13 +25,14 @@ try {
   process.exit(error.status ?? 1);
 }
 
-function resolveManifestPath(args) {
+function resolveManifestDirectory(args) {
   const workspace = JSON.parse(
     fs.readFileSync(path.resolve(workspaceRoot, 'angular.json'), 'utf8'),
   );
   const cliOptions = parseCliOptions(args);
   const projectName = resolveProjectName(workspace, cliOptions);
-  const buildTarget = workspace.projects?.[projectName]?.architect?.build;
+  const project = findNamedValue(workspace.projects, projectName);
+  const buildTarget = project?.architect?.build;
 
   if (!buildTarget) {
     throw new Error(`Build target not found for Angular project "${projectName}".`);
@@ -48,9 +49,7 @@ function resolveManifestPath(args) {
     ? basePath
     : path.resolve(workspaceRoot, basePath);
 
-  return browserPath
-    ? path.resolve(absoluteBasePath, browserPath, 'ngsw.json')
-    : path.resolve(absoluteBasePath, 'ngsw.json');
+  return browserPath ? path.resolve(absoluteBasePath, browserPath) : absoluteBasePath;
 }
 
 function parseCliOptions(args) {
@@ -106,9 +105,12 @@ function parseCliOptions(args) {
 }
 
 function resolveProjectName(workspace, cliOptions) {
+  const knownProjectNames = getNamedEntries(workspace.projects).map(
+    ([projectName]) => projectName,
+  );
   const explicitProject =
     cliOptions.project ??
-    cliOptions.positionals.find((value) => workspace.projects && value in workspace.projects);
+    cliOptions.positionals.find((value) => knownProjectNames.includes(value));
 
   if (explicitProject) {
     return explicitProject;
@@ -118,10 +120,8 @@ function resolveProjectName(workspace, cliOptions) {
     return workspace.defaultProject;
   }
 
-  const projectNames = Object.keys(workspace.projects ?? {});
-
-  if (projectNames.length === 1) {
-    return projectNames[0];
+  if (knownProjectNames.length === 1) {
+    return knownProjectNames[0];
   }
 
   throw new Error('Unable to determine the Angular project for ng build.');
@@ -135,7 +135,11 @@ function resolveOutputPath(buildTarget, cliOptions, projectName) {
     .filter(Boolean);
 
   for (const configurationName of configurationNames) {
-    const configuredOutputPath = buildTarget.configurations?.[configurationName]?.outputPath;
+    const configuration = findNamedValue(buildTarget.configurations, configurationName);
+    const configuredOutputPath =
+      configuration && typeof configuration === 'object' && Object.hasOwn(configuration, 'outputPath')
+        ? configuration.outputPath
+        : undefined;
 
     if (configuredOutputPath !== undefined) {
       outputPath = configuredOutputPath;
@@ -147,4 +151,18 @@ function resolveOutputPath(buildTarget, cliOptions, projectName) {
   }
 
   return outputPath ?? path.posix.join('dist', projectName);
+}
+
+function getNamedEntries(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? Object.entries(value) : [];
+}
+
+function findNamedValue(value, expectedKey) {
+  for (const [entryKey, entryValue] of getNamedEntries(value)) {
+    if (entryKey === expectedKey) {
+      return entryValue;
+    }
+  }
+
+  return undefined;
 }

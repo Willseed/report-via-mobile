@@ -3,39 +3,38 @@
 const { execFileSync } = require('node:child_process');
 const { createHash } = require('node:crypto');
 const fs = require('node:fs');
-const path = require('node:path');
 
-const defaultManifestPath = path.resolve(
-  process.cwd(),
-  'dist/report-via-mobile/browser/ngsw.json',
-);
-const manifestPath = path.resolve(process.argv[2] ?? defaultManifestPath);
+const manifestFilename = 'ngsw.json';
+let manifestDescriptor;
 
 try {
-  if (!fs.existsSync(manifestPath)) {
-    console.log(
-      `Skipping ngsw normalization; manifest not found at ${path.relative(process.cwd(), manifestPath)}.`,
-    );
+  manifestDescriptor = fs.openSync(manifestFilename, 'r+');
+} catch (error) {
+  if (error.code === 'ENOENT') {
+    console.log(`Skipping ngsw normalization; manifest not found at ${manifestFilename}.`);
     process.exit(0);
   }
 
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  console.error(`Failed to open ${manifestFilename}: ${error.message}`);
+  process.exit(1);
+}
+
+try {
+  const manifest = JSON.parse(readUtf8File(manifestDescriptor));
   const { source, timestamp } = resolveDeterministicTimestamp(manifest);
   const originalTimestamp = manifest.timestamp;
 
   manifest.timestamp = timestamp;
-  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  writeManifest(manifestDescriptor, manifest);
 
   console.log(
-    `Normalized ${path.relative(process.cwd(), manifestPath)} timestamp ${String(
-      originalTimestamp,
-    )} -> ${timestamp} (${source}).`,
+    `Normalized ${manifestFilename} timestamp ${String(originalTimestamp)} -> ${timestamp} (${source}).`,
   );
 } catch (error) {
-  console.error(
-    `Failed to normalize ${path.relative(process.cwd(), manifestPath)}: ${error.message}`,
-  );
-  process.exit(1);
+  console.error(`Failed to normalize ${manifestFilename}: ${error.message}`);
+  process.exitCode = 1;
+} finally {
+  fs.closeSync(manifestDescriptor);
 }
 
 function resolveDeterministicTimestamp(manifest) {
@@ -113,15 +112,34 @@ function parseEpochSeconds(rawValue, label) {
   return milliseconds;
 }
 
+function readUtf8File(fileDescriptor) {
+  const { size } = fs.fstatSync(fileDescriptor);
+
+  if (size === 0) {
+    return '';
+  }
+
+  const buffer = Buffer.alloc(size);
+  fs.readSync(fileDescriptor, buffer, 0, size, 0);
+
+  return buffer.toString('utf8');
+}
+
+function writeManifest(fileDescriptor, manifest) {
+  const serializedManifest = `${JSON.stringify(manifest, null, 2)}\n`;
+  fs.ftruncateSync(fileDescriptor, 0);
+  fs.writeSync(fileDescriptor, serializedManifest, 0, 'utf8');
+}
+
 function stableStringify(value) {
   if (Array.isArray(value)) {
     return `[${value.map((entry) => stableStringify(entry)).join(',')}]`;
   }
 
   if (value && typeof value === 'object') {
-    return `{${Object.keys(value)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
+    return `{${Object.entries(value)
+      .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+      .map(([key, entryValue]) => `${JSON.stringify(key)}:${stableStringify(entryValue)}`)
       .join(',')}}`;
   }
 
