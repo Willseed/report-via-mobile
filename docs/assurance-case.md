@@ -20,7 +20,7 @@ When deployed as designed, `report-via-mobile` provides a reasonably low-risk wa
 | Privacy leakage through backend retention | App architecture | Static-site deployment; no project backend for reports or accounts | User IP/location may still be visible to Nominatim and to the mobile carrier when SMS is sent |
 | Reverse-geocoding outage or rate limiting | External geocoder | Timeout, retry, circuit breaker, manual-input fallback | Auto-fill quality degrades when external services are unavailable |
 | Incorrect police-station routing | Local data + address matching | Address normalization, station lookup logic, visible station selection, user preview before send | Stale public data or ambiguous addresses still require manual correction |
-| CI or supply-chain tampering | Repository / Actions | Pull-request CI, `CODEOWNERS`, pinned GitHub Actions SHAs, lockfile-based installs | Single-maintainer governance and missing provenance evidence remain limitations |
+| CI or supply-chain tampering | Repository / Actions | Protected `main` branch requiring pull requests, one approving review, and CI / E2E / security checks; `CODEOWNERS`, pinned GitHub Actions SHAs, and lockfile-based installs | Owner-level settings continuity still follows GitHub's personal-repository model; provenance evidence remains a limitation |
 
 ## Secure design principles used here
 
@@ -43,6 +43,4 @@ When deployed as designed, `report-via-mobile` provides a reasonably low-risk wa
 
 The following items cannot be solved by documentation alone:
 
-- a second maintainer or reviewer is not yet documented in repository access controls
-- GitHub branch protection and required-check enforcement are administrative settings, not repo files
 - release provenance / signing evidence is not yet documented as part of the delivery process

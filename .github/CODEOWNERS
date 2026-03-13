@@ -1,11 +1,11 @@
 # 程式碼擁有者 - 需要審查才能合併
 # 語法: 路徑模式 @GitHub使用者名
 
-# 所有檔案預設由你審查
-* @Willseed
+# 所有檔案預設由主要維護者與第二審查者審查
+* @Willseed @SayMyNameTW
 
 # 工作流程檔案需要審查
-/.github/workflows/ @Willseed
+/.github/workflows/ @Willseed @SayMyNameTW
 
 # 安全相關檔案需要審查
-/SECURITY.md @Willseed
+/SECURITY.md @Willseed @SayMyNameTW
