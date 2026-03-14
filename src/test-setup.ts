@@ -16,6 +16,24 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
   globalThis.IntersectionObserver = IntersectionObserver as typeof globalThis.IntersectionObserver;
 }
 
+function getStoredValue(store: Map<string, string>, key: string): string | null {
+  const value = store.get(key);
+  return value === undefined ? null : value;
+}
+
+function getKeyAtIndex(store: Map<string, string>, index: number): string | null {
+  let currentIndex = 0;
+  for (const key of store.keys()) {
+    if (currentIndex === index) {
+      return key;
+    }
+
+    currentIndex += 1;
+  }
+
+  return null;
+}
+
 const needsLocalStorage =
   typeof globalThis.localStorage === 'undefined' ||
   typeof globalThis.localStorage.getItem !== 'function' ||
@@ -32,10 +50,10 @@ if (needsLocalStorage) {
       store.clear();
     },
     getItem(key: string) {
-      return store.has(key) ? store.get(key)! : null;
+      return getStoredValue(store, key);
     },
     key(index: number) {
-      return Array.from(store.keys())[index] ?? null;
+      return getKeyAtIndex(store, index);
     },
     removeItem(key: string) {
       store.delete(key);
@@ -66,10 +84,10 @@ if (needsSessionStorage) {
       store.clear();
     },
     getItem(key: string) {
-      return store.has(key) ? store.get(key)! : null;
+      return getStoredValue(store, key);
     },
     key(index: number) {
-      return Array.from(store.keys())[index] ?? null;
+      return getKeyAtIndex(store, index);
     },
     removeItem(key: string) {
       store.delete(key);
