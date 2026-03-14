@@ -77,7 +77,7 @@ export class LocationResolverService {
       const displayName = await this.geocodingService.reverseGeocode(latitude, longitude);
       this.formService.setAddress(displayName);
       this.autoSelectDistrict(displayName);
-      if (typeof globalThis.navigator.vibrate === 'function') {
+      if (typeof globalThis.navigator?.vibrate === 'function') {
         globalThis.navigator.vibrate(50);
       }
       this.locationStatusState.set(`${ZH_TW.location.locateSuccess}${displayName}`);
