@@ -127,7 +127,7 @@ describe('GeocodingService', () => {
     }
 
     function muteExpectedGeocodingErrors() {
-      return vi.spyOn(console, 'error').mockImplementation(() => {});
+      return vi.spyOn(console, 'error').mockImplementation(() => undefined);
     }
 
     function expectGeocodingErrorsLogged(
