@@ -25,7 +25,7 @@ export class LocationResolverService {
   readonly locationError = this.locationErrorState.asReadonly();
   readonly locationStatus = this.locationStatusState.asReadonly();
   readonly manualInputFallback = computed(
-    () => this.geocodingService.fallbackToManualInput?.() ?? false,
+    () => this.geocodingService.fallbackToManualInput(),
   );
 
   constructor() {
@@ -77,10 +77,9 @@ export class LocationResolverService {
       const displayName = await this.geocodingService.reverseGeocode(latitude, longitude);
       this.formService.setAddress(displayName);
       this.autoSelectDistrict(displayName);
-      if (typeof navigator !== 'undefined') {
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
-        }
+      const navigatorRef = 'navigator' in globalThis ? globalThis.navigator : undefined;
+      if (navigatorRef && typeof navigatorRef.vibrate === 'function') {
+        navigatorRef.vibrate(50);
       }
       this.locationStatusState.set(`${ZH_TW.location.locateSuccess}${displayName}`);
     } catch (e) {

@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, DeferBlockBehavior, DeferBlockState, TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { of } from 'rxjs';
@@ -24,6 +25,7 @@ describe('SmsForm', () => {
   let geocodingServiceSpy: {
     getCurrentPosition: ReturnType<typeof vi.fn>;
     reverseGeocode: ReturnType<typeof vi.fn>;
+    fallbackToManualInput: ReturnType<typeof signal<boolean>>;
   };
   let dialogSpy: { open: ReturnType<typeof vi.fn> };
   let state: ReportStateService;
@@ -43,6 +45,7 @@ describe('SmsForm', () => {
     geocodingServiceSpy = {
       getCurrentPosition: vi.fn(),
       reverseGeocode: vi.fn(),
+      fallbackToManualInput: signal(false),
     };
     dialogSpy = {
       open: vi.fn().mockReturnValue({
@@ -865,7 +868,11 @@ describe('SmsForm desktop behavior', () => {
         },
         {
           provide: GeocodingService,
-          useValue: { getCurrentPosition: vi.fn(), reverseGeocode: vi.fn() },
+          useValue: {
+            getCurrentPosition: vi.fn(),
+            reverseGeocode: vi.fn(),
+            fallbackToManualInput: signal(false),
+          },
         },
         {
           provide: MatDialog,

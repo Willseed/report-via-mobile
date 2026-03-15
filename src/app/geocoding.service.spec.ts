@@ -44,6 +44,7 @@ describe('GeocodingService', () => {
 
   afterEach(() => {
     httpTesting.verify();
+    vi.restoreAllMocks();
   });
 
   describe('getCurrentPosition', () => {
@@ -125,6 +126,22 @@ describe('GeocodingService', () => {
       return promise;
     }
 
+    function muteExpectedGeocodingErrors() {
+      return vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    }
+
+    function expectGeocodingErrorsLogged(
+      consoleErrorSpy: ReturnType<typeof muteExpectedGeocodingErrors>,
+      count = 1,
+    ): void {
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(count);
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Geocoding error:', expect.anything());
+      for (const [message, error] of consoleErrorSpy.mock.calls) {
+        expect(message).toBe('Geocoding error:');
+        expect(error).toBeDefined();
+      }
+    }
+
     it('should return formatted address from address fields', async () => {
       const promise = service.reverseGeocode(25.033, 121.565);
       const req = httpTesting.expectOne((r) => r.url.includes('addressdetails=1'));
@@ -156,6 +173,7 @@ describe('GeocodingService', () => {
 
     it('should throw on HTTP error after retries', async () => {
       vi.useFakeTimers();
+      const consoleErrorSpy = muteExpectedGeocodingErrors();
       const promise = service.reverseGeocode(25.033, 121.565);
 
       // Initial attempt
@@ -168,6 +186,7 @@ describe('GeocodingService', () => {
       req.flush('Error', { status: 500, statusText: 'Server Error' });
 
       await expect(promise).rejects.toThrow('地址查詢失敗，請稍後再試。');
+      expectGeocodingErrorsLogged(consoleErrorSpy);
       vi.useRealTimers();
     });
 
@@ -194,6 +213,7 @@ describe('GeocodingService', () => {
 
     it('should throw on request timeout', async () => {
       vi.useFakeTimers();
+      const consoleErrorSpy = muteExpectedGeocodingErrors();
       const promise = service.reverseGeocode(25.033, 121.565);
 
       // Attach rejection handler early to prevent unhandled rejection warning
@@ -209,6 +229,7 @@ describe('GeocodingService', () => {
       await vi.advanceTimersByTimeAsync(8000);
 
       await rejection;
+      expectGeocodingErrorsLogged(consoleErrorSpy);
       vi.useRealTimers();
     });
 
@@ -248,6 +269,7 @@ describe('GeocodingService', () => {
 
     it('should not cache failed requests', async () => {
       vi.useFakeTimers();
+      const consoleErrorSpy = muteExpectedGeocodingErrors();
 
       // First call fails
       const promise1 = service.reverseGeocode(25.033, 121.565);
@@ -264,7 +286,7 @@ describe('GeocodingService', () => {
         address: { city: '臺北市' },
       });
       expect(result2).toBe('臺北市');
-
+      expectGeocodingErrorsLogged(consoleErrorSpy);
       vi.useRealTimers();
     });
 
@@ -278,6 +300,7 @@ describe('GeocodingService', () => {
 
     it('should open circuit after 3 consecutive failures', async () => {
       vi.useFakeTimers();
+      const consoleErrorSpy = muteExpectedGeocodingErrors();
 
       for (let i = 0; i < 3; i++) {
         const lat = 25 + i * 0.01;
@@ -293,12 +316,13 @@ describe('GeocodingService', () => {
       // Circuit is now open — next call should reject immediately
       await expect(service.reverseGeocode(26, 121)).rejects.toThrow(GEOCODE_CIRCUIT_OPEN_MSG);
       httpTesting.expectNone((r) => r.url.includes('nominatim'));
-
+      expectGeocodingErrorsLogged(consoleErrorSpy, 3);
       vi.useRealTimers();
     });
 
     it('should reject immediately when circuit is open', async () => {
       vi.useFakeTimers();
+      const consoleErrorSpy = muteExpectedGeocodingErrors();
 
       // Open the circuit via 3 failures
       for (let i = 0; i < 3; i++) {
@@ -316,12 +340,13 @@ describe('GeocodingService', () => {
       await expect(service.reverseGeocode(27, 121)).rejects.toThrow(GEOCODE_CIRCUIT_OPEN_MSG);
       await expect(service.reverseGeocode(28, 121)).rejects.toThrow(GEOCODE_CIRCUIT_OPEN_MSG);
       httpTesting.expectNone((r) => r.url.includes('nominatim'));
-
+      expectGeocodingErrorsLogged(consoleErrorSpy, 3);
       vi.useRealTimers();
     });
 
     it('should allow probe after cooldown (half-open state)', async () => {
       vi.useFakeTimers();
+      const consoleErrorSpy = muteExpectedGeocodingErrors();
 
       // Open the circuit
       for (let i = 0; i < 3; i++) {
@@ -347,12 +372,13 @@ describe('GeocodingService', () => {
       });
       const result = await probePromise;
       expect(result).toBe('臺北市');
-
+      expectGeocodingErrorsLogged(consoleErrorSpy, 3);
       vi.useRealTimers();
     });
 
     it('should reset circuit on success', async () => {
       vi.useFakeTimers();
+      const consoleErrorSpy = muteExpectedGeocodingErrors();
 
       // Accumulate 2 failures (not enough to open)
       for (let i = 0; i < 2; i++) {
@@ -390,13 +416,13 @@ describe('GeocodingService', () => {
       verifyReq.flush({ display_name: '高雄市', address: { city: '高雄市' } });
       const result = await verifyPromise;
       expect(result).toBe('高雄市');
-
+      expectGeocodingErrorsLogged(consoleErrorSpy, 4);
       vi.useRealTimers();
     });
 
     it('should immediately open circuit on 429 HTTP error', async () => {
       vi.useFakeTimers();
-
+      const consoleErrorSpy = muteExpectedGeocodingErrors();
       const promise = service.reverseGeocode(25.033, 121.565);
       let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
       req.flush('Error', { status: 429, statusText: 'Too Many Requests' });
@@ -408,13 +434,13 @@ describe('GeocodingService', () => {
       // Circuit should be open now
       await expect(service.reverseGeocode(26, 121)).rejects.toThrow(GEOCODE_CIRCUIT_OPEN_MSG);
       httpTesting.expectNone((r) => r.url.includes('nominatim'));
-
+      expectGeocodingErrorsLogged(consoleErrorSpy);
       vi.useRealTimers();
     });
 
     it('should immediately open circuit on 503 HTTP error', async () => {
       vi.useFakeTimers();
-
+      const consoleErrorSpy = muteExpectedGeocodingErrors();
       const promise = service.reverseGeocode(25.033, 121.565);
       let req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
       req.flush('Error', { status: 503, statusText: 'Service Unavailable' });
@@ -426,12 +452,13 @@ describe('GeocodingService', () => {
       // Circuit should be open now
       await expect(service.reverseGeocode(26, 121)).rejects.toThrow(GEOCODE_CIRCUIT_OPEN_MSG);
       httpTesting.expectNone((r) => r.url.includes('nominatim'));
-
+      expectGeocodingErrorsLogged(consoleErrorSpy);
       vi.useRealTimers();
     });
 
     it('fallbackToManualInput should reflect circuit state', async () => {
       vi.useFakeTimers();
+      const consoleErrorSpy = muteExpectedGeocodingErrors();
 
       // Initially closed
       expect(service.fallbackToManualInput()).toBe(false);
@@ -462,7 +489,7 @@ describe('GeocodingService', () => {
 
       // Circuit closed — fallback should be false
       expect(service.fallbackToManualInput()).toBe(false);
-
+      expectGeocodingErrorsLogged(consoleErrorSpy, 3);
       vi.useRealTimers();
     });
 
