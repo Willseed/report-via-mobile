@@ -152,11 +152,14 @@ export class GeocodingService {
       if (error instanceof HttpErrorResponse) {
         if (error.status === 429 || error.status === 503) {
           this.openCircuit();
-          throw new Error(error.status === 429 ? GEOCODE_RATE_LIMITED_MSG : GEOCODE_SERVICE_UNAVAILABLE_MSG);
+          throw new Error(
+            error.status === 429 ? GEOCODE_RATE_LIMITED_MSG : GEOCODE_SERVICE_UNAVAILABLE_MSG,
+            { cause: error }
+          );
         }
       }
       this.recordFailure();
-      throw new Error(ZH_TW.geocoding.queryFailed);
+      throw new Error(ZH_TW.geocoding.queryFailed, { cause: error });
     }
     this.resetCircuit();
     const a = data.address;
