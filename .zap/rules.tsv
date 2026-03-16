@@ -13,6 +13,7 @@
 10096	IGNORE	Timestamp Disclosure - Unix
 10098	WARN	Cross-Domain Misconfiguration
 10103	IGNORE	Cross-Origin-Resource-Policy Header Missing - Set via Cloudflare (same-origin)
+10104	IGNORE	User Agent Fuzzer - Static SPA on GitHub Pages serves identical content regardless of User-Agent; no server-side content negotiation
 10109	WARN	Modern Web Application
 10110	IGNORE	Dangerous JS Functions - setTimeout/setInterval in Angular/RxJS framework internals, not application code; eval/new Function blocked by eslint.configs.recommended (no-eval, no-implied-eval)
 90004	IGNORE	Cross-Origin isolation headers missing/invalid (COEP/COOP/CORP) - Managed by Cloudflare on production and verified via curl
