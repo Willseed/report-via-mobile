@@ -70,6 +70,6 @@
   },
   "overrides": {
     "undici": "7.24.2",
-    "flatted": "3.4.1"
+    "flatted": "3.4.2"
   }
 }
