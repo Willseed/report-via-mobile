@@ -53,7 +53,7 @@ describe('GeocodingService', () => {
     } as GeolocationPosition;
 
     it('should resolve with position on success', async () => {
-      stubGeolocation((success: PositionCallback) => success(mockPosition));
+      stubGeolocation((success: PositionCallback) => { success(mockPosition); });
 
       const result = await service.getCurrentPosition();
       expect(result).toBe(mockPosition);
@@ -65,22 +65,22 @@ describe('GeocodingService', () => {
     });
 
     it('should reject with permission denied message', async () => {
-      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => err(mockGeoError(1)));
+      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => { err(mockGeoError(1)); });
       await expect(service.getCurrentPosition()).rejects.toThrow('定位權限被拒絕');
     });
 
     it('should reject with position unavailable message', async () => {
-      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => err(mockGeoError(2)));
+      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => { err(mockGeoError(2)); });
       await expect(service.getCurrentPosition()).rejects.toThrow('無法取得位置資訊');
     });
 
     it('should reject with timeout message', async () => {
-      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => err(mockGeoError(3)));
+      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => { err(mockGeoError(3)); });
       await expect(service.getCurrentPosition()).rejects.toThrow('定位逾時');
     });
 
     it('should reject with default message for unknown error code', async () => {
-      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => err(mockGeoError(99)));
+      stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) => { err(mockGeoError(99)); });
       await expect(service.getCurrentPosition()).rejects.toThrow('定位失敗，請稍後再試。');
     });
 
@@ -102,8 +102,7 @@ describe('GeocodingService', () => {
 
     it('should not retry when permission is denied', async () => {
       const spy = stubGeolocation((_s: PositionCallback, err: PositionErrorCallback) =>
-        err(mockGeoError(1)),
-      );
+        { err(mockGeoError(1)); },      );
 
       await expect(service.getCurrentPosition()).rejects.toThrow('定位權限被拒絕');
       expect(spy).toHaveBeenCalledTimes(1);

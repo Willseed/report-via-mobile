@@ -17,7 +17,7 @@ export class ThemeService {
   });
 
   constructor() {
-    effect(() => this.applyTheme(this.preference()));
+    effect(() => { this.applyTheme(this.preference()); });
   }
 
   toggle(): void {
