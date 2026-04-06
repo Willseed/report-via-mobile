@@ -30,7 +30,6 @@ test.describe('表單互動', () => {
   test('選擇違規事實應填入欄位', async ({ page }) => {
     const violationInput = page.getByRole('combobox', { name: '違規事實' });
     await violationInput.click();
-    await violationInput.fill('機車');
     await page.getByRole('option', { name: '機車並排停車' }).click();
     await expect(violationInput).toHaveValue('機車並排停車');
   });

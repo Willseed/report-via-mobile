@@ -68,8 +68,8 @@ export class ViolationInput {
     this.state.handleViolationInput(readInputValue(event), VIOLATION_FILTER_DEBOUNCE_MS);
   }
 
-  protected onViolationChange(): void {
-    this.state.handleViolationChange();
+  protected onViolationChange(value?: string): void {
+    this.state.handleViolationChange(value);
   }
 
   protected toggleLicensePlate(): void {

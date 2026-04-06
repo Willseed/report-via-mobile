@@ -154,6 +154,15 @@ describe('ViolationInput', () => {
     expect(component['violationFilter']()).toBe('汽車於紅線停車');
   });
 
+  it('should use the selected autocomplete value when violation change fires', () => {
+    component['onViolationInput'](mockInputEvent('機車'));
+    component['onViolationChange']('機車並排停車');
+    vi.advanceTimersByTime(VIOLATION_FILTER_DEBOUNCE_MS + 1);
+    expect(component.violation()).toBe('機車並排停車');
+    expect(component['violationForm'].violation().value()).toBe('機車並排停車');
+    expect(component['violationFilter']()).toBe('機車並排停車');
+  });
+
   it('should clear filter debounce timer on destroy', () => {
     component['onViolationInput'](mockInputEvent('紅'));
     fixture.destroy();
