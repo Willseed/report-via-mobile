@@ -98,8 +98,8 @@ export class ReportStateService {
     this.form.handleViolationInput(value, debounceMs);
   }
 
-  handleViolationChange(): void {
-    this.form.handleViolationChange();
+  handleViolationChange(value?: string): void {
+    this.form.handleViolationChange(value);
   }
 
   handleLicensePlateInput(raw: string): string {

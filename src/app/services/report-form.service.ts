@@ -115,9 +115,8 @@ export class ReportFormService {
     }, debounceMs);
   }
 
-  handleViolationChange(): void {
+  handleViolationChange(value = this.violationForm.violation().value()): void {
     this.clearViolationDebounce();
-    const value = this.violationForm.violation().value();
     this.setViolation(value);
     this.violationFilterState.set(value);
   }

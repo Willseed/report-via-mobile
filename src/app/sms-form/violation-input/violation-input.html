@@ -12,7 +12,7 @@
     #autoViolation="matAutocomplete"
     requireSelection
     panelClass="fade-dropdown"
-    (optionSelected)="onViolationChange()"
+    (optionSelected)="onViolationChange($event.option.value)"
   >
     @for (type of filteredViolations(); track type) {
       <mat-option [value]="type">{{ type }}</mat-option>
