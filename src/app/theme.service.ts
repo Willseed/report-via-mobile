@@ -2,7 +2,7 @@ import { computed, effect, Injectable, signal } from '@angular/core';
 
 export type ThemePreference = 'light' | 'dark' | 'auto';
 
-const STORAGE_KEY = 'theme-preference';
+const THEME_PREFERENCE_STORE = 'theme-preference';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
@@ -33,11 +33,11 @@ export class ThemeService {
     const meta = document.querySelector('meta[name="color-scheme"]');
     if (meta) meta.setAttribute('content', colorScheme);
 
-    localStorage.setItem(STORAGE_KEY, pref);
+    localStorage.setItem(THEME_PREFERENCE_STORE, pref);
   }
 
   private loadPreference(): ThemePreference {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(THEME_PREFERENCE_STORE);
     if (stored === 'light' || stored === 'dark' || stored === 'auto') return stored;
     return 'auto';
   }
