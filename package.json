@@ -73,7 +73,7 @@
     "brace-expansion": "5.0.5",
     "undici": "7.24.2",
     "flatted": "3.4.2",
-    "hono": "4.12.15",
+    "hono": "4.12.16",
     "path-to-regexp": "8.4.0",
     "picomatch": ">=2.3.2",
     "vite": "7.3.2"
