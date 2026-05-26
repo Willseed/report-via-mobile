@@ -5,8 +5,8 @@ import { ReportFormService } from './report-form.service';
 
 @Injectable({ providedIn: 'root' })
 export class MessageComposerService {
-  private formService = inject(ReportFormService);
-  private stationLookup = inject(StationLookupService);
+  private readonly formService = inject(ReportFormService);
+  private readonly stationLookup = inject(StationLookupService);
 
   readonly stationFromAddress = computed(() =>
     this.stationLookup.findStation(this.formService.address()),

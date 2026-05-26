@@ -19,9 +19,9 @@ export interface ConfirmDialogData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfirmDialog {
-  protected data = inject<ConfirmDialogData>(MAT_DIALOG_DATA);
+  protected readonly data = inject<ConfirmDialogData>(MAT_DIALOG_DATA);
   protected readonly i18n = ZH_TW;
-  private dialogRef = inject(MatDialogRef<ConfirmDialog>);
+  private readonly dialogRef = inject(MatDialogRef<ConfirmDialog>);
 
   protected confirm(): void {
     this.dialogRef.close(true);

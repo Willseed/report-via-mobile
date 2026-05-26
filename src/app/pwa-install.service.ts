@@ -10,10 +10,10 @@ interface BeforeInstallPromptEvent extends Event {
 
 @Injectable({ providedIn: 'root' })
 export class PwaInstallService {
-  private snackBar = inject(MatSnackBar);
-  private destroyRef = inject(DestroyRef);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
 
-  private deferredPrompt = signal<BeforeInstallPromptEvent | null>(null);
+  private readonly deferredPrompt = signal<BeforeInstallPromptEvent | null>(null);
   readonly canInstall = this.deferredPrompt.asReadonly();
 
   init(): void {

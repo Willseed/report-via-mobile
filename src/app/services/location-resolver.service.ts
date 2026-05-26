@@ -9,17 +9,17 @@ import { ReportFormService } from './report-form.service';
 
 @Injectable({ providedIn: 'root' })
 export class LocationResolverService {
-  private geocodingService = inject(GeocodingService);
-  private stationLookup = inject(StationLookupService);
-  private formService = inject(ReportFormService);
-  private destroyRef = inject(DestroyRef);
+  private readonly geocodingService = inject(GeocodingService);
+  private readonly stationLookup = inject(StationLookupService);
+  private readonly formService = inject(ReportFormService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  private addressInput$ = new Subject<{ value: string; debounceMs: number }>();
-  private addressCancel$ = new Subject<void>();
+  private readonly addressInput$ = new Subject<{ value: string; debounceMs: number }>();
+  private readonly addressCancel$ = new Subject<void>();
 
-  private isLocatingState = signal(false);
-  private locationErrorState = signal('');
-  private locationStatusState = signal('');
+  private readonly isLocatingState = signal(false);
+  private readonly locationErrorState = signal('');
+  private readonly locationStatusState = signal('');
 
   readonly isLocating = this.isLocatingState.asReadonly();
   readonly locationError = this.locationErrorState.asReadonly();

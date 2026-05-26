@@ -6,16 +6,16 @@ import { ReportFormService } from './report-form.service';
 
 @Injectable({ providedIn: 'root' })
 export class ReportStateService {
-  private form = inject(ReportFormService);
-  private location = inject(LocationResolverService);
-  private composer = inject(MessageComposerService);
-  private destroyRef = inject(DestroyRef);
+  private readonly form = inject(ReportFormService);
+  private readonly location = inject(LocationResolverService);
+  private readonly composer = inject(MessageComposerService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  private isOnlineState = signal(navigator.onLine);
+  private readonly isOnlineState = signal(navigator.onLine);
   readonly isOnline = this.isOnlineState.asReadonly();
 
-  private handleOnline = () => this.isOnlineState.set(true);
-  private handleOffline = () => this.isOnlineState.set(false);
+  private readonly handleOnline = () => this.isOnlineState.set(true);
+  private readonly handleOffline = () => this.isOnlineState.set(false);
 
   readonly addressForm = this.form.addressForm;
   readonly violationForm = this.form.violationForm;

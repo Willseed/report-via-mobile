@@ -17,5 +17,5 @@ export class SmsPreview {
 
   protected readonly SMS_CHAR_LIMIT = SMS_CHAR_LIMIT;
 
-  protected overLimit = computed(() => this.message().length > SMS_CHAR_LIMIT);
+  protected readonly overLimit = computed(() => this.message().length > SMS_CHAR_LIMIT);
 }

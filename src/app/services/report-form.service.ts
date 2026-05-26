@@ -16,21 +16,21 @@ import {
 export class ReportFormService {
   private violationDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  private addressState = signal('');
-  private violationState = signal('');
-  private licensePlateState = signal('');
-  private selectedStationState = signal<PoliceStation | null>(null);
-  private districtTouched = signal(false);
-  private showLicensePlateState = signal(false);
-  private violationFilterState = signal('');
+  private readonly addressState = signal('');
+  private readonly violationState = signal('');
+  private readonly licensePlateState = signal('');
+  private readonly selectedStationState = signal<PoliceStation | null>(null);
+  private readonly districtTouched = signal(false);
+  private readonly showLicensePlateState = signal(false);
+  private readonly violationFilterState = signal('');
 
-  private addressModel = signal({ address: '' });
+  private readonly addressModel = signal({ address: '' });
   readonly addressForm = form(this.addressModel, (schema) => {
     required(schema.address, { message: ZH_TW.location.addressRequired });
     maxLength(schema.address, ADDRESS_MAX_LENGTH, { message: ZH_TW.location.addressMaxLength });
   });
 
-  private violationModel = signal({ violation: '', licensePlate: '' });
+  private readonly violationModel = signal({ violation: '', licensePlate: '' });
   readonly violationForm = form(this.violationModel, (schema) => {
     required(schema.violation, { message: ZH_TW.violation.required });
     maxLength(schema.violation, VIOLATION_MAX_LENGTH, { message: ZH_TW.violation.maxLength });

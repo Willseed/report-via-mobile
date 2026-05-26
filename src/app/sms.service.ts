@@ -7,8 +7,8 @@ const IOS_SMS_RECOMMENDED_LIMIT = 1600;
 
 @Injectable({ providedIn: 'root' })
 export class SmsService {
-  private document = inject(DOCUMENT);
-  private platform = inject(Platform);
+  private readonly document = inject(DOCUMENT);
+  private readonly platform = inject(Platform);
 
   sendSms(phone: string, body: string): void {
     const sanitizedBody = this.sanitizeBody(body);
