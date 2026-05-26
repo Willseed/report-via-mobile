@@ -13,6 +13,7 @@ import {
   ViolationInput,
   VIOLATION_FILTER_DEBOUNCE_MS,
 } from './violation-input/violation-input';
+import { mockGeolocationPosition } from '../../testing/geolocation';
 
 function mockDialogResult(
   dialogSpy: { open: ReturnType<typeof vi.fn> },
@@ -49,25 +50,6 @@ function queryEl<T extends Element>(fixture: ComponentFixture<SmsForm>, selector
   const el = hostElement(fixture).querySelector<T>(selector);
   if (!el) throw new Error(`Element not found: ${selector}`);
   return el;
-}
-
-function mockGeolocationPosition(latitude = 25.033, longitude = 121.565): GeolocationPosition {
-  const coords = {
-    latitude,
-    longitude,
-    accuracy: 10,
-    altitude: null,
-    altitudeAccuracy: null,
-    heading: null,
-    speed: null,
-    toJSON: () => ({ latitude, longitude, accuracy: 10 }),
-  };
-
-  return {
-    coords,
-    timestamp: 0,
-    toJSON: () => ({ coords, timestamp: 0 }),
-  };
 }
 
 function mockInputEvent(value: string): Event {

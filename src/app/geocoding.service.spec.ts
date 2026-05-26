@@ -9,6 +9,7 @@ import {
   GEOCODE_RATE_LIMITED_MSG,
   GEOCODE_SERVICE_UNAVAILABLE_MSG,
 } from './geocoding.service';
+import { mockGeolocationPosition } from '../testing/geolocation';
 
 function mockGeoError(code: number): GeolocationPositionError {
   return { code, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: '' };
@@ -53,25 +54,6 @@ function expectGeocodingErrorsLogged(
     expect(message).toBe('Geocoding error:');
     expect(error).toBeDefined();
   }
-}
-
-function mockGeolocationPosition(latitude = 25.033, longitude = 121.565): GeolocationPosition {
-  const coords = {
-    latitude,
-    longitude,
-    accuracy: 10,
-    altitude: null,
-    altitudeAccuracy: null,
-    heading: null,
-    speed: null,
-    toJSON: () => ({ latitude, longitude, accuracy: 10 }),
-  };
-
-  return {
-    coords,
-    timestamp: 0,
-    toJSON: () => ({ coords, timestamp: 0 }),
-  };
 }
 
 describe('GeocodingService', () => {
