@@ -81,14 +81,14 @@ function consumeCliOption(cliOptions, pendingArgs, arg) {
   const separatedOption = getSeparatedCliOptionKey(arg);
 
   if (separatedOption) {
-    cliOptions[separatedOption] = pendingArgs.shift();
+    assignCliOptionValue(cliOptions, separatedOption, pendingArgs.shift());
     return true;
   }
 
   const inlineOption = getInlineCliOption(arg);
 
   if (inlineOption) {
-    cliOptions[inlineOption.key] = inlineOption.value;
+    assignCliOptionValue(cliOptions, inlineOption.key, inlineOption.value);
     return true;
   }
 
@@ -96,15 +96,18 @@ function consumeCliOption(cliOptions, pendingArgs, arg) {
 }
 
 function getSeparatedCliOptionKey(arg) {
-  return (
-    {
-      '--configuration': 'configuration',
-      '-c': 'configuration',
-      '--output-path': 'outputPath',
-      '-o': 'outputPath',
-      '--project': 'project',
-    }[arg] ?? undefined
-  );
+  switch (arg) {
+    case '--configuration':
+    case '-c':
+      return 'configuration';
+    case '--output-path':
+    case '-o':
+      return 'outputPath';
+    case '--project':
+      return 'project';
+    default:
+      return undefined;
+  }
 }
 
 function getInlineCliOption(arg) {
@@ -121,6 +124,22 @@ function getInlineCliOption(arg) {
   }
 
   return undefined;
+}
+
+function assignCliOptionValue(cliOptions, optionKey, value) {
+  switch (optionKey) {
+    case 'configuration':
+      cliOptions.configuration = value;
+      break;
+    case 'outputPath':
+      cliOptions.outputPath = value;
+      break;
+    case 'project':
+      cliOptions.project = value;
+      break;
+    default:
+      throw new Error(`Unsupported CLI option key "${optionKey}".`);
+  }
 }
 
 function resolveProjectName(workspace, cliOptions) {
