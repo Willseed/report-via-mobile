@@ -41,16 +41,8 @@ function getKeyAtIndex(store: Map<string, string>, index: number): string | null
   return null;
 }
 
-const globalLocalStorage = getGlobalValue('localStorage');
-const needsLocalStorage =
-  globalLocalStorage === undefined ||
-  typeof globalLocalStorage.getItem !== 'function' ||
-  typeof globalLocalStorage.setItem !== 'function' ||
-  typeof globalLocalStorage.clear !== 'function';
-
-if (needsLocalStorage) {
-  const store = new Map<string, string>();
-  const storage: Storage = {
+function createTestStorage(store: Map<string, string>): Storage {
+  return {
     get length() {
       return store.size;
     },
@@ -70,9 +62,20 @@ if (needsLocalStorage) {
       store.set(key, String(value));
     },
   };
+}
+
+const globalLocalStorage = getGlobalValue('localStorage');
+const needsLocalStorage =
+  globalLocalStorage === undefined ||
+  typeof globalLocalStorage.getItem !== 'function' ||
+  typeof globalLocalStorage.setItem !== 'function' ||
+  typeof globalLocalStorage.clear !== 'function';
+
+if (needsLocalStorage) {
+  const store = new Map<string, string>();
 
   Object.defineProperty(globalThis, 'localStorage', {
-    value: storage,
+    value: createTestStorage(store),
     configurable: true,
   });
 }
@@ -85,29 +88,9 @@ const needsSessionStorage =
   typeof globalSessionStorage.clear !== 'function';
 if (needsSessionStorage) {
   const store = new Map<string, string>();
-  const storage: Storage = {
-    get length() {
-      return store.size;
-    },
-    clear() {
-      store.clear();
-    },
-    getItem(key: string) {
-      return getStoredValue(store, key);
-    },
-    key(index: number) {
-      return getKeyAtIndex(store, index);
-    },
-    removeItem(key: string) {
-      store.delete(key);
-    },
-    setItem(key: string, value: string) {
-      store.set(key, String(value));
-    },
-  };
 
   Object.defineProperty(globalThis, 'sessionStorage', {
-    value: storage,
+    value: createTestStorage(store),
     configurable: true,
   });
 }
