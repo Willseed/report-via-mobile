@@ -41,7 +41,7 @@ describe('PwaInstallService', () => {
     const preventDefaultSpy = vi.fn();
     Object.defineProperty(mockEvent, 'preventDefault', { value: preventDefaultSpy });
 
-    window.dispatchEvent(mockEvent);
+    globalThis.dispatchEvent(mockEvent);
 
     expect(preventDefaultSpy).toHaveBeenCalled();
     expect(service.canInstall()).toBeTruthy();
@@ -60,7 +60,7 @@ describe('PwaInstallService', () => {
     mockEvent.prompt = promptFn;
     Object.defineProperty(mockEvent, 'preventDefault', { value: vi.fn() });
 
-    window.dispatchEvent(mockEvent);
+    globalThis.dispatchEvent(mockEvent);
     expect(service.canInstall()).toBeTruthy();
 
     await service.promptInstall();
@@ -78,7 +78,7 @@ describe('PwaInstallService', () => {
     mockEvent.prompt = promptFn;
     Object.defineProperty(mockEvent, 'preventDefault', { value: vi.fn() });
 
-    window.dispatchEvent(mockEvent);
+    globalThis.dispatchEvent(mockEvent);
 
     await service.promptInstall();
     expect(service.canInstall()).toBeNull();

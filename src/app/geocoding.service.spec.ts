@@ -241,7 +241,7 @@ describe('GeocodingService', () => {
     it('should throw on invalid latitude', async () => {
       await expect(service.reverseGeocode(91, 121)).rejects.toThrow('無效的座標資訊。');
       await expect(service.reverseGeocode(-91, 121)).rejects.toThrow('無效的座標資訊。');
-      await expect(service.reverseGeocode(NaN, 121)).rejects.toThrow('無效的座標資訊。');
+      await expect(service.reverseGeocode(Number.NaN, 121)).rejects.toThrow('無效的座標資訊。');
     });
 
     it('should throw on invalid longitude', async () => {
