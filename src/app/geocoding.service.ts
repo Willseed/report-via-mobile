@@ -39,17 +39,17 @@ class GeolocationError extends Error {
 
 @Injectable({ providedIn: 'root' })
 export class GeocodingService {
-  private http = inject(HttpClient);
-  private nominatimUserAgent = inject(NOMINATIM_USER_AGENT);
+  private readonly http = inject(HttpClient);
+  private readonly nominatimUserAgent = inject(NOMINATIM_USER_AGENT);
   private static readonly MAX_CACHE_SIZE = 100;
-  private geocodeCache = new Map<string, string>();
+  private readonly geocodeCache = new Map<string, string>();
 
   private consecutiveFailures = 0;
   private circuitOpenUntil = 0;
   private static readonly MAX_FAILURES = 3;
   private static readonly CIRCUIT_COOLDOWN_MS = 30_000;
 
-  private _circuitState = signal<'closed' | 'open' | 'half-open'>('closed');
+  private readonly _circuitState = signal<'closed' | 'open' | 'half-open'>('closed');
   readonly fallbackToManualInput = computed(() => this._circuitState() !== 'closed');
 
   private isCircuitOpen(): boolean {

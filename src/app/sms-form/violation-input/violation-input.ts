@@ -43,18 +43,18 @@ const readInputValue = (event: Event): string =>
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ViolationInput {
-  private state = inject(ReportStateService);
-  private injector = inject(Injector);
-  private destroyRef = inject(DestroyRef);
+  private readonly state = inject(ReportStateService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
-  private licensePlateInputRef = viewChild<ElementRef<HTMLInputElement>>('licensePlateInput');
-  private addPlateButton = viewChild<ElementRef<HTMLButtonElement>>('addPlateButton');
+  private readonly licensePlateInputRef = viewChild<ElementRef<HTMLInputElement>>('licensePlateInput');
+  private readonly addPlateButton = viewChild<ElementRef<HTMLButtonElement>>('addPlateButton');
 
   protected readonly i18n = ZH_TW;
-  protected violationForm = this.state.violationForm;
-  protected violationTypes = this.state.violationTypes;
-  protected filteredViolations = this.state.filteredViolations;
-  protected showLicensePlate = this.state.showLicensePlate;
+  protected readonly violationForm = this.state.violationForm;
+  protected readonly violationTypes = this.state.violationTypes;
+  protected readonly filteredViolations = this.state.filteredViolations;
+  protected readonly showLicensePlate = this.state.showLicensePlate;
 
   readonly violation = this.state.violation;
   readonly licensePlate = this.state.licensePlate;

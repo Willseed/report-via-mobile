@@ -26,18 +26,18 @@ export {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SmsForm {
-  private smsService = inject(SmsService);
-  private dialog = inject(MatDialog);
-  private state = inject(ReportStateService);
+  private readonly smsService = inject(SmsService);
+  private readonly dialog = inject(MatDialog);
+  private readonly state = inject(ReportStateService);
   protected readonly i18n = ZH_TW;
 
-  private locationInput = viewChild(LocationInput);
-  private violationInput = viewChild(ViolationInput);
+  private readonly locationInput = viewChild(LocationInput);
+  private readonly violationInput = viewChild(ViolationInput);
 
-  protected isDesktop = signal(this.smsService.isDesktop());
-  protected composedMessage = this.state.composedMessage;
-  protected pendingPreview = this.state.pendingPreview;
-  protected districtMismatch = this.state.districtMismatch;
+  protected readonly isDesktop = signal(this.smsService.isDesktop());
+  protected readonly composedMessage = this.state.composedMessage;
+  protected readonly pendingPreview = this.state.pendingPreview;
+  protected readonly districtMismatch = this.state.districtMismatch;
 
   protected async sendSms(): Promise<void> {
     const location = this.locationInput();

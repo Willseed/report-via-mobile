@@ -7,9 +7,9 @@ import { ZH_TW } from './i18n';
 
 @Injectable({ providedIn: 'root' })
 export class PwaUpdateService {
-  private swUpdate = inject(SwUpdate);
-  private snackBar = inject(MatSnackBar);
-  private destroyRef = inject(DestroyRef);
+  private readonly swUpdate = inject(SwUpdate);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
 
   init(): void {
     if (!this.swUpdate.isEnabled) return;

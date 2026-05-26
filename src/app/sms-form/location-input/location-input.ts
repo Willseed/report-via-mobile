@@ -36,18 +36,18 @@ const readInputValue = (event: Event): string =>
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LocationInput {
-  private state = inject(ReportStateService);
-  private districtSelect = viewChild(MatSelect);
+  private readonly state = inject(ReportStateService);
+  private readonly districtSelect = viewChild(MatSelect);
 
   protected readonly i18n = ZH_TW;
-  protected addressForm = this.state.addressForm;
-  protected stations = this.state.stations;
-  protected manualInputFallback = this.state.manualInputFallback;
-  protected isLocating = this.state.isLocating;
-  protected isOnline = this.state.isOnline;
-  protected locationError = this.state.locationError;
-  protected locationStatus = this.state.locationStatus;
-  protected compareStations = this.state.compareStations;
+  protected readonly addressForm = this.state.addressForm;
+  protected readonly stations = this.state.stations;
+  protected readonly manualInputFallback = this.state.manualInputFallback;
+  protected readonly isLocating = this.state.isLocating;
+  protected readonly isOnline = this.state.isOnline;
+  protected readonly locationError = this.state.locationError;
+  protected readonly locationStatus = this.state.locationStatus;
+  protected readonly compareStations = this.state.compareStations;
 
   readonly address = this.state.address;
   readonly district = this.state.station;
