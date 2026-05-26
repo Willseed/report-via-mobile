@@ -69,42 +69,58 @@ function parseCliOptions(args) {
       break;
     }
 
-    if (arg === '--configuration' || arg === '-c') {
-      cliOptions.configuration = pendingArgs.shift();
-      continue;
-    }
-
-    if (arg.startsWith('--configuration=')) {
-      cliOptions.configuration = arg.slice('--configuration='.length);
-      continue;
-    }
-
-    if (arg === '--output-path' || arg === '-o') {
-      cliOptions.outputPath = pendingArgs.shift();
-      continue;
-    }
-
-    if (arg.startsWith('--output-path=')) {
-      cliOptions.outputPath = arg.slice('--output-path='.length);
-      continue;
-    }
-
-    if (arg === '--project') {
-      cliOptions.project = pendingArgs.shift();
-      continue;
-    }
-
-    if (arg.startsWith('--project=')) {
-      cliOptions.project = arg.slice('--project='.length);
-      continue;
-    }
-
-    if (!arg.startsWith('-')) {
+    if (!consumeCliOption(cliOptions, pendingArgs, arg) && !arg.startsWith('-')) {
       cliOptions.positionals.push(arg);
     }
   }
 
   return cliOptions;
+}
+
+function consumeCliOption(cliOptions, pendingArgs, arg) {
+  const separatedOption = getSeparatedCliOptionKey(arg);
+
+  if (separatedOption) {
+    cliOptions[separatedOption] = pendingArgs.shift();
+    return true;
+  }
+
+  const inlineOption = getInlineCliOption(arg);
+
+  if (inlineOption) {
+    cliOptions[inlineOption.key] = inlineOption.value;
+    return true;
+  }
+
+  return false;
+}
+
+function getSeparatedCliOptionKey(arg) {
+  return (
+    {
+      '--configuration': 'configuration',
+      '-c': 'configuration',
+      '--output-path': 'outputPath',
+      '-o': 'outputPath',
+      '--project': 'project',
+    }[arg] ?? undefined
+  );
+}
+
+function getInlineCliOption(arg) {
+  const inlineOptions = [
+    ['--configuration=', 'configuration'],
+    ['--output-path=', 'outputPath'],
+    ['--project=', 'project'],
+  ];
+
+  for (const [prefix, key] of inlineOptions) {
+    if (arg.startsWith(prefix)) {
+      return { key, value: arg.slice(prefix.length) };
+    }
+  }
+
+  return undefined;
 }
 
 function resolveProjectName(workspace, cliOptions) {

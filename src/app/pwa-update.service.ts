@@ -24,10 +24,7 @@ export class PwaUpdateService {
           duration: 0,
         });
         snackBarRef.onAction().pipe(take(1)).subscribe(() => {
-          void this.swUpdate
-            .activateUpdate()
-            .then(() => { location.reload(); })
-            .catch(() => this.snackBar.open(ZH_TW.pwa.updateFailed, '', { duration: 5000 }));
+          this.activateUpdate();
         });
       });
 
@@ -37,5 +34,14 @@ export class PwaUpdateService {
         this.snackBar.open(ZH_TW.pwa.unrecoverableError, '', { duration: 3000 });
         setTimeout(() => { location.reload(); }, 3000);
       });
+  }
+
+  private activateUpdate(): void {
+    this.swUpdate
+      .activateUpdate()
+      .then(() => {
+        location.reload();
+      })
+      .catch(() => this.snackBar.open(ZH_TW.pwa.updateFailed, '', { duration: 5000 }));
   }
 }
