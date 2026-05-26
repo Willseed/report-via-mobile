@@ -1,4 +1,4 @@
-if (typeof globalThis.IntersectionObserver === 'undefined') {
+if (globalThis.IntersectionObserver === undefined) {
   class IntersectionObserver {
     observe(): void {
       // no-op for tests
@@ -35,7 +35,7 @@ function getKeyAtIndex(store: Map<string, string>, index: number): string | null
 }
 
 const needsLocalStorage =
-  typeof globalThis.localStorage === 'undefined' ||
+  globalThis.localStorage === undefined ||
   typeof globalThis.localStorage.getItem !== 'function' ||
   typeof globalThis.localStorage.setItem !== 'function' ||
   typeof globalThis.localStorage.clear !== 'function';
@@ -70,7 +70,7 @@ if (needsLocalStorage) {
 }
 
 const needsSessionStorage =
-  typeof globalThis.sessionStorage === 'undefined' ||
+  globalThis.sessionStorage === undefined ||
   typeof globalThis.sessionStorage.getItem !== 'function' ||
   typeof globalThis.sessionStorage.setItem !== 'function' ||
   typeof globalThis.sessionStorage.clear !== 'function';
