@@ -50,7 +50,7 @@ const needsLocalStorage =
 
 if (needsLocalStorage) {
   const store = new Map<string, string>();
-  const storage = {
+  const storage: Storage = {
     get length() {
       return store.size;
     },
@@ -69,7 +69,7 @@ if (needsLocalStorage) {
     setItem(key: string, value: string) {
       store.set(key, String(value));
     },
-  } as Storage;
+  };
 
   Object.defineProperty(globalThis, 'localStorage', {
     value: storage,
@@ -85,7 +85,7 @@ const needsSessionStorage =
   typeof globalSessionStorage.clear !== 'function';
 if (needsSessionStorage) {
   const store = new Map<string, string>();
-  const storage = {
+  const storage: Storage = {
     get length() {
       return store.size;
     },
@@ -104,7 +104,7 @@ if (needsSessionStorage) {
     setItem(key: string, value: string) {
       store.set(key, String(value));
     },
-  } as Storage;
+  };
 
   Object.defineProperty(globalThis, 'sessionStorage', {
     value: storage,

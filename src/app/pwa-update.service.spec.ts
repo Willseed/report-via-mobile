@@ -67,7 +67,7 @@ describe('PwaUpdateService', () => {
       type: 'VERSION_READY',
       currentVersion: { hash: 'abc' },
       latestVersion: { hash: 'def' },
-    } as VersionReadyEvent);
+    });
 
     expect(snackBarSpy.open).toHaveBeenCalledWith('有新版本可用', '更新', { duration: 0 });
   });
@@ -89,7 +89,7 @@ describe('PwaUpdateService', () => {
       type: 'VERSION_READY',
       currentVersion: { hash: 'abc' },
       latestVersion: { hash: 'def' },
-    } as VersionReadyEvent);
+    });
 
     expect(snackBarSpy.open).not.toHaveBeenCalled();
   });
@@ -103,7 +103,7 @@ describe('PwaUpdateService', () => {
       type: 'VERSION_READY',
       currentVersion: { hash: 'abc' },
       latestVersion: { hash: 'def' },
-    } as VersionReadyEvent);
+    });
 
     snackBarAction$.next();
     await vi.waitFor(() => {
@@ -121,7 +121,7 @@ describe('PwaUpdateService', () => {
       type: 'VERSION_READY',
       currentVersion: { hash: 'abc' },
       latestVersion: { hash: 'def' },
-    } as VersionReadyEvent);
+    });
 
     snackBarAction$.next();
     await vi.waitFor(() => {
@@ -135,10 +135,7 @@ describe('PwaUpdateService', () => {
     const { service, unrecoverable$, snackBarSpy } = setupPwaUpdateService();
     service.init();
 
-    unrecoverable$.next({
-      type: 'UNRECOVERABLE_STATE',
-      reason: 'hash mismatch',
-    } as UnrecoverableStateEvent);
+    unrecoverable$.next({ type: 'UNRECOVERABLE_STATE', reason: 'hash mismatch' });
 
     expect(snackBarSpy.open).toHaveBeenCalledWith('應用程式發生錯誤，將重新載入', '', {
       duration: 3000,

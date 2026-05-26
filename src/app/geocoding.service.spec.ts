@@ -55,6 +55,25 @@ function expectGeocodingErrorsLogged(
   }
 }
 
+function mockGeolocationPosition(latitude = 25.033, longitude = 121.565): GeolocationPosition {
+  const coords = {
+    latitude,
+    longitude,
+    accuracy: 10,
+    altitude: null,
+    altitudeAccuracy: null,
+    heading: null,
+    speed: null,
+    toJSON: () => ({ latitude, longitude, accuracy: 10 }),
+  };
+
+  return {
+    coords,
+    timestamp: 0,
+    toJSON: () => ({ coords, timestamp: 0 }),
+  };
+}
+
 describe('GeocodingService', () => {
   let service: GeocodingService;
   let httpTesting: HttpTestingController;
@@ -77,9 +96,7 @@ describe('GeocodingService', () => {
   });
 
   describe('getCurrentPosition', () => {
-    const mockPosition = {
-      coords: { latitude: 25.033, longitude: 121.565 },
-    } as GeolocationPosition;
+    const mockPosition = mockGeolocationPosition();
 
     it('should resolve with position on success', async () => {
       stubGeolocation((success: PositionCallback) => { success(mockPosition); });
