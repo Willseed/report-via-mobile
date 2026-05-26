@@ -1,4 +1,10 @@
-if (globalThis.IntersectionObserver === undefined) {
+function getGlobalValue<K extends keyof typeof globalThis>(
+  key: K,
+): (typeof globalThis)[K] | undefined {
+  return Reflect.get(globalThis, key) as (typeof globalThis)[K] | undefined;
+}
+
+if (getGlobalValue('IntersectionObserver') === undefined) {
   class IntersectionObserver {
     observe(): void {
       // no-op for tests
@@ -13,7 +19,8 @@ if (globalThis.IntersectionObserver === undefined) {
     }
   }
 
-  globalThis.IntersectionObserver = IntersectionObserver as typeof globalThis.IntersectionObserver;
+  globalThis.IntersectionObserver =
+    IntersectionObserver as unknown as typeof globalThis.IntersectionObserver;
 }
 
 function getStoredValue(store: Map<string, string>, key: string): string | null {
@@ -34,11 +41,12 @@ function getKeyAtIndex(store: Map<string, string>, index: number): string | null
   return null;
 }
 
+const globalLocalStorage = getGlobalValue('localStorage');
 const needsLocalStorage =
-  globalThis.localStorage === undefined ||
-  typeof globalThis.localStorage.getItem !== 'function' ||
-  typeof globalThis.localStorage.setItem !== 'function' ||
-  typeof globalThis.localStorage.clear !== 'function';
+  globalLocalStorage === undefined ||
+  typeof globalLocalStorage.getItem !== 'function' ||
+  typeof globalLocalStorage.setItem !== 'function' ||
+  typeof globalLocalStorage.clear !== 'function';
 
 if (needsLocalStorage) {
   const store = new Map<string, string>();
@@ -69,11 +77,12 @@ if (needsLocalStorage) {
   });
 }
 
+const globalSessionStorage = getGlobalValue('sessionStorage');
 const needsSessionStorage =
-  globalThis.sessionStorage === undefined ||
-  typeof globalThis.sessionStorage.getItem !== 'function' ||
-  typeof globalThis.sessionStorage.setItem !== 'function' ||
-  typeof globalThis.sessionStorage.clear !== 'function';
+  globalSessionStorage === undefined ||
+  typeof globalSessionStorage.getItem !== 'function' ||
+  typeof globalSessionStorage.setItem !== 'function' ||
+  typeof globalSessionStorage.clear !== 'function';
 if (needsSessionStorage) {
   const store = new Map<string, string>();
   const storage = {
