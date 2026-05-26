@@ -14,6 +14,49 @@ import {
   VIOLATION_FILTER_DEBOUNCE_MS,
 } from './violation-input/violation-input';
 
+function mockDialogResult(
+  dialogSpy: { open: ReturnType<typeof vi.fn> },
+  result: boolean | undefined,
+): void {
+  dialogSpy.open.mockReturnValue({
+    afterClosed: () => of(result),
+  } as Partial<MatDialogRef<unknown>>);
+}
+
+function getLocationInput(component: SmsForm): LocationInput {
+  const ref = component['locationInput']();
+  if (!ref) throw new Error('LocationInput not found');
+  return ref;
+}
+
+function getViolationInput(component: SmsForm): ViolationInput {
+  const ref = component['violationInput']();
+  if (!ref) throw new Error('ViolationInput not found');
+  return ref;
+}
+
+function fillValidForm(state: ReportStateService, station = POLICE_STATIONS[0]): void {
+  state.setAddress('臺北市信義區信義路五段7號');
+  state.setSelectedStation(station);
+  state.setViolation('汽車於紅線停車');
+}
+
+function mockInputEvent(value: string): Event {
+  return { target: { value } } as unknown as Event;
+}
+
+function mockPendingPosition(geocodingServiceSpy: {
+  getCurrentPosition: ReturnType<typeof vi.fn>;
+}): (value: GeolocationPosition) => void {
+  let resolvePosition!: (value: GeolocationPosition) => void;
+  geocodingServiceSpy.getCurrentPosition.mockReturnValue(
+    new Promise<GeolocationPosition>((resolve) => {
+      resolvePosition = resolve;
+    }),
+  );
+  return resolvePosition;
+}
+
 describe('SmsForm', () => {
   let component: SmsForm;
   let fixture: ComponentFixture<SmsForm>;
@@ -29,12 +72,6 @@ describe('SmsForm', () => {
   };
   let dialogSpy: { open: ReturnType<typeof vi.fn> };
   let state: ReportStateService;
-
-  function mockDialogResult(result: boolean | undefined): void {
-    dialogSpy.open.mockReturnValue({
-      afterClosed: () => of(result),
-    } as Partial<MatDialogRef<unknown>>);
-  }
 
   beforeEach(async () => {
     smsServiceSpy = {
@@ -78,58 +115,25 @@ describe('SmsForm', () => {
   const kaohsiungStation =
     POLICE_STATIONS.find((s) => s.district === '高雄市') ?? POLICE_STATIONS[0];
 
-  function getLocationInput(): LocationInput {
-    const ref = component['locationInput']();
-    if (!ref) throw new Error('LocationInput not found');
-    return ref;
-  }
-
-  function getViolationInput(): ViolationInput {
-    const ref = component['violationInput']();
-    if (!ref) throw new Error('ViolationInput not found');
-    return ref;
-  }
-
-  function fillValidForm(station = POLICE_STATIONS[0]) {
-    state.setAddress('臺北市信義區信義路五段7號');
-    state.setSelectedStation(station);
-    state.setViolation('汽車於紅線停車');
-  }
-
-  function mockInputEvent(value: string): Event {
-    return { target: { value } } as unknown as Event;
-  }
-
-
-  function mockPendingPosition() {
-    let resolvePosition!: (value: GeolocationPosition) => void;
-    geocodingServiceSpy.getCurrentPosition.mockReturnValue(
-      new Promise((resolve) => {
-        resolvePosition = resolve;
-      }),
-    );
-    return resolvePosition;
-  }
-
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
   it('should have an invalid form when empty', async () => {
-    expect(getLocationInput().valid()).toBe(false);
+    expect(getLocationInput(component).valid()).toBe(false);
   });
 
   it('should require district selection after touched', async () => {
-    expect(getLocationInput()['district']()).toBeNull();
-    expect(getLocationInput().districtRequired()).toBe(false);
-    getLocationInput().markAsTouched();
-    expect(getLocationInput().districtRequired()).toBe(true);
+    expect(getLocationInput(component)['district']()).toBeNull();
+    expect(getLocationInput(component).districtRequired()).toBe(false);
+    getLocationInput(component).markAsTouched();
+    expect(getLocationInput(component).districtRequired()).toBe(true);
   });
 
   it('should accept valid form values with all required fields', async () => {
-    fillValidForm();
-    expect(getLocationInput().valid()).toBe(true);
-    expect(getViolationInput().valid()).toBe(true);
+    fillValidForm(state);
+    expect(getLocationInput(component).valid()).toBe(true);
+    expect(getViolationInput(component).valid()).toBe(true);
   });
 
   it('should return district from location input', async () => {
@@ -140,7 +144,7 @@ describe('SmsForm', () => {
   });
 
   it('should open confirm dialog on valid submit', async () => {
-    fillValidForm();
+    fillValidForm(state);
 
     await component['sendSms']();
     expect(dialogSpy.open).toHaveBeenCalledWith(
@@ -156,8 +160,8 @@ describe('SmsForm', () => {
   });
 
   it('should call sendSms after dialog is confirmed', async () => {
-    fillValidForm();
-    mockDialogResult(true);
+    fillValidForm(state);
+    mockDialogResult(dialogSpy, true);
 
     await component['sendSms']();
 
@@ -168,8 +172,8 @@ describe('SmsForm', () => {
   });
 
   it('should not call sendSms when dialog is cancelled', async () => {
-    fillValidForm();
-    mockDialogResult(false);
+    fillValidForm(state);
+    mockDialogResult(dialogSpy, false);
 
     await component['sendSms']();
 
@@ -177,8 +181,8 @@ describe('SmsForm', () => {
   });
 
   it('should not call sendSms when dialog is dismissed (backdrop click)', async () => {
-    fillValidForm();
-    mockDialogResult(undefined);
+    fillValidForm(state);
+    mockDialogResult(dialogSpy, undefined);
 
     await component['sendSms']();
 
@@ -209,14 +213,14 @@ describe('SmsForm', () => {
     });
 
     it('should auto-select district when address contains district name', () => {
-      const loc = getLocationInput();
+      const loc = getLocationInput(component);
       loc['onAddressInput'](mockInputEvent('臺北市信義區信義路五段7號'));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(loc['district']()).toEqual(POLICE_STATIONS[0]);
     });
 
     it('should auto-select district with 台 → 臺 normalization', () => {
-      const loc = getLocationInput();
+      const loc = getLocationInput(component);
       loc['onAddressInput'](mockInputEvent('台中市西屯區某路'));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       const taichungStation = POLICE_STATIONS.find((s) => s.district === '臺中市');
@@ -224,14 +228,14 @@ describe('SmsForm', () => {
     });
 
     it('should not change district when address does not match', () => {
-      const loc = getLocationInput();
+      const loc = getLocationInput(component);
       loc['onAddressInput'](mockInputEvent('某個不存在的地方'));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(loc['district']()).toBeNull();
     });
 
     it('should debounce rapid address inputs', () => {
-      const loc = getLocationInput();
+      const loc = getLocationInput(component);
       loc['onAddressInput'](mockInputEvent('臺北'));
       vi.advanceTimersByTime(100);
       expect(loc['district']()).toBeNull();
@@ -246,24 +250,24 @@ describe('SmsForm', () => {
     it('should detect mismatch when address district differs from selected district', () => {
       state.setAddress('臺北市信義區信義路五段7號');
       state.setSelectedStation(kaohsiungStation);
-      expect(getLocationInput().districtMismatch()).toBe(true);
+      expect(getLocationInput(component).districtMismatch()).toBe(true);
     });
 
     it('should not detect mismatch when address and district match', () => {
       state.setAddress('臺北市信義區信義路五段7號');
       state.setSelectedStation(POLICE_STATIONS[0]);
-      expect(getLocationInput().districtMismatch()).toBe(false);
+      expect(getLocationInput(component).districtMismatch()).toBe(false);
     });
 
     it('should not detect mismatch when address has no recognizable district', () => {
       state.setAddress('某個不存在的地方');
       state.setSelectedStation(POLICE_STATIONS[0]);
-      expect(getLocationInput().districtMismatch()).toBe(false);
+      expect(getLocationInput(component).districtMismatch()).toBe(false);
     });
 
     it('should not detect mismatch when no district is selected', () => {
       state.setAddress('臺北市信義區信義路五段7號');
-      expect(getLocationInput().districtMismatch()).toBe(false);
+      expect(getLocationInput(component).districtMismatch()).toBe(false);
     });
 
     it('should disable submit button when district mismatches', async () => {
@@ -380,12 +384,12 @@ describe('SmsForm', () => {
 
   describe('filteredViolations', () => {
     it('should return all violations when filter is empty', () => {
-      expect(getViolationInput()['filteredViolations']().length).toBe(27);
+      expect(getViolationInput(component)['filteredViolations']().length).toBe(27);
     });
 
     it('should filter violations by keyword', () => {
       state.setViolationFilter('紅線');
-      expect(getViolationInput()['filteredViolations']()).toEqual([
+      expect(getViolationInput(component)['filteredViolations']()).toEqual([
         '汽車於紅線停車',
         '機車於紅線停車',
       ]);
@@ -393,31 +397,31 @@ describe('SmsForm', () => {
 
     it('should filter by vehicle type', () => {
       state.setViolationFilter('機車');
-      const filtered = getViolationInput()['filteredViolations']();
+      const filtered = getViolationInput(component)['filteredViolations']();
       expect(filtered.length).toBe(9);
       expect(filtered.every((v) => v.includes('機車'))).toBe(true);
     });
 
     it('should return all violations when filter matches an exact option', () => {
       state.setViolationFilter('汽車於紅線停車');
-      expect(getViolationInput()['filteredViolations']().length).toBe(27);
+      expect(getViolationInput(component)['filteredViolations']().length).toBe(27);
     });
 
     it('should include car-only violation for disabled parking space', () => {
       state.setViolationFilter('身心障礙');
-      const results = getViolationInput()['filteredViolations']();
+      const results = getViolationInput(component)['filteredViolations']();
       expect(results).toEqual(['汽車違法佔用身心障礙者專用停車位']);
     });
 
     it('should not include car-only violations for motorcycles', () => {
-      const violations = getViolationInput()['filteredViolations']();
+      const violations = getViolationInput(component)['filteredViolations']();
       expect(violations).not.toContain('機車違法佔用身心障礙者專用停車位');
       expect(violations).toContain('汽車違法佔用身心障礙者專用停車位');
     });
 
     it('should include the shared sidewalk and crosswalk temporary parking violation', () => {
       state.setViolationFilter('行人穿越道');
-      expect(getViolationInput()['filteredViolations']()).toEqual([
+      expect(getViolationInput(component)['filteredViolations']()).toEqual([
         '汽車於人行道、行人穿越道違規臨停',
         '機車於人行道、行人穿越道違規臨停',
       ]);
@@ -450,14 +454,14 @@ describe('SmsForm', () => {
       geocodingServiceSpy.getCurrentPosition.mockResolvedValue(mockPosition);
       geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
 
-      await getLocationInput()['locateUser']();
+      await getLocationInput(component)['locateUser']();
 
-      expect(getLocationInput()['addressForm'].address().value()).toBe(
+      expect(getLocationInput(component)['addressForm'].address().value()).toBe(
         '臺北市信義區信義路五段7號',
       );
-      expect(getLocationInput()['district']()).toEqual(POLICE_STATIONS[0]);
-      expect(getLocationInput()['isLocating']()).toBe(false);
-      expect(getLocationInput()['locationError']()).toBe('');
+      expect(getLocationInput(component)['district']()).toEqual(POLICE_STATIONS[0]);
+      expect(getLocationInput(component)['isLocating']()).toBe(false);
+      expect(getLocationInput(component)['locationError']()).toBe('');
     });
 
     it('should show error message on failure', async () => {
@@ -465,17 +469,17 @@ describe('SmsForm', () => {
         new Error('定位權限被拒絕，請允許存取位置資訊。'),
       );
 
-      await getLocationInput()['locateUser']();
+      await getLocationInput(component)['locateUser']();
 
-      expect(getLocationInput()['locationError']()).toBe('定位權限被拒絕，請允許存取位置資訊。');
-      expect(getLocationInput()['isLocating']()).toBe(false);
+      expect(getLocationInput(component)['locationError']()).toBe('定位權限被拒絕，請允許存取位置資訊。');
+      expect(getLocationInput(component)['isLocating']()).toBe(false);
     });
 
     it('should skip when already locating (race condition guard)', async () => {
-      const resolvePosition = mockPendingPosition();
+      const resolvePosition = mockPendingPosition(geocodingServiceSpy);
       geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區');
 
-      const loc = getLocationInput();
+      const loc = getLocationInput(component);
       const promise1 = loc['locateUser']();
       expect(loc['isLocating']()).toBe(true);
 
@@ -489,9 +493,9 @@ describe('SmsForm', () => {
     });
 
     it('should set isLocating during location process', async () => {
-      const resolvePosition = mockPendingPosition();
+      const resolvePosition = mockPendingPosition(geocodingServiceSpy);
 
-      const loc = getLocationInput();
+      const loc = getLocationInput(component);
       const promise = loc['locateUser']();
       expect(loc['isLocating']()).toBe(true);
 
@@ -505,16 +509,16 @@ describe('SmsForm', () => {
 
   describe('licensePlate', () => {
     it('should not show license plate field by default', () => {
-      expect(getViolationInput()['showLicensePlate']()).toBe(false);
+      expect(getViolationInput(component)['showLicensePlate']()).toBe(false);
     });
 
     it('should show license plate field after toggle', () => {
-      getViolationInput()['toggleLicensePlate']();
-      expect(getViolationInput()['showLicensePlate']()).toBe(true);
+      getViolationInput(component)['toggleLicensePlate']();
+      expect(getViolationInput(component)['showLicensePlate']()).toBe(true);
     });
 
     it('should hide field and clear value on clearLicensePlate', () => {
-      const vi = getViolationInput();
+      const vi = getViolationInput(component);
       vi['toggleLicensePlate']();
       state.setLicensePlate('ABC1234');
       vi['clearLicensePlate']();
@@ -523,7 +527,7 @@ describe('SmsForm', () => {
     });
 
     it('should auto-uppercase and filter non-alphanumeric on input', () => {
-      const vi = getViolationInput();
+      const vi = getViolationInput(component);
       vi['toggleLicensePlate']();
       const event = { target: { value: 'abc-123!' } } as unknown as Event;
       vi['onLicensePlateInput'](event);
@@ -531,7 +535,7 @@ describe('SmsForm', () => {
     });
 
     it('should not modify value when input is already clean uppercase', () => {
-      const vi = getViolationInput();
+      const vi = getViolationInput(component);
       vi['toggleLicensePlate']();
       state.setLicensePlate('ABC1234');
       const event = { target: { value: 'ABC1234' } } as unknown as Event;
@@ -559,7 +563,7 @@ describe('SmsForm', () => {
     });
 
     it('should pass licensePlate to confirm dialog when present', async () => {
-      fillValidForm();
+      fillValidForm(state);
       state.setLicensePlate('XYZ9999');
 
       await component['sendSms']();
@@ -574,7 +578,7 @@ describe('SmsForm', () => {
     });
 
     it('should not pass licensePlate to dialog when empty', async () => {
-      fillValidForm();
+      fillValidForm(state);
 
       await component['sendSms']();
       expect(dialogSpy.open).toHaveBeenCalledWith(
@@ -594,7 +598,7 @@ describe('SmsForm', () => {
     });
 
     it('should show license plate field after clicking add button', () => {
-      getViolationInput()['toggleLicensePlate']();
+      getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
       const field = (fixture.nativeElement as HTMLElement).querySelector(
         'input[placeholder="例：ABC1234"]',
@@ -603,22 +607,22 @@ describe('SmsForm', () => {
     });
 
     it('should hide add-plate button when field is shown', () => {
-      getViolationInput()['toggleLicensePlate']();
+      getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
       const btn = (fixture.nativeElement as HTMLElement).querySelector('.add-plate-btn');
       expect(btn).toBeNull();
     });
 
     it('should keep form valid when license plate is empty (optional field)', () => {
-      fillValidForm();
-      expect(getLocationInput().valid()).toBe(true);
-      expect(getViolationInput().valid()).toBe(true);
+      fillValidForm(state);
+      expect(getLocationInput(component).valid()).toBe(true);
+      expect(getViolationInput(component).valid()).toBe(true);
     });
 
     it('should keep form valid with a valid license plate', () => {
-      fillValidForm();
+      fillValidForm(state);
       state.setLicensePlate('ABC1234');
-      expect(getViolationInput().valid()).toBe(true);
+      expect(getViolationInput(component).valid()).toBe(true);
     });
   });
 
@@ -646,7 +650,7 @@ describe('SmsForm', () => {
 
   describe('onDistrictChange', () => {
     it('should update district when selection changes', async () => {
-      const loc = getLocationInput();
+      const loc = getLocationInput(component);
       loc['onDistrictChange'](POLICE_STATIONS[0]);
       expect(loc['district']()).toBe(POLICE_STATIONS[0]);
     });
@@ -667,7 +671,7 @@ describe('SmsForm', () => {
       } as GeolocationPosition);
       geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
 
-      const loc = getLocationInput();
+      const loc = getLocationInput(component);
       // Trigger an address input to start a debounce timer
       loc['onAddressInput'](mockInputEvent('臺北市'));
 
@@ -685,7 +689,7 @@ describe('SmsForm', () => {
   describe('violation input events', () => {
     it('should update violation model on input event', () => {
       vi.useFakeTimers();
-      const violationInput = getViolationInput();
+      const violationInput = getViolationInput(component);
       violationInput['violationForm'].violation().value.set('汽車於紅線停車');
       const event = { target: { value: '汽車於紅線停車' } } as unknown as Event;
       violationInput['onViolationInput'](event);
@@ -697,7 +701,7 @@ describe('SmsForm', () => {
     // This test ensures angle brackets are handled as plain text, not HTML. Use a safe string to avoid XSS warnings.
     it('should pass angle brackets through without manual stripping', () => {
       vi.useFakeTimers();
-      const violationInput = getViolationInput();
+      const violationInput = getViolationInput(component);
       const sanitizedTestInput = '&lt;script&gt;alert&lt;/script&gt;';
       const event = { target: { value: sanitizedTestInput } } as unknown as Event;
       violationInput['onViolationInput'](event);
@@ -708,7 +712,7 @@ describe('SmsForm', () => {
     });
 
     it('should update violation model on change event', () => {
-      const vi = getViolationInput();
+      const vi = getViolationInput(component);
       vi['violationForm'].violation().value.set('機車於黃線停車');
       vi['onViolationChange']();
       expect(vi['violation']()).toBe('機車於黃線停車');
@@ -730,7 +734,7 @@ describe('SmsForm', () => {
       el.dispatchEvent(new Event('input', { bubbles: true }));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       fixture.detectChanges();
-      expect(getLocationInput()['address']()).toBe('臺北市');
+      expect(getLocationInput(component)['address']()).toBe('臺北市');
       vi.useRealTimers();
     });
 
@@ -745,13 +749,13 @@ describe('SmsForm', () => {
 
       // Wait for async locateUser to complete
       await vi.waitFor(() => {
-        expect(getLocationInput()['isLocating']()).toBe(false);
+        expect(getLocationInput(component)['isLocating']()).toBe(false);
       });
       fixture.detectChanges();
     });
 
     it('should show address validation errors when touched and invalid', () => {
-      const loc = getLocationInput();
+      const loc = getLocationInput(component);
       loc['addressForm'].address().value.set('');
       loc.markAsTouched();
       fixture.detectChanges();
@@ -763,7 +767,7 @@ describe('SmsForm', () => {
       geocodingServiceSpy.getCurrentPosition.mockRejectedValue(
         new Error('定位權限被拒絕，請允許存取位置資訊。'),
       );
-      await getLocationInput()['locateUser']();
+      await getLocationInput(component)['locateUser']();
       fixture.detectChanges();
       const errorDiv = (fixture.nativeElement as Element).querySelector('.location-error');
       expect(errorDiv).toBeTruthy();
@@ -771,7 +775,7 @@ describe('SmsForm', () => {
     });
 
     it('should trigger onDistrictChange via mat-select in DOM', () => {
-      const loc = getLocationInput();
+      const loc = getLocationInput(component);
       loc['onDistrictChange'](POLICE_STATIONS[1]);
       fixture.detectChanges();
       expect(loc['district']()).toBe(POLICE_STATIONS[1]);
@@ -794,37 +798,37 @@ describe('SmsForm', () => {
       fixture.detectChanges();
       queryEl<HTMLButtonElement>('.add-plate-btn').click();
       fixture.detectChanges();
-      expect(getViolationInput()['showLicensePlate']()).toBe(true);
+      expect(getViolationInput(component)['showLicensePlate']()).toBe(true);
     });
 
     it('should trigger clearLicensePlate via DOM click', () => {
-      getViolationInput()['toggleLicensePlate']();
+      getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
       queryEl<HTMLButtonElement>('button[aria-label="移除車牌號碼"]').click();
       fixture.detectChanges();
-      expect(getViolationInput()['showLicensePlate']()).toBe(false);
+      expect(getViolationInput(component)['showLicensePlate']()).toBe(false);
     });
 
     it('should trigger license plate input via DOM', () => {
-      getViolationInput()['toggleLicensePlate']();
+      getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
       const el = queryEl<HTMLInputElement>('input[placeholder="例：ABC1234"]');
       el.value = 'abc-123';
       el.dispatchEvent(new Event('input'));
       fixture.detectChanges();
-      expect(getViolationInput()['violationForm'].licensePlate().value()).toBe('ABC123');
+      expect(getViolationInput(component)['violationForm'].licensePlate().value()).toBe('ABC123');
     });
 
     it('should mark license plate as touched on blur', () => {
-      getViolationInput()['toggleLicensePlate']();
+      getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
       queryEl<HTMLInputElement>('input[placeholder="例：ABC1234"]').dispatchEvent(new Event('blur'));
       fixture.detectChanges();
-      expect(getViolationInput()['violationForm'].licensePlate().touched()).toBe(true);
+      expect(getViolationInput(component)['violationForm'].licensePlate().touched()).toBe(true);
     });
 
     it('should show violation validation errors when touched and invalid', () => {
-      const vi = getViolationInput();
+      const vi = getViolationInput(component);
       vi['violationForm'].violation().value.set('');
       vi.markAsTouched();
       fixture.detectChanges();
@@ -835,7 +839,7 @@ describe('SmsForm', () => {
     });
 
     it('should show license plate validation errors when touched and invalid', () => {
-      const vi = getViolationInput();
+      const vi = getViolationInput(component);
       vi['toggleLicensePlate']();
       vi['violationForm'].licensePlate().value.set('!!!');
       vi['violationForm'].licensePlate().markAsTouched();

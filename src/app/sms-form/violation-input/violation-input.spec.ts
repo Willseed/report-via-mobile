@@ -10,6 +10,10 @@ import {
 import { ReportStateService } from '../../services/report-state.service';
 import { NOMINATIM_USER_AGENT } from '../../app.config';
 
+function mockInputEvent(value: string): Event {
+  return { target: { value } } as unknown as Event;
+}
+
 describe('ViolationInput', () => {
   let fixture: ComponentFixture<ViolationInput>;
   let component: ViolationInput;
@@ -33,10 +37,6 @@ describe('ViolationInput', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
-
-  function mockInputEvent(value: string): Event {
-    return { target: { value } } as unknown as Event;
-  }
 
   it('should create', () => {
     expect(component).toBeTruthy();
