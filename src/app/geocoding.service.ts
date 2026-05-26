@@ -119,25 +119,45 @@ export class GeocodingService {
   }
 
   async reverseGeocode(lat: number, lng: number): Promise<string> {
+    this.validateCoordinates(lat, lng);
+
+    const cacheKey = this.getCacheKey(lat, lng);
+    const cached = this.geocodeCache.get(cacheKey);
+    if (cached) return cached;
+
+    this.ensureCircuitAllowsRequest();
+
+    const data = await this.fetchReverseGeocode(lat, lng);
+    this.resetCircuit();
+
+    const result = this.parseGeocodeResult(data);
+    this.storeGeocodeCache(cacheKey, result);
+    return result;
+  }
+
+  private validateCoordinates(lat: number, lng: number): void {
     if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
       throw new Error(INVALID_COORDINATES_MSG);
     }
     if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
       throw new Error(INVALID_COORDINATES_MSG);
     }
+  }
 
-    const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
-    const cached = this.geocodeCache.get(cacheKey);
-    if (cached) return cached;
+  private getCacheKey(lat: number, lng: number): string {
+    return `${lat.toFixed(4)},${lng.toFixed(4)}`;
+  }
 
+  private ensureCircuitAllowsRequest(): void {
     if (this.isCircuitOpen()) {
       throw new Error(GEOCODE_CIRCUIT_OPEN_MSG);
     }
+  }
 
+  private async fetchReverseGeocode(lat: number, lng: number): Promise<NominatimResponse> {
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=zh-TW&addressdetails=1`;
-    let data: NominatimResponse;
     try {
-      data = await firstValueFrom(
+      return await firstValueFrom(
         this.http
           .get<NominatimResponse>(url, {
             headers: { 'User-Agent': this.nominatimUserAgent },
@@ -148,20 +168,29 @@ export class GeocodingService {
           )
       );
     } catch (error) {
-      console.error('Geocoding error:', error);
-      if (error instanceof HttpErrorResponse) {
-        if (error.status === 429 || error.status === 503) {
-          this.openCircuit();
-          throw new Error(
-            error.status === 429 ? GEOCODE_RATE_LIMITED_MSG : GEOCODE_SERVICE_UNAVAILABLE_MSG,
-            { cause: error }
-          );
-        }
-      }
-      this.recordFailure();
-      throw new Error(ZH_TW.geocoding.queryFailed, { cause: error });
+      this.handleGeocodeError(error);
     }
-    this.resetCircuit();
+  }
+
+  private handleGeocodeError(error: unknown): never {
+    console.error('Geocoding error:', error);
+    if (this.isCircuitOpeningHttpError(error)) {
+      this.openCircuit();
+      throw new Error(this.getCircuitOpeningHttpMessage(error.status), { cause: error });
+    }
+    this.recordFailure();
+    throw new Error(ZH_TW.geocoding.queryFailed, { cause: error });
+  }
+
+  private isCircuitOpeningHttpError(error: unknown): error is HttpErrorResponse {
+    return error instanceof HttpErrorResponse && (error.status === 429 || error.status === 503);
+  }
+
+  private getCircuitOpeningHttpMessage(status: number): string {
+    return status === 429 ? GEOCODE_RATE_LIMITED_MSG : GEOCODE_SERVICE_UNAVAILABLE_MSG;
+  }
+
+  private parseGeocodeResult(data: NominatimResponse): string {
     const a = data.address;
     let result: string | undefined;
     if (a) {
@@ -174,12 +203,14 @@ export class GeocodingService {
     }
     if (!result && data.display_name) result = data.display_name;
     if (!result) throw new Error(ZH_TW.geocoding.parseError);
+    return result;
+  }
 
+  private storeGeocodeCache(cacheKey: string, result: string): void {
     if (this.geocodeCache.size >= GeocodingService.MAX_CACHE_SIZE) {
       const firstKey = this.geocodeCache.keys().next().value;
       if (firstKey !== undefined) this.geocodeCache.delete(firstKey);
     }
     this.geocodeCache.set(cacheKey, result);
-    return result;
   }
 }
