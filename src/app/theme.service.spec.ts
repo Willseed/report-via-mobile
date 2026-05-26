@@ -1,6 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { ThemeService } from './theme.service';
 
+function createService(): ThemeService {
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({});
+  return TestBed.inject(ThemeService);
+}
+
 describe('ThemeService', () => {
   let service: ThemeService;
 
@@ -9,12 +15,6 @@ describe('ThemeService', () => {
     document.documentElement.style.removeProperty('color-scheme');
     document.body.style.removeProperty('color-scheme');
   });
-
-  function createService(): ThemeService {
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({});
-    return TestBed.inject(ThemeService);
-  }
 
   it('should default to auto when no stored preference', () => {
     service = createService();

@@ -10,6 +10,21 @@ import { POLICE_STATIONS, District } from '../../police-stations';
 import { ZH_TW } from '../../i18n';
 import { ReportStateService } from '../../services/report-state.service';
 
+function fireAddressInput(component: LocationInput, value: string): void {
+  component['onAddressInput']({ target: { value } } as unknown as Event);
+}
+
+function firePasteEvent(
+  component: LocationInput,
+  state: ReportStateService,
+  value: string,
+): void {
+  state.setAddress(value);
+  component['onAddressPaste']({
+    clipboardData: { getData: () => value },
+  } as unknown as ClipboardEvent);
+}
+
 describe('LocationInput', () => {
   let fixture: ComponentFixture<LocationInput>;
   let component: LocationInput;
@@ -49,10 +64,6 @@ describe('LocationInput', () => {
     vi.useRealTimers();
   });
 
-  function fireAddressInput(value: string): void {
-    component['onAddressInput']({ target: { value } } as unknown as Event);
-  }
-
   it('should create', () => {
     expect(component).toBeTruthy();
   });
@@ -63,25 +74,25 @@ describe('LocationInput', () => {
   });
 
   it('should update address on input event', () => {
-    fireAddressInput('測試地址');
+    fireAddressInput(component, '測試地址');
     vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
     expect(component['address']()).toBe('測試地址');
   });
 
   it('should require address (validation)', () => {
-    fireAddressInput('');
+    fireAddressInput(component, '');
     component.markAsTouched();
     expect(component['addressForm'].address().valid()).toBe(false);
   });
 
   it('should enforce max length on address', () => {
     const longAddress = '字'.repeat(ADDRESS_MAX_LENGTH + 1);
-    fireAddressInput(longAddress);
+    fireAddressInput(component, longAddress);
     expect(component['addressForm'].address().valid()).toBe(false);
   });
 
   it('should auto-select district when address contains known district', () => {
-    fireAddressInput('臺北市信義區信義路');
+    fireAddressInput(component, '臺北市信義區信義路');
     vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
 
     const district = component['district']();
@@ -96,7 +107,7 @@ describe('LocationInput', () => {
   });
 
   it('should detect district mismatch', () => {
-    fireAddressInput('臺北市信義區信義路');
+    fireAddressInput(component, '臺北市信義區信義路');
     vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
 
     const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === District.Kaohsiung);
@@ -107,7 +118,7 @@ describe('LocationInput', () => {
   });
 
   it('should not detect mismatch when no district selected', () => {
-    fireAddressInput('臺北市信義區信義路');
+    fireAddressInput(component, '臺北市信義區信義路');
     vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
     // Reset district to null
     state.setSelectedStation(null);
@@ -116,7 +127,7 @@ describe('LocationInput', () => {
   });
 
   it('should show valid=true when address and district are set', () => {
-    fireAddressInput('臺北市信義區信義路');
+    fireAddressInput(component, '臺北市信義區信義路');
     vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
 
     expect(component['district']()).not.toBeNull();
@@ -124,7 +135,7 @@ describe('LocationInput', () => {
   });
 
   it('should show valid=false when district is null', () => {
-    fireAddressInput('某個不含行政區的地址');
+    fireAddressInput(component, '某個不含行政區的地址');
     vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
 
     expect(component['district']()).toBeNull();
@@ -187,22 +198,15 @@ describe('LocationInput', () => {
   });
 
   describe('paste handling', () => {
-    function firePasteEvent(value: string): void {
-      state.setAddress(value);
-      component['onAddressPaste']({
-        clipboardData: { getData: () => value },
-      } as unknown as ClipboardEvent);
-    }
-
     it('should immediately match district on paste without debounce', async () => {
-      firePasteEvent('臺北市信義區信義路五段7號');
+      firePasteEvent(component, state, '臺北市信義區信義路五段7號');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['district']()).not.toBeNull();
       expect(component['district']()?.district).toBe(District.Taipei);
     });
 
     it('should normalize pasted address with 台灣 prefix', async () => {
-      firePasteEvent('台灣臺中市西屯區某路');
+      firePasteEvent(component, state, '台灣臺中市西屯區某路');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['address']()).toBe('臺中市西屯區某路');
       const result = component['district']();
@@ -211,7 +215,7 @@ describe('LocationInput', () => {
     });
 
     it('should normalize pasted address with postal code', async () => {
-      firePasteEvent('242 新北市新莊區某路');
+      firePasteEvent(component, state, '242 新北市新莊區某路');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['address']()).toBe('新北市新莊區某路');
       const result = component['district']();
@@ -228,9 +232,9 @@ describe('LocationInput', () => {
 
     it('should cancel pending debounce timer when pasting', async () => {
       // Start typing to trigger debounce timer
-      fireAddressInput('臺北');
+      fireAddressInput(component, '臺北');
       // Paste before debounce fires — should cancel the timer
-      firePasteEvent('臺中市西屯區某路');
+      firePasteEvent(component, state, '臺中市西屯區某路');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['district']()?.district).toBe(District.Taichung);
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS + 50);

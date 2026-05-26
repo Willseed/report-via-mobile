@@ -18,35 +18,35 @@ function sanitizeBodyForExpectation(body: string): string {
   return body.replace(/\p{Cc}/gu, ' ');
 }
 
-describe('SmsService', () => {
-  function createService(
-    platformOverrides: Partial<Platform> = {},
-    mockDocument?: { location: { assign: ReturnType<typeof import('vitest').vi.fn> } },
-  ) {
-    TestBed.resetTestingModule();
+function createService(
+  platformOverrides: Partial<Platform> = {},
+  mockDocument?: { location: { assign: ReturnType<typeof import('vitest').vi.fn> } },
+) {
+  TestBed.resetTestingModule();
 
-    const mockPlatform = {
-      ANDROID: false,
-      IOS: false,
-      isBrowser: true,
-      BLINK: false,
-      WEBKIT: false,
-      TRIDENT: false,
-      EDGE: false,
-      FIREFOX: false,
-      SAFARI: false,
-      ...platformOverrides,
-    } as Platform;
+  const mockPlatform = {
+    ANDROID: false,
+    IOS: false,
+    isBrowser: true,
+    BLINK: false,
+    WEBKIT: false,
+    TRIDENT: false,
+    EDGE: false,
+    FIREFOX: false,
+    SAFARI: false,
+    ...platformOverrides,
+  } as Platform;
 
-    const providers: unknown[] = [{ provide: Platform, useValue: mockPlatform }];
-    if (mockDocument) {
-      providers.push({ provide: DOCUMENT, useValue: mockDocument });
-    }
-
-    TestBed.configureTestingModule({ providers });
-    return TestBed.inject(SmsService);
+  const providers: unknown[] = [{ provide: Platform, useValue: mockPlatform }];
+  if (mockDocument) {
+    providers.push({ provide: DOCUMENT, useValue: mockDocument });
   }
 
+  TestBed.configureTestingModule({ providers });
+  return TestBed.inject(SmsService);
+}
+
+describe('SmsService', () => {
   it('should be created', () => {
     const service = createService();
     expect(service).toBeTruthy();

@@ -5,50 +5,62 @@ import { describe, it, expect, vi } from 'vitest';
 import { Subject } from 'rxjs';
 import { PwaUpdateService } from './pwa-update.service';
 
-describe('PwaUpdateService', () => {
-  let service: PwaUpdateService;
-  let versionUpdates$: Subject<VersionReadyEvent>;
-  let unrecoverable$: Subject<UnrecoverableStateEvent>;
-  let snackBarSpy: { open: ReturnType<typeof vi.fn> };
-  let snackBarAction$: Subject<void>;
-  let activateUpdateSpy: ReturnType<typeof vi.fn>;
+interface PwaUpdateTestContext {
+  service: PwaUpdateService;
+  versionUpdates$: Subject<VersionReadyEvent>;
+  unrecoverable$: Subject<UnrecoverableStateEvent>;
+  snackBarSpy: { open: ReturnType<typeof vi.fn> };
+  snackBarAction$: Subject<void>;
+  activateUpdateSpy: ReturnType<typeof vi.fn>;
+}
 
-  function setup(options: { isEnabled?: boolean; activateUpdate?: ReturnType<typeof vi.fn> } = {}) {
-    const { isEnabled = true, activateUpdate } = options;
-    versionUpdates$ = new Subject();
-    unrecoverable$ = new Subject();
-    snackBarAction$ = new Subject();
-    activateUpdateSpy = activateUpdate ?? vi.fn().mockResolvedValue(undefined);
-    snackBarSpy = {
-      open: vi.fn().mockReturnValue({
-        onAction: () => snackBarAction$,
-      } as unknown as MatSnackBarRef<TextOnlySnackBar>),
-    };
+function setupPwaUpdateService(
+  options: { isEnabled?: boolean; activateUpdate?: ReturnType<typeof vi.fn> } = {},
+): PwaUpdateTestContext {
+  const { isEnabled = true, activateUpdate } = options;
+  const versionUpdates$ = new Subject<VersionReadyEvent>();
+  const unrecoverable$ = new Subject<UnrecoverableStateEvent>();
+  const snackBarAction$ = new Subject<void>();
+  const activateUpdateSpy = activateUpdate ?? vi.fn().mockResolvedValue(undefined);
+  const snackBarSpy = {
+    open: vi.fn().mockReturnValue({
+      onAction: () => snackBarAction$,
+    } as unknown as MatSnackBarRef<TextOnlySnackBar>),
+  };
 
-    TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: SwUpdate,
-          useValue: {
-            isEnabled,
-            versionUpdates: versionUpdates$,
-            unrecoverable: unrecoverable$,
-            activateUpdate: activateUpdateSpy,
-          },
+  TestBed.configureTestingModule({
+    providers: [
+      {
+        provide: SwUpdate,
+        useValue: {
+          isEnabled,
+          versionUpdates: versionUpdates$,
+          unrecoverable: unrecoverable$,
+          activateUpdate: activateUpdateSpy,
         },
-        { provide: MatSnackBar, useValue: snackBarSpy },
-      ],
-    });
-    service = TestBed.inject(PwaUpdateService);
-  }
+      },
+      { provide: MatSnackBar, useValue: snackBarSpy },
+    ],
+  });
 
+  return {
+    service: TestBed.inject(PwaUpdateService),
+    versionUpdates$,
+    unrecoverable$,
+    snackBarSpy,
+    snackBarAction$,
+    activateUpdateSpy,
+  };
+}
+
+describe('PwaUpdateService', () => {
   it('should be created', () => {
-    setup();
+    const { service } = setupPwaUpdateService();
     expect(service).toBeTruthy();
   });
 
   it('should show snackbar when VERSION_READY event fires', () => {
-    setup();
+    const { service, versionUpdates$, snackBarSpy } = setupPwaUpdateService();
     service.init();
 
     versionUpdates$.next({
@@ -61,7 +73,7 @@ describe('PwaUpdateService', () => {
   });
 
   it('should not show snackbar for non-VERSION_READY events', () => {
-    setup();
+    const { service, versionUpdates$, snackBarSpy } = setupPwaUpdateService();
     service.init();
 
     versionUpdates$.next({ type: 'VERSION_DETECTED' } as unknown as VersionReadyEvent);
@@ -70,7 +82,7 @@ describe('PwaUpdateService', () => {
   });
 
   it('should not subscribe when SwUpdate is disabled', () => {
-    setup({ isEnabled: false });
+    const { service, versionUpdates$, snackBarSpy } = setupPwaUpdateService({ isEnabled: false });
     service.init();
 
     versionUpdates$.next({
@@ -83,7 +95,8 @@ describe('PwaUpdateService', () => {
   });
 
   it('should call activateUpdate on snackbar action', async () => {
-    setup();
+    const { service, versionUpdates$, snackBarAction$, activateUpdateSpy } =
+      setupPwaUpdateService();
     service.init();
 
     versionUpdates$.next({
@@ -99,7 +112,9 @@ describe('PwaUpdateService', () => {
   });
 
   it('should show error snackbar when activateUpdate fails', async () => {
-    setup({ activateUpdate: vi.fn().mockRejectedValue(new Error('SW error')) });
+    const { service, versionUpdates$, snackBarSpy, snackBarAction$ } = setupPwaUpdateService({
+      activateUpdate: vi.fn().mockRejectedValue(new Error('SW error')),
+    });
     service.init();
 
     versionUpdates$.next({
@@ -110,16 +125,23 @@ describe('PwaUpdateService', () => {
 
     snackBarAction$.next();
     await vi.waitFor(() => {
-      expect(snackBarSpy.open).toHaveBeenCalledWith('更新失敗，請重新整理頁面', '', { duration: 5000 });
+      expect(snackBarSpy.open).toHaveBeenCalledWith('更新失敗，請重新整理頁面', '', {
+        duration: 5000,
+      });
     });
   });
 
   it('should show snackbar on unrecoverable state', () => {
-    setup();
+    const { service, unrecoverable$, snackBarSpy } = setupPwaUpdateService();
     service.init();
 
-    unrecoverable$.next({ type: 'UNRECOVERABLE_STATE', reason: 'hash mismatch' } as UnrecoverableStateEvent);
+    unrecoverable$.next({
+      type: 'UNRECOVERABLE_STATE',
+      reason: 'hash mismatch',
+    } as UnrecoverableStateEvent);
 
-    expect(snackBarSpy.open).toHaveBeenCalledWith('應用程式發生錯誤，將重新載入', '', { duration: 3000 });
+    expect(snackBarSpy.open).toHaveBeenCalledWith('應用程式發生錯誤，將重新載入', '', {
+      duration: 3000,
+    });
   });
 });

@@ -26,6 +26,35 @@ function stubGeolocation(impl: GeoImplFn): ReturnType<typeof vi.fn> {
   return spy;
 }
 
+async function flushReverseGeocode(
+  service: GeocodingService,
+  httpTesting: HttpTestingController,
+  lat: number,
+  lon: number,
+  response: object,
+): Promise<string> {
+  const promise = service.reverseGeocode(lat, lon);
+  const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
+  req.flush(response);
+  return promise;
+}
+
+function muteExpectedGeocodingErrors() {
+  return vi.spyOn(console, 'error').mockImplementation(() => undefined);
+}
+
+function expectGeocodingErrorsLogged(
+  consoleErrorSpy: ReturnType<typeof muteExpectedGeocodingErrors>,
+  count = 1,
+): void {
+  expect(consoleErrorSpy).toHaveBeenCalledTimes(count);
+  expect(consoleErrorSpy).toHaveBeenCalledWith('Geocoding error:', expect.anything());
+  for (const [message, error] of consoleErrorSpy.mock.calls) {
+    expect(message).toBe('Geocoding error:');
+    expect(error).toBeDefined();
+  }
+}
+
 describe('GeocodingService', () => {
   let service: GeocodingService;
   let httpTesting: HttpTestingController;
@@ -114,33 +143,6 @@ describe('GeocodingService', () => {
   });
 
   describe('reverseGeocode', () => {
-    async function flushReverseGeocode(
-      lat: number,
-      lon: number,
-      response: object,
-    ): Promise<string> {
-      const promise = service.reverseGeocode(lat, lon);
-      const req = httpTesting.expectOne((r) => r.url.includes('nominatim'));
-      req.flush(response);
-      return promise;
-    }
-
-    function muteExpectedGeocodingErrors() {
-      return vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    }
-
-    function expectGeocodingErrorsLogged(
-      consoleErrorSpy: ReturnType<typeof muteExpectedGeocodingErrors>,
-      count = 1,
-    ): void {
-      expect(consoleErrorSpy).toHaveBeenCalledTimes(count);
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Geocoding error:', expect.anything());
-      for (const [message, error] of consoleErrorSpy.mock.calls) {
-        expect(message).toBe('Geocoding error:');
-        expect(error).toBeDefined();
-      }
-    }
-
     it('should return formatted address from address fields', async () => {
       const promise = service.reverseGeocode(25.033, 121.565);
       const req = httpTesting.expectOne((r) => r.url.includes('addressdetails=1'));
@@ -155,7 +157,7 @@ describe('GeocodingService', () => {
     });
 
     it('should use county and town as fallback for city and district', async () => {
-      const result = await flushReverseGeocode(24.859, 121.823, {
+      const result = await flushReverseGeocode(service, httpTesting, 24.859, 121.823, {
         display_name: '中正路100號, 頭城鎮, 宜蘭縣, 臺灣',
         address: { house_number: '100號', road: '中正路', town: '頭城鎮', county: '宜蘭縣' },
       });
@@ -163,7 +165,7 @@ describe('GeocodingService', () => {
     });
 
     it('should fallback to display_name when address fields are insufficient', async () => {
-      const result = await flushReverseGeocode(25.033, 121.565, {
+      const result = await flushReverseGeocode(service, httpTesting, 25.033, 121.565, {
         display_name: '某個地方, 臺灣',
         address: {},
       });
@@ -233,7 +235,7 @@ describe('GeocodingService', () => {
     });
 
     it('should throw when no address and no display_name', async () => {
-      await expect(flushReverseGeocode(25.033, 121.565, {})).rejects.toThrow(
+      await expect(flushReverseGeocode(service, httpTesting, 25.033, 121.565, {})).rejects.toThrow(
         '無法解析地址，請手動輸入。',
       );
     });
@@ -257,7 +259,13 @@ describe('GeocodingService', () => {
       };
 
       // First call — hits network
-      const result1 = await flushReverseGeocode(25.03301, 121.56501, mockResponse);
+      const result1 = await flushReverseGeocode(
+        service,
+        httpTesting,
+        25.03301,
+        121.56501,
+        mockResponse,
+      );
       expect(result1).toBe('臺北市信義區');
 
       // Second call with nearby coords (same toFixed(4) = 25.0330, 121.5650) — should use cache
@@ -280,7 +288,7 @@ describe('GeocodingService', () => {
       await expect(promise1).rejects.toThrow('地址查詢失敗');
 
       // Second call should still hit network (not cached)
-      const result2 = await flushReverseGeocode(25.033, 121.565, {
+      const result2 = await flushReverseGeocode(service, httpTesting, 25.033, 121.565, {
         display_name: '臺北市',
         address: { city: '臺北市' },
       });
