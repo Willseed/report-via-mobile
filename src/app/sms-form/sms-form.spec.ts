@@ -13,6 +13,7 @@ import {
   ViolationInput,
   VIOLATION_FILTER_DEBOUNCE_MS,
 } from './violation-input/violation-input';
+import { mockGeolocationPosition } from '../../testing/geolocation';
 
 function mockDialogResult(
   dialogSpy: { open: ReturnType<typeof vi.fn> },
@@ -41,6 +42,16 @@ function fillValidForm(state: ReportStateService, station = POLICE_STATIONS[0]):
   state.setViolation('汽車於紅線停車');
 }
 
+function hostElement(fixture: ComponentFixture<SmsForm>): HTMLElement {
+  return fixture.nativeElement;
+}
+
+function queryEl<T extends Element>(fixture: ComponentFixture<SmsForm>, selector: string): T {
+  const el = hostElement(fixture).querySelector<T>(selector);
+  if (!el) throw new Error(`Element not found: ${selector}`);
+  return el;
+}
+
 function mockInputEvent(value: string): Event {
   return { target: { value } } as unknown as Event;
 }
@@ -48,12 +59,13 @@ function mockInputEvent(value: string): Event {
 function mockPendingPosition(geocodingServiceSpy: {
   getCurrentPosition: ReturnType<typeof vi.fn>;
 }): (value: GeolocationPosition) => void {
-  let resolvePosition!: (value: GeolocationPosition) => void;
+  let resolvePosition: ((value: GeolocationPosition) => void) | undefined;
   geocodingServiceSpy.getCurrentPosition.mockReturnValue(
     new Promise<GeolocationPosition>((resolve) => {
       resolvePosition = resolve;
     }),
   );
+  if (!resolvePosition) throw new Error('Position resolver was not initialized');
   return resolvePosition;
 }
 
@@ -284,9 +296,7 @@ describe('SmsForm', () => {
       state.setAddress('臺北市信義區信義路五段7號');
       state.setSelectedStation(kaohsiungStation);
       fixture.detectChanges();
-      const warning = (fixture.nativeElement as HTMLElement).querySelector(
-        '.district-mismatch-warning',
-      );
+      const warning = hostElement(fixture).querySelector('.district-mismatch-warning');
       expect(warning).toBeTruthy();
     });
 
@@ -294,9 +304,7 @@ describe('SmsForm', () => {
       state.setAddress('臺北市信義區信義路五段7號');
       state.setSelectedStation(POLICE_STATIONS[0]);
       fixture.detectChanges();
-      const warning = (fixture.nativeElement as HTMLElement).querySelector(
-        '.district-mismatch-warning',
-      );
+      const warning = hostElement(fixture).querySelector('.district-mismatch-warning');
       expect(warning).toBeNull();
     });
   });
@@ -352,21 +360,21 @@ describe('SmsForm', () => {
       state.setSelectedStation(POLICE_STATIONS[0]);
       state.setViolation('汽車於紅線停車');
       fixture.detectChanges();
-      const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
+      const preview = hostElement(fixture).querySelector('.sms-preview');
       expect(preview).toBeTruthy();
     });
 
     it('should hide preview when address is empty', async () => {
       state.setViolation('汽車於紅線停車');
       fixture.detectChanges();
-      const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
+      const preview = hostElement(fixture).querySelector('.sms-preview');
       expect(preview).toBeNull();
     });
 
     it('should hide preview when violation is empty', async () => {
       state.setAddress('臺北市信義區信義路五段7號');
       fixture.detectChanges();
-      const preview = (fixture.nativeElement as HTMLElement).querySelector('.sms-preview');
+      const preview = hostElement(fixture).querySelector('.sms-preview');
       expect(preview).toBeNull();
     });
 
@@ -375,7 +383,7 @@ describe('SmsForm', () => {
       state.setSelectedStation(POLICE_STATIONS[0]);
       state.setViolation('汽車於紅線停車');
       fixture.detectChanges();
-      const bubble = (fixture.nativeElement as HTMLElement).querySelector('.sms-bubble');
+      const bubble = hostElement(fixture).querySelector('.sms-bubble');
       expect(bubble?.textContent?.trim()).toBe(
         '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
       );
@@ -448,10 +456,7 @@ describe('SmsForm', () => {
 
   describe('locateUser', () => {
     it('should fill address and auto-select district on success', async () => {
-      const mockPosition = {
-        coords: { latitude: 25.033, longitude: 121.565 },
-      } as GeolocationPosition;
-      geocodingServiceSpy.getCurrentPosition.mockResolvedValue(mockPosition);
+      geocodingServiceSpy.getCurrentPosition.mockResolvedValue(mockGeolocationPosition());
       geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
 
       await getLocationInput(component)['locateUser']();
@@ -485,7 +490,7 @@ describe('SmsForm', () => {
 
       const promise2 = loc['locateUser']();
 
-      resolvePosition({ coords: { latitude: 25, longitude: 121 } } as GeolocationPosition);
+      resolvePosition(mockGeolocationPosition(25, 121));
       await promise1;
       await promise2;
 
@@ -500,7 +505,7 @@ describe('SmsForm', () => {
       expect(loc['isLocating']()).toBe(true);
 
       geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區');
-      resolvePosition({ coords: { latitude: 25, longitude: 121 } } as GeolocationPosition);
+      resolvePosition(mockGeolocationPosition(25, 121));
       await promise;
 
       expect(loc['isLocating']()).toBe(false);
@@ -592,7 +597,7 @@ describe('SmsForm', () => {
     });
 
     it('should show add-plate button in template when not toggled', async () => {
-      const btn = (fixture.nativeElement as HTMLElement).querySelector('.add-plate-btn');
+      const btn = hostElement(fixture).querySelector('.add-plate-btn');
       expect(btn).toBeTruthy();
       expect(btn?.textContent).toContain('新增車牌號碼');
     });
@@ -600,16 +605,14 @@ describe('SmsForm', () => {
     it('should show license plate field after clicking add button', () => {
       getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
-      const field = (fixture.nativeElement as HTMLElement).querySelector(
-        'input[placeholder="例：ABC1234"]',
-      );
+      const field = hostElement(fixture).querySelector('input[placeholder="例：ABC1234"]');
       expect(field).toBeTruthy();
     });
 
     it('should hide add-plate button when field is shown', () => {
       getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
-      const btn = (fixture.nativeElement as HTMLElement).querySelector('.add-plate-btn');
+      const btn = hostElement(fixture).querySelector('.add-plate-btn');
       expect(btn).toBeNull();
     });
 
@@ -634,7 +637,7 @@ describe('SmsForm', () => {
       state.setSelectedStation(POLICE_STATIONS[0]);
       state.setViolation('汽車於紅線停車');
       fixture.detectChanges();
-      const warning = (fixture.nativeElement as HTMLElement).querySelector('.sms-length-warning');
+      const warning = hostElement(fixture).querySelector('.sms-length-warning');
       expect(warning).toBeTruthy();
       expect(warning?.textContent).toContain('可能被拆為多則傳送');
     });
@@ -643,7 +646,7 @@ describe('SmsForm', () => {
       state.setAddress('臺北市信義路');
       state.setViolation('汽車於紅線停車');
       fixture.detectChanges();
-      const warning = (fixture.nativeElement as HTMLElement).querySelector('.sms-length-warning');
+      const warning = hostElement(fixture).querySelector('.sms-length-warning');
       expect(warning).toBeNull();
     });
   });
@@ -666,9 +669,7 @@ describe('SmsForm', () => {
     });
 
     it('should clear pending debounce timer when locating', async () => {
-      geocodingServiceSpy.getCurrentPosition.mockResolvedValue({
-        coords: { latitude: 25.033, longitude: 121.565 },
-      } as GeolocationPosition);
+      geocodingServiceSpy.getCurrentPosition.mockResolvedValue(mockGeolocationPosition());
       geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
 
       const loc = getLocationInput(component);
@@ -720,16 +721,10 @@ describe('SmsForm', () => {
   });
 
   describe('DOM-driven template coverage', () => {
-    function queryEl<T extends Element>(selector: string): T {
-      const el = (fixture.nativeElement as Element).querySelector<T>(selector);
-      if (!el) throw new Error(`Element not found: ${selector}`);
-      return el;
-    }
-
     it('should trigger onAddressInput via DOM input event', () => {
       vi.useFakeTimers();
       fixture.detectChanges();
-      const el = queryEl<HTMLInputElement>('input[placeholder="請輸入地址..."]');
+      const el = queryEl<HTMLInputElement>(fixture, 'input[placeholder="請輸入地址..."]');
       el.value = '臺北市';
       el.dispatchEvent(new Event('input', { bubbles: true }));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
@@ -739,13 +734,11 @@ describe('SmsForm', () => {
     });
 
     it('should trigger locateUser via DOM click event', async () => {
-      geocodingServiceSpy.getCurrentPosition.mockResolvedValue({
-        coords: { latitude: 25.033, longitude: 121.565 },
-      } as GeolocationPosition);
+      geocodingServiceSpy.getCurrentPosition.mockResolvedValue(mockGeolocationPosition());
       geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
 
       fixture.detectChanges();
-      queryEl<HTMLButtonElement>('button[aria-label="使用目前位置"]').click();
+      queryEl<HTMLButtonElement>(fixture, 'button[aria-label="使用目前位置"]').click();
 
       // Wait for async locateUser to complete
       await vi.waitFor(() => {
@@ -759,7 +752,7 @@ describe('SmsForm', () => {
       loc['addressForm'].address().value.set('');
       loc.markAsTouched();
       fixture.detectChanges();
-      const errors = (fixture.nativeElement as Element).querySelectorAll('mat-error');
+      const errors = hostElement(fixture).querySelectorAll('mat-error');
       expect(errors.length).toBeGreaterThan(0);
     });
 
@@ -769,7 +762,7 @@ describe('SmsForm', () => {
       );
       await getLocationInput(component)['locateUser']();
       fixture.detectChanges();
-      const errorDiv = (fixture.nativeElement as Element).querySelector('.location-error');
+      const errorDiv = hostElement(fixture).querySelector('.location-error');
       expect(errorDiv).toBeTruthy();
       expect(errorDiv?.textContent).toContain('定位權限被拒絕');
     });
@@ -779,7 +772,7 @@ describe('SmsForm', () => {
       loc['onDistrictChange'](POLICE_STATIONS[1]);
       fixture.detectChanges();
       expect(loc['district']()).toBe(POLICE_STATIONS[1]);
-      const hints = (fixture.nativeElement as Element).querySelectorAll('mat-hint');
+      const hints = hostElement(fixture).querySelectorAll('mat-hint');
       const stationHint = Array.from(hints).find((h) =>
         h.textContent?.includes(POLICE_STATIONS[1].stationName),
       );
@@ -788,7 +781,7 @@ describe('SmsForm', () => {
 
     it('should trigger violation input via DOM', () => {
       fixture.detectChanges();
-      const el = queryEl<HTMLInputElement>('input[placeholder="請選擇違規事實..."]');
+      const el = queryEl<HTMLInputElement>(fixture, 'input[placeholder="請選擇違規事實..."]');
       el.value = '紅線';
       el.dispatchEvent(new Event('input'));
       fixture.detectChanges();
@@ -796,7 +789,7 @@ describe('SmsForm', () => {
 
     it('should trigger toggleLicensePlate via DOM click', () => {
       fixture.detectChanges();
-      queryEl<HTMLButtonElement>('.add-plate-btn').click();
+      queryEl<HTMLButtonElement>(fixture, '.add-plate-btn').click();
       fixture.detectChanges();
       expect(getViolationInput(component)['showLicensePlate']()).toBe(true);
     });
@@ -804,7 +797,7 @@ describe('SmsForm', () => {
     it('should trigger clearLicensePlate via DOM click', () => {
       getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
-      queryEl<HTMLButtonElement>('button[aria-label="移除車牌號碼"]').click();
+      queryEl<HTMLButtonElement>(fixture, 'button[aria-label="移除車牌號碼"]').click();
       fixture.detectChanges();
       expect(getViolationInput(component)['showLicensePlate']()).toBe(false);
     });
@@ -812,7 +805,7 @@ describe('SmsForm', () => {
     it('should trigger license plate input via DOM', () => {
       getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
-      const el = queryEl<HTMLInputElement>('input[placeholder="例：ABC1234"]');
+      const el = queryEl<HTMLInputElement>(fixture, 'input[placeholder="例：ABC1234"]');
       el.value = 'abc-123';
       el.dispatchEvent(new Event('input'));
       fixture.detectChanges();
@@ -822,7 +815,9 @@ describe('SmsForm', () => {
     it('should mark license plate as touched on blur', () => {
       getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
-      queryEl<HTMLInputElement>('input[placeholder="例：ABC1234"]').dispatchEvent(new Event('blur'));
+      queryEl<HTMLInputElement>(fixture, 'input[placeholder="例：ABC1234"]').dispatchEvent(
+        new Event('blur'),
+      );
       fixture.detectChanges();
       expect(getViolationInput(component)['violationForm'].licensePlate().touched()).toBe(true);
     });
@@ -832,9 +827,7 @@ describe('SmsForm', () => {
       vi['violationForm'].violation().value.set('');
       vi.markAsTouched();
       fixture.detectChanges();
-      const errors = (fixture.nativeElement as HTMLElement).querySelectorAll(
-        'app-violation-input mat-error',
-      );
+      const errors = hostElement(fixture).querySelectorAll('app-violation-input mat-error');
       expect(errors.length).toBeGreaterThan(0);
     });
 
@@ -844,9 +837,7 @@ describe('SmsForm', () => {
       vi['violationForm'].licensePlate().value.set('!!!');
       vi['violationForm'].licensePlate().markAsTouched();
       fixture.detectChanges();
-      const errors = (fixture.nativeElement as HTMLElement).querySelectorAll(
-        'app-violation-input mat-error',
-      );
+      const errors = hostElement(fixture).querySelectorAll('app-violation-input mat-error');
       expect(errors.length).toBeGreaterThan(0);
     });
 
@@ -900,21 +891,21 @@ describe('SmsForm desktop behavior', () => {
   });
 
   it('should show desktop warning when on desktop', () => {
-    const warning = (fixture.nativeElement as HTMLElement).querySelector('.desktop-warning');
+    const warning = hostElement(fixture).querySelector('.desktop-warning');
     expect(warning).toBeTruthy();
     expect(warning?.textContent).toContain('簡訊連結可能無法在桌面瀏覽器上使用');
   });
 
   it('should disable submit button when on desktop', async () => {
     fixture.detectChanges();
-    const submitButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+    const submitButton = hostElement(fixture).querySelector<HTMLButtonElement>(
       'button[mat-flat-button]',
     );
     expect(submitButton?.disabled).toBe(true);
   });
 
   it('should render disclaimer section in defer block', () => {
-    const details = (fixture.nativeElement as HTMLElement).querySelector('details.disclaimer');
+    const details = hostElement(fixture).querySelector('details.disclaimer');
     expect(details).not.toBeNull();
     const summary = details?.querySelector('summary');
     expect(summary?.textContent).toContain('免責聲明');

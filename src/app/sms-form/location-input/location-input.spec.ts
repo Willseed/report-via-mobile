@@ -112,7 +112,8 @@ describe('LocationInput', () => {
 
     const kaohsiungStation = POLICE_STATIONS.find((s) => s.district === District.Kaohsiung);
     expect(kaohsiungStation).toBeDefined();
-    component['onDistrictChange'](kaohsiungStation as NonNullable<typeof kaohsiungStation>);
+    if (!kaohsiungStation) throw new Error('Kaohsiung station not found');
+    component['onDistrictChange'](kaohsiungStation);
 
     expect(component.districtMismatch()).toBe(true);
   });

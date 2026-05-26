@@ -13,7 +13,7 @@ function createComponent(message: string): ComponentFixture<SmsPreview> {
  * Returns the root DOM element of the test fixture for querying rendered output.
  */
 function getHostHtmlElement(fixture: ComponentFixture<SmsPreview>): HTMLElement {
-  return fixture.nativeElement as HTMLElement;
+  return fixture.nativeElement;
 }
 
 describe('SmsPreview', () => {

@@ -9,6 +9,7 @@ import {
   GEOCODE_RATE_LIMITED_MSG,
   GEOCODE_SERVICE_UNAVAILABLE_MSG,
 } from './geocoding.service';
+import { mockGeolocationPosition } from '../testing/geolocation';
 
 function mockGeoError(code: number): GeolocationPositionError {
   return { code, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3, message: '' };
@@ -77,9 +78,7 @@ describe('GeocodingService', () => {
   });
 
   describe('getCurrentPosition', () => {
-    const mockPosition = {
-      coords: { latitude: 25.033, longitude: 121.565 },
-    } as GeolocationPosition;
+    const mockPosition = mockGeolocationPosition();
 
     it('should resolve with position on success', async () => {
       stubGeolocation((success: PositionCallback) => { success(mockPosition); });
