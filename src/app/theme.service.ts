@@ -11,9 +11,8 @@ export class ThemeService {
   readonly isDark = computed(() => {
     const pref = this.preference();
     if (pref !== 'auto') return pref === 'dark';
-    return typeof window !== 'undefined'
-      && typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return typeof globalThis.matchMedia === 'function'
+      && globalThis.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
   constructor() {

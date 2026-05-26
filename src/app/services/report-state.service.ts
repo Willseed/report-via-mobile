@@ -48,12 +48,12 @@ export class ReportStateService {
   readonly compareStations = this.form.compareStations;
 
   constructor() {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('online', this.handleOnline);
-      window.addEventListener('offline', this.handleOffline);
+    if (typeof globalThis.addEventListener === 'function') {
+      globalThis.addEventListener('online', this.handleOnline);
+      globalThis.addEventListener('offline', this.handleOffline);
       this.destroyRef.onDestroy(() => {
-        window.removeEventListener('online', this.handleOnline);
-        window.removeEventListener('offline', this.handleOffline);
+        globalThis.removeEventListener('online', this.handleOnline);
+        globalThis.removeEventListener('offline', this.handleOffline);
       });
     }
   }

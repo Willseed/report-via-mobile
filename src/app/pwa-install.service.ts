@@ -17,7 +17,7 @@ export class PwaInstallService {
   readonly canInstall = this.deferredPrompt.asReadonly();
 
   init(): void {
-    fromEvent<BeforeInstallPromptEvent>(window, 'beforeinstallprompt')
+    fromEvent<BeforeInstallPromptEvent>(globalThis, 'beforeinstallprompt')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((event) => {
         event.preventDefault();
