@@ -69,42 +69,77 @@ function parseCliOptions(args) {
       break;
     }
 
-    if (arg === '--configuration' || arg === '-c') {
-      cliOptions.configuration = pendingArgs.shift();
-      continue;
-    }
-
-    if (arg.startsWith('--configuration=')) {
-      cliOptions.configuration = arg.slice('--configuration='.length);
-      continue;
-    }
-
-    if (arg === '--output-path' || arg === '-o') {
-      cliOptions.outputPath = pendingArgs.shift();
-      continue;
-    }
-
-    if (arg.startsWith('--output-path=')) {
-      cliOptions.outputPath = arg.slice('--output-path='.length);
-      continue;
-    }
-
-    if (arg === '--project') {
-      cliOptions.project = pendingArgs.shift();
-      continue;
-    }
-
-    if (arg.startsWith('--project=')) {
-      cliOptions.project = arg.slice('--project='.length);
-      continue;
-    }
-
-    if (!arg.startsWith('-')) {
+    if (!consumeCliOption(cliOptions, pendingArgs, arg) && !arg.startsWith('-')) {
       cliOptions.positionals.push(arg);
     }
   }
 
   return cliOptions;
+}
+
+function consumeCliOption(cliOptions, pendingArgs, arg) {
+  const separatedOption = getSeparatedCliOptionKey(arg);
+
+  if (separatedOption) {
+    assignCliOptionValue(cliOptions, separatedOption, pendingArgs.shift());
+    return true;
+  }
+
+  const inlineOption = getInlineCliOption(arg);
+
+  if (inlineOption) {
+    assignCliOptionValue(cliOptions, inlineOption.key, inlineOption.value);
+    return true;
+  }
+
+  return false;
+}
+
+function getSeparatedCliOptionKey(arg) {
+  switch (arg) {
+    case '--configuration':
+    case '-c':
+      return 'configuration';
+    case '--output-path':
+    case '-o':
+      return 'outputPath';
+    case '--project':
+      return 'project';
+    default:
+      return undefined;
+  }
+}
+
+function getInlineCliOption(arg) {
+  const inlineOptions = [
+    ['--configuration=', 'configuration'],
+    ['--output-path=', 'outputPath'],
+    ['--project=', 'project'],
+  ];
+
+  for (const [prefix, key] of inlineOptions) {
+    if (arg.startsWith(prefix)) {
+      return { key, value: arg.slice(prefix.length) };
+    }
+  }
+
+  return undefined;
+}
+
+function assignCliOptionValue(cliOptions, optionKey, value) {
+  switch (optionKey) {
+    case 'configuration':
+      cliOptions.configuration = value;
+      break;
+    case 'outputPath':
+      cliOptions.outputPath = value;
+      break;
+    case 'project':
+      cliOptions.project = value;
+      break;
+    default:
+      throw new Error(`Unsupported CLI option key "${optionKey}".`);
+  }
 }
 
 function resolveProjectName(workspace, cliOptions) {
