@@ -5,6 +5,8 @@ const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 
 const manifestFilename = 'ngsw.json';
+const fixedCommandPath = '/usr/bin:/bin';
+const gitCommandEnv = { PATH: fixedCommandPath };
 let manifestDescriptor;
 
 try {
@@ -67,6 +69,7 @@ function getGitCommitTimestamp() {
       ['status', '--porcelain', '--untracked-files=no'],
       {
         encoding: 'utf8',
+        env: gitCommandEnv,
         stdio: ['ignore', 'pipe', 'ignore'],
       },
     ).trim();
@@ -77,6 +80,7 @@ function getGitCommitTimestamp() {
 
     const commitEpochSeconds = execFileSync('git', ['log', '-1', '--format=%ct', 'HEAD'], {
       encoding: 'utf8',
+      env: gitCommandEnv,
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
 
