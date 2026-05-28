@@ -15,6 +15,26 @@ import {
 } from './violation-input/violation-input';
 import { mockGeolocationPosition } from '../../testing/geolocation';
 
+const VALID_ADDRESS = '臺北市信義區信義路五段7號';
+const SHORT_ADDRESS = '臺北市信義路';
+const UNKNOWN_ADDRESS = '某個不存在的地方';
+const VALID_VIOLATION = '汽車於紅線停車';
+const VALID_PLATE = 'ABC1234';
+const EXPECTED_MESSAGE = `${VALID_ADDRESS}，有${VALID_VIOLATION}，請派員處理`;
+const EXPECTED_MESSAGE_WITH_PLATE =
+  `${VALID_ADDRESS}，有${VALID_VIOLATION}，車牌號碼：${VALID_PLATE}，請派員處理`;
+const LONG_ADDRESS =
+  '臺北市信義區信義路五段某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某號';
+const GEOLOCATION_PERMISSION_DENIED = '定位權限被拒絕，請允許存取位置資訊。';
+const LICENSE_PLATE_INPUT_SELECTOR = 'input[placeholder="例：ABC1234"]';
+
+interface FormState {
+  address?: string;
+  station?: (typeof POLICE_STATIONS)[number] | null;
+  violation?: string;
+  plate?: string;
+}
+
 function mockDialogResult(
   dialogSpy: { open: ReturnType<typeof vi.fn> },
   result: boolean | undefined,
@@ -36,10 +56,23 @@ function getViolationInput(component: SmsForm): ViolationInput {
   return ref;
 }
 
+function setFormState(
+  state: ReportStateService,
+  {
+    address = VALID_ADDRESS,
+    station = POLICE_STATIONS[0],
+    violation = VALID_VIOLATION,
+    plate,
+  }: FormState = {},
+): void {
+  if (address !== undefined) state.setAddress(address);
+  if (station !== undefined) state.setSelectedStation(station);
+  if (violation !== undefined) state.setViolation(violation);
+  if (plate !== undefined) state.setLicensePlate(plate);
+}
+
 function fillValidForm(state: ReportStateService, station = POLICE_STATIONS[0]): void {
-  state.setAddress('臺北市信義區信義路五段7號');
-  state.setSelectedStation(station);
-  state.setViolation('汽車於紅線停車');
+  setFormState(state, { station });
 }
 
 function hostElement(fixture: ComponentFixture<SmsForm>): HTMLElement {
@@ -50,6 +83,44 @@ function queryEl<T extends Element>(fixture: ComponentFixture<SmsForm>, selector
   const el = hostElement(fixture).querySelector<T>(selector);
   if (!el) throw new Error(`Element not found: ${selector}`);
   return el;
+}
+
+function queryOptional<T extends Element>(
+  fixture: ComponentFixture<SmsForm>,
+  selector: string,
+): T | null {
+  return hostElement(fixture).querySelector<T>(selector);
+}
+
+function queryAll(fixture: ComponentFixture<SmsForm>, selector: string): NodeListOf<Element> {
+  return hostElement(fixture).querySelectorAll(selector);
+}
+
+function smsPreview(fixture: ComponentFixture<SmsForm>): Element | null {
+  return queryOptional(fixture, '.sms-preview');
+}
+
+function smsBubble(fixture: ComponentFixture<SmsForm>): Element | null {
+  return queryOptional(fixture, '.sms-bubble');
+}
+
+function lengthWarning(fixture: ComponentFixture<SmsForm>): Element | null {
+  return queryOptional(fixture, '.sms-length-warning');
+}
+
+function districtWarning(fixture: ComponentFixture<SmsForm>): Element | null {
+  return queryOptional(fixture, '.district-mismatch-warning');
+}
+
+function submitButton(fixture: ComponentFixture<SmsForm>): HTMLButtonElement | null {
+  return queryOptional<HTMLButtonElement>(fixture, 'button[mat-flat-button]');
+}
+
+function validationErrors(
+  fixture: ComponentFixture<SmsForm>,
+  selector = 'mat-error',
+): NodeListOf<Element> {
+  return queryAll(fixture, selector);
 }
 
 function mockInputEvent(value: string): Event {
@@ -165,7 +236,7 @@ describe('SmsForm', () => {
         data: {
           stationName: POLICE_STATIONS[0].stationName,
           phoneNumber: POLICE_STATIONS[0].phoneNumber,
-          message: '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
+          message: EXPECTED_MESSAGE,
         },
       }),
     );
@@ -179,7 +250,7 @@ describe('SmsForm', () => {
 
     expect(smsServiceSpy.sendSms).toHaveBeenCalledWith(
       POLICE_STATIONS[0].phoneNumber,
-      '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
+      EXPECTED_MESSAGE,
     );
   });
 
@@ -207,9 +278,7 @@ describe('SmsForm', () => {
   });
 
   it('should not open dialog when district mismatches even if form is valid', async () => {
-    state.setAddress('臺北市信義區信義路五段7號');
-    state.setViolation('汽車於紅線停車');
-    state.setSelectedStation(kaohsiungStation);
+    setFormState(state, { station: kaohsiungStation });
 
     void component['sendSms']();
     expect(dialogSpy.open).not.toHaveBeenCalled();
@@ -226,7 +295,7 @@ describe('SmsForm', () => {
 
     it('should auto-select district when address contains district name', () => {
       const loc = getLocationInput(component);
-      loc['onAddressInput'](mockInputEvent('臺北市信義區信義路五段7號'));
+      loc['onAddressInput'](mockInputEvent(VALID_ADDRESS));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(loc['district']()).toEqual(POLICE_STATIONS[0]);
     });
@@ -241,7 +310,7 @@ describe('SmsForm', () => {
 
     it('should not change district when address does not match', () => {
       const loc = getLocationInput(component);
-      loc['onAddressInput'](mockInputEvent('某個不存在的地方'));
+      loc['onAddressInput'](mockInputEvent(UNKNOWN_ADDRESS));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(loc['district']()).toBeNull();
     });
@@ -252,39 +321,41 @@ describe('SmsForm', () => {
       vi.advanceTimersByTime(100);
       expect(loc['district']()).toBeNull();
 
-      loc['onAddressInput'](mockInputEvent('臺北市信義區信義路五段7號'));
+      loc['onAddressInput'](mockInputEvent(VALID_ADDRESS));
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
       expect(loc['district']()).toEqual(POLICE_STATIONS[0]);
     });
   });
 
   describe('districtMismatch', () => {
-    it('should detect mismatch when address district differs from selected district', () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setSelectedStation(kaohsiungStation);
-      expect(getLocationInput(component).districtMismatch()).toBe(true);
-    });
-
-    it('should not detect mismatch when address and district match', () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setSelectedStation(POLICE_STATIONS[0]);
-      expect(getLocationInput(component).districtMismatch()).toBe(false);
-    });
-
-    it('should not detect mismatch when address has no recognizable district', () => {
-      state.setAddress('某個不存在的地方');
-      state.setSelectedStation(POLICE_STATIONS[0]);
-      expect(getLocationInput(component).districtMismatch()).toBe(false);
+    it.each([
+      {
+        name: 'detect mismatch when address district differs from selected district',
+        formState: { station: kaohsiungStation },
+        expected: true,
+      },
+      {
+        name: 'not detect mismatch when address and district match',
+        formState: {},
+        expected: false,
+      },
+      {
+        name: 'not detect mismatch when address has no recognizable district',
+        formState: { address: UNKNOWN_ADDRESS },
+        expected: false,
+      },
+    ])('should $name', ({ formState, expected }) => {
+      setFormState(state, formState);
+      expect(getLocationInput(component).districtMismatch()).toBe(expected);
     });
 
     it('should not detect mismatch when no district is selected', () => {
-      state.setAddress('臺北市信義區信義路五段7號');
+      state.setAddress(VALID_ADDRESS);
       expect(getLocationInput(component).districtMismatch()).toBe(false);
     });
 
     it('should disable submit button when district mismatches', async () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setSelectedStation(kaohsiungStation);
+      setFormState(state, { station: kaohsiungStation });
       fixture.detectChanges();
       const buttonDebug = fixture.debugElement.query(
         (el) => el.name === 'button' && el.attributes['mat-flat-button'] !== undefined,
@@ -293,46 +364,38 @@ describe('SmsForm', () => {
     });
 
     it('should show warning message when district mismatches', () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setSelectedStation(kaohsiungStation);
+      setFormState(state, { station: kaohsiungStation });
       fixture.detectChanges();
-      const warning = hostElement(fixture).querySelector('.district-mismatch-warning');
-      expect(warning).toBeTruthy();
+      expect(districtWarning(fixture)).toBeTruthy();
     });
 
     it('should not show warning when district matches', () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setSelectedStation(POLICE_STATIONS[0]);
+      fillValidForm(state);
       fixture.detectChanges();
-      const warning = hostElement(fixture).querySelector('.district-mismatch-warning');
-      expect(warning).toBeNull();
+      expect(districtWarning(fixture)).toBeNull();
     });
   });
 
   describe('composedMessage', () => {
     it('should compose message from address and violation', () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setSelectedStation(POLICE_STATIONS[0]);
-      state.setViolation('汽車於紅線停車');
-      expect(component['composedMessage']()).toBe(
-        '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
-      );
+      fillValidForm(state);
+      expect(component['composedMessage']()).toBe(EXPECTED_MESSAGE);
     });
 
     it('should return empty string when address is missing', () => {
-      state.setViolation('汽車於紅線停車');
+      state.setViolation(VALID_VIOLATION);
       expect(component['composedMessage']()).toBe('');
     });
 
     it('should return empty string when violation is missing', () => {
-      state.setAddress('臺北市信義區信義路五段7號');
+      state.setAddress(VALID_ADDRESS);
       state.setSelectedStation(POLICE_STATIONS[0]);
       expect(component['composedMessage']()).toBe('');
     });
 
     it('should return empty string when district is not set', () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setViolation('汽車於紅線停車');
+      state.setAddress(VALID_ADDRESS);
+      state.setViolation(VALID_VIOLATION);
       expect(component['composedMessage']()).toBe('');
     });
   });
@@ -356,37 +419,27 @@ describe('SmsForm', () => {
 
   describe('sms preview', () => {
     it('should show preview when address and violation are filled', async () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setSelectedStation(POLICE_STATIONS[0]);
-      state.setViolation('汽車於紅線停車');
+      fillValidForm(state);
       fixture.detectChanges();
-      const preview = hostElement(fixture).querySelector('.sms-preview');
-      expect(preview).toBeTruthy();
+      expect(smsPreview(fixture)).toBeTruthy();
     });
 
     it('should hide preview when address is empty', async () => {
-      state.setViolation('汽車於紅線停車');
+      state.setViolation(VALID_VIOLATION);
       fixture.detectChanges();
-      const preview = hostElement(fixture).querySelector('.sms-preview');
-      expect(preview).toBeNull();
+      expect(smsPreview(fixture)).toBeNull();
     });
 
     it('should hide preview when violation is empty', async () => {
-      state.setAddress('臺北市信義區信義路五段7號');
+      state.setAddress(VALID_ADDRESS);
       fixture.detectChanges();
-      const preview = hostElement(fixture).querySelector('.sms-preview');
-      expect(preview).toBeNull();
+      expect(smsPreview(fixture)).toBeNull();
     });
 
     it('should display composed message in bubble', async () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setSelectedStation(POLICE_STATIONS[0]);
-      state.setViolation('汽車於紅線停車');
+      fillValidForm(state);
       fixture.detectChanges();
-      const bubble = hostElement(fixture).querySelector('.sms-bubble');
-      expect(bubble?.textContent?.trim()).toBe(
-        '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
-      );
+      expect(smsBubble(fixture)?.textContent?.trim()).toBe(EXPECTED_MESSAGE);
     });
   });
 
@@ -398,7 +451,7 @@ describe('SmsForm', () => {
     it('should filter violations by keyword', () => {
       state.setViolationFilter('紅線');
       expect(getViolationInput(component)['filteredViolations']()).toEqual([
-        '汽車於紅線停車',
+        VALID_VIOLATION,
         '機車於紅線停車',
       ]);
     });
@@ -411,7 +464,7 @@ describe('SmsForm', () => {
     });
 
     it('should return all violations when filter matches an exact option', () => {
-      state.setViolationFilter('汽車於紅線停車');
+      state.setViolationFilter(VALID_VIOLATION);
       expect(getViolationInput(component)['filteredViolations']().length).toBe(27);
     });
 
@@ -438,18 +491,12 @@ describe('SmsForm', () => {
 
   describe('smsOverLimit', () => {
     it('should detect when message exceeds 70 characters', () => {
-      const longAddress =
-        '臺北市信義區信義路五段某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某號';
-      state.setAddress(longAddress);
-      state.setSelectedStation(POLICE_STATIONS[0]);
-      state.setViolation('汽車於紅線停車');
+      setFormState(state, { address: LONG_ADDRESS });
       expect(component['composedMessage']().length).toBeGreaterThan(70);
     });
 
     it('should not flag when message is within limit', () => {
-      state.setAddress('臺北市信義路');
-      state.setSelectedStation(POLICE_STATIONS[0]);
-      state.setViolation('汽車於紅線停車');
+      setFormState(state, { address: SHORT_ADDRESS });
       expect(component['composedMessage']().length).toBeLessThanOrEqual(70);
     });
   });
@@ -457,13 +504,11 @@ describe('SmsForm', () => {
   describe('locateUser', () => {
     it('should fill address and auto-select district on success', async () => {
       geocodingServiceSpy.getCurrentPosition.mockResolvedValue(mockGeolocationPosition());
-      geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
+      geocodingServiceSpy.reverseGeocode.mockResolvedValue(VALID_ADDRESS);
 
       await getLocationInput(component)['locateUser']();
 
-      expect(getLocationInput(component)['addressForm'].address().value()).toBe(
-        '臺北市信義區信義路五段7號',
-      );
+      expect(getLocationInput(component)['addressForm'].address().value()).toBe(VALID_ADDRESS);
       expect(getLocationInput(component)['district']()).toEqual(POLICE_STATIONS[0]);
       expect(getLocationInput(component)['isLocating']()).toBe(false);
       expect(getLocationInput(component)['locationError']()).toBe('');
@@ -471,12 +516,12 @@ describe('SmsForm', () => {
 
     it('should show error message on failure', async () => {
       geocodingServiceSpy.getCurrentPosition.mockRejectedValue(
-        new Error('定位權限被拒絕，請允許存取位置資訊。'),
+        new Error(GEOLOCATION_PERMISSION_DENIED),
       );
 
       await getLocationInput(component)['locateUser']();
 
-      expect(getLocationInput(component)['locationError']()).toBe('定位權限被拒絕，請允許存取位置資訊。');
+      expect(getLocationInput(component)['locationError']()).toBe(GEOLOCATION_PERMISSION_DENIED);
       expect(getLocationInput(component)['isLocating']()).toBe(false);
     });
 
@@ -525,7 +570,7 @@ describe('SmsForm', () => {
     it('should hide field and clear value on clearLicensePlate', () => {
       const vi = getViolationInput(component);
       vi['toggleLicensePlate']();
-      state.setLicensePlate('ABC1234');
+      state.setLicensePlate(VALID_PLATE);
       vi['clearLicensePlate']();
       expect(vi['showLicensePlate']()).toBe(false);
       expect(vi['violationForm'].licensePlate().value()).toBe('');
@@ -542,29 +587,20 @@ describe('SmsForm', () => {
     it('should not modify value when input is already clean uppercase', () => {
       const vi = getViolationInput(component);
       vi['toggleLicensePlate']();
-      state.setLicensePlate('ABC1234');
-      const event = { target: { value: 'ABC1234' } } as unknown as Event;
+      state.setLicensePlate(VALID_PLATE);
+      const event = { target: { value: VALID_PLATE } } as unknown as Event;
       vi['onLicensePlateInput'](event);
-      expect(vi['violationForm'].licensePlate().value()).toBe('ABC1234');
+      expect(vi['violationForm'].licensePlate().value()).toBe(VALID_PLATE);
     });
 
     it('should include plate in composed message when provided', () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setSelectedStation(POLICE_STATIONS[0]);
-      state.setViolation('汽車於紅線停車');
-      state.setLicensePlate('ABC1234');
-      expect(component['composedMessage']()).toBe(
-        '臺北市信義區信義路五段7號，有汽車於紅線停車，車牌號碼：ABC1234，請派員處理',
-      );
+      setFormState(state, { plate: VALID_PLATE });
+      expect(component['composedMessage']()).toBe(EXPECTED_MESSAGE_WITH_PLATE);
     });
 
     it('should not include plate segment when plate is empty', () => {
-      state.setAddress('臺北市信義區信義路五段7號');
-      state.setSelectedStation(POLICE_STATIONS[0]);
-      state.setViolation('汽車於紅線停車');
-      expect(component['composedMessage']()).toBe(
-        '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理',
-      );
+      fillValidForm(state);
+      expect(component['composedMessage']()).toBe(EXPECTED_MESSAGE);
     });
 
     it('should pass licensePlate to confirm dialog when present', async () => {
@@ -597,7 +633,7 @@ describe('SmsForm', () => {
     });
 
     it('should show add-plate button in template when not toggled', async () => {
-      const btn = hostElement(fixture).querySelector('.add-plate-btn');
+      const btn = queryOptional(fixture, '.add-plate-btn');
       expect(btn).toBeTruthy();
       expect(btn?.textContent).toContain('新增車牌號碼');
     });
@@ -605,14 +641,14 @@ describe('SmsForm', () => {
     it('should show license plate field after clicking add button', () => {
       getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
-      const field = hostElement(fixture).querySelector('input[placeholder="例：ABC1234"]');
+      const field = queryOptional(fixture, LICENSE_PLATE_INPUT_SELECTOR);
       expect(field).toBeTruthy();
     });
 
     it('should hide add-plate button when field is shown', () => {
       getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
-      const btn = hostElement(fixture).querySelector('.add-plate-btn');
+      const btn = queryOptional(fixture, '.add-plate-btn');
       expect(btn).toBeNull();
     });
 
@@ -624,30 +660,23 @@ describe('SmsForm', () => {
 
     it('should keep form valid with a valid license plate', () => {
       fillValidForm(state);
-      state.setLicensePlate('ABC1234');
+      state.setLicensePlate(VALID_PLATE);
       expect(getViolationInput(component).valid()).toBe(true);
     });
   });
 
   describe('sms preview over-limit warning', () => {
     it('should show over-limit warning when message exceeds 70 chars', async () => {
-      const longAddress =
-        '臺北市信義區信義路五段某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某某號';
-      state.setAddress(longAddress);
-      state.setSelectedStation(POLICE_STATIONS[0]);
-      state.setViolation('汽車於紅線停車');
+      setFormState(state, { address: LONG_ADDRESS });
       fixture.detectChanges();
-      const warning = hostElement(fixture).querySelector('.sms-length-warning');
-      expect(warning).toBeTruthy();
-      expect(warning?.textContent).toContain('可能被拆為多則傳送');
+      expect(lengthWarning(fixture)).toBeTruthy();
+      expect(lengthWarning(fixture)?.textContent).toContain('可能被拆為多則傳送');
     });
 
     it('should not show over-limit warning when message is within limit', async () => {
-      state.setAddress('臺北市信義路');
-      state.setViolation('汽車於紅線停車');
+      setFormState(state, { address: SHORT_ADDRESS, station: null });
       fixture.detectChanges();
-      const warning = hostElement(fixture).querySelector('.sms-length-warning');
-      expect(warning).toBeNull();
+      expect(lengthWarning(fixture)).toBeNull();
     });
   });
 
@@ -670,7 +699,7 @@ describe('SmsForm', () => {
 
     it('should clear pending debounce timer when locating', async () => {
       geocodingServiceSpy.getCurrentPosition.mockResolvedValue(mockGeolocationPosition());
-      geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
+      geocodingServiceSpy.reverseGeocode.mockResolvedValue(VALID_ADDRESS);
 
       const loc = getLocationInput(component);
       // Trigger an address input to start a debounce timer
@@ -683,7 +712,7 @@ describe('SmsForm', () => {
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS + 100);
 
       // District should match the geocoded address, not the typed '臺北市'
-      expect(loc['address']()).toBe('臺北市信義區信義路五段7號');
+      expect(loc['address']()).toBe(VALID_ADDRESS);
     });
   });
 
@@ -691,11 +720,11 @@ describe('SmsForm', () => {
     it('should update violation model on input event', () => {
       vi.useFakeTimers();
       const violationInput = getViolationInput(component);
-      violationInput['violationForm'].violation().value.set('汽車於紅線停車');
-      const event = { target: { value: '汽車於紅線停車' } } as unknown as Event;
+      violationInput['violationForm'].violation().value.set(VALID_VIOLATION);
+      const event = { target: { value: VALID_VIOLATION } } as unknown as Event;
       violationInput['onViolationInput'](event);
       vi.advanceTimersByTime(VIOLATION_FILTER_DEBOUNCE_MS);
-      expect(violationInput['violation']()).toBe('汽車於紅線停車');
+      expect(violationInput['violation']()).toBe(VALID_VIOLATION);
       vi.useRealTimers();
     });
 
@@ -735,7 +764,7 @@ describe('SmsForm', () => {
 
     it('should trigger locateUser via DOM click event', async () => {
       geocodingServiceSpy.getCurrentPosition.mockResolvedValue(mockGeolocationPosition());
-      geocodingServiceSpy.reverseGeocode.mockResolvedValue('臺北市信義區信義路五段7號');
+      geocodingServiceSpy.reverseGeocode.mockResolvedValue(VALID_ADDRESS);
 
       fixture.detectChanges();
       queryEl<HTMLButtonElement>(fixture, 'button[aria-label="使用目前位置"]').click();
@@ -752,17 +781,17 @@ describe('SmsForm', () => {
       loc['addressForm'].address().value.set('');
       loc.markAsTouched();
       fixture.detectChanges();
-      const errors = hostElement(fixture).querySelectorAll('mat-error');
+      const errors = validationErrors(fixture);
       expect(errors.length).toBeGreaterThan(0);
     });
 
     it('should show location error when geolocation fails', async () => {
       geocodingServiceSpy.getCurrentPosition.mockRejectedValue(
-        new Error('定位權限被拒絕，請允許存取位置資訊。'),
+        new Error(GEOLOCATION_PERMISSION_DENIED),
       );
       await getLocationInput(component)['locateUser']();
       fixture.detectChanges();
-      const errorDiv = hostElement(fixture).querySelector('.location-error');
+      const errorDiv = queryOptional(fixture, '.location-error');
       expect(errorDiv).toBeTruthy();
       expect(errorDiv?.textContent).toContain('定位權限被拒絕');
     });
@@ -772,7 +801,7 @@ describe('SmsForm', () => {
       loc['onDistrictChange'](POLICE_STATIONS[1]);
       fixture.detectChanges();
       expect(loc['district']()).toBe(POLICE_STATIONS[1]);
-      const hints = hostElement(fixture).querySelectorAll('mat-hint');
+      const hints = queryAll(fixture, 'mat-hint');
       const stationHint = Array.from(hints).find((h) =>
         h.textContent?.includes(POLICE_STATIONS[1].stationName),
       );
@@ -805,7 +834,7 @@ describe('SmsForm', () => {
     it('should trigger license plate input via DOM', () => {
       getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
-      const el = queryEl<HTMLInputElement>(fixture, 'input[placeholder="例：ABC1234"]');
+      const el = queryEl<HTMLInputElement>(fixture, LICENSE_PLATE_INPUT_SELECTOR);
       el.value = 'abc-123';
       el.dispatchEvent(new Event('input'));
       fixture.detectChanges();
@@ -815,7 +844,7 @@ describe('SmsForm', () => {
     it('should mark license plate as touched on blur', () => {
       getViolationInput(component)['toggleLicensePlate']();
       fixture.detectChanges();
-      queryEl<HTMLInputElement>(fixture, 'input[placeholder="例：ABC1234"]').dispatchEvent(
+      queryEl<HTMLInputElement>(fixture, LICENSE_PLATE_INPUT_SELECTOR).dispatchEvent(
         new Event('blur'),
       );
       fixture.detectChanges();
@@ -827,7 +856,7 @@ describe('SmsForm', () => {
       vi['violationForm'].violation().value.set('');
       vi.markAsTouched();
       fixture.detectChanges();
-      const errors = hostElement(fixture).querySelectorAll('app-violation-input mat-error');
+      const errors = validationErrors(fixture, 'app-violation-input mat-error');
       expect(errors.length).toBeGreaterThan(0);
     });
 
@@ -837,11 +866,9 @@ describe('SmsForm', () => {
       vi['violationForm'].licensePlate().value.set('!!!');
       vi['violationForm'].licensePlate().markAsTouched();
       fixture.detectChanges();
-      const errors = hostElement(fixture).querySelectorAll('app-violation-input mat-error');
+      const errors = validationErrors(fixture, 'app-violation-input mat-error');
       expect(errors.length).toBeGreaterThan(0);
     });
-
-
   });
 });
 
@@ -891,21 +918,18 @@ describe('SmsForm desktop behavior', () => {
   });
 
   it('should show desktop warning when on desktop', () => {
-    const warning = hostElement(fixture).querySelector('.desktop-warning');
+    const warning = queryOptional(fixture, '.desktop-warning');
     expect(warning).toBeTruthy();
     expect(warning?.textContent).toContain('簡訊連結可能無法在桌面瀏覽器上使用');
   });
 
   it('should disable submit button when on desktop', async () => {
     fixture.detectChanges();
-    const submitButton = hostElement(fixture).querySelector<HTMLButtonElement>(
-      'button[mat-flat-button]',
-    );
-    expect(submitButton?.disabled).toBe(true);
+    expect(submitButton(fixture)?.disabled).toBe(true);
   });
 
   it('should render disclaimer section in defer block', () => {
-    const details = hostElement(fixture).querySelector('details.disclaimer');
+    const details = queryOptional(fixture, 'details.disclaimer');
     expect(details).not.toBeNull();
     const summary = details?.querySelector('summary');
     expect(summary?.textContent).toContain('免責聲明');
@@ -926,7 +950,7 @@ describe('findStationByAddress', () => {
   });
 
   it('should return null for unmatched address', () => {
-    const result = findStationByAddress('某個不存在的地方');
+    const result = findStationByAddress(UNKNOWN_ADDRESS);
     expect(result).toBeNull();
   });
 
