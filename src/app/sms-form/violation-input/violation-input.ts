@@ -16,14 +16,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ZH_TW } from '../../i18n';
 import { ReportStateService } from '../../services/report-state.service';
-import {
-  LICENSE_PLATE_MAX_LENGTH,
-  LICENSE_PLATE_PATTERN,
-  VIOLATION_MAX_LENGTH,
-} from '../../domain/violation.utils';
 
 export const VIOLATION_FILTER_DEBOUNCE_MS = 150;
-export { VIOLATION_MAX_LENGTH, LICENSE_PLATE_MAX_LENGTH, LICENSE_PLATE_PATTERN };
+export {
+  VIOLATION_MAX_LENGTH,
+  LICENSE_PLATE_MAX_LENGTH,
+  LICENSE_PLATE_PATTERN,
+} from '../../domain/violation.utils';
 
 const readInputValue = (event: Event): string =>
   (event.target as EventTarget & { value: string }).value;
