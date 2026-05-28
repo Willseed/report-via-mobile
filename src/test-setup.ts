@@ -25,7 +25,7 @@ if (getGlobalValue('IntersectionObserver') === undefined) {
 
 function getStoredValue(store: Map<string, string>, key: string): string | null {
   const value = store.get(key);
-  return value === undefined ? null : value;
+  return value ?? null;
 }
 
 function getKeyAtIndex(store: Map<string, string>, index: number): string | null {

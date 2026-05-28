@@ -19,7 +19,7 @@ export function normalizeAddress(
 
 export function findStationByAddress(address: string): PoliceStation | null {
   const normalized = normalizeAddress(address);
-  const match = normalized.match(DISTRICT_MATCHER);
+  const match = DISTRICT_MATCHER.exec(normalized);
   if (!match) return null;
   return STATION_MAP.get(match[0] as PoliceStation['district']) ?? null;
 }
