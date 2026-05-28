@@ -62,7 +62,7 @@ test.describe('GPS 定位功能', () => {
 
   test('成功定位應填入地址並自動選擇行政區', async ({ page }) => {
     // Mock 台北市中正區座標
-    await mockGeolocation(page, 25.0330, 121.5654);
+    await mockGeolocation(page, 25.033, 121.5654);
 
     // Mock Nominatim API 回應
     await page.route('**/nominatim.openstreetmap.org/**', async (route) => {
@@ -91,7 +91,7 @@ test.describe('GPS 定位功能', () => {
   });
 
   test('定位時應顯示載入狀態', async ({ page }) => {
-    await mockGeolocation(page, 25.0330, 121.5654);
+    await mockGeolocation(page, 25.033, 121.5654);
 
     // Mock 慢速 API 回應
     await page.route('**/nominatim.openstreetmap.org/**', async (route) => {
@@ -113,7 +113,7 @@ test.describe('GPS 定位功能', () => {
   });
 
   test('定位完成後按鈕應恢復可用', async ({ page }) => {
-    await mockGeolocation(page, 25.0330, 121.5654);
+    await mockGeolocation(page, 25.033, 121.5654);
 
     await page.route('**/nominatim.openstreetmap.org/**', async (route) => {
       await route.fulfill({
@@ -185,7 +185,7 @@ test.describe('定位錯誤處理', () => {
   });
 
   test('Geocoding API 失敗應顯示錯誤訊息', async ({ page }) => {
-    await mockGeolocation(page, 25.0330, 121.5654);
+    await mockGeolocation(page, 25.033, 121.5654);
 
     // Mock API 錯誤
     await page.route('**/nominatim.openstreetmap.org/**', async (route) => {
@@ -203,7 +203,7 @@ test.describe('定位錯誤處理', () => {
 
   test('成功定位後錯誤訊息應清除', async ({ page }) => {
     // 先製造 API 錯誤
-    await mockGeolocation(page, 25.0330, 121.5654);
+    await mockGeolocation(page, 25.033, 121.5654);
     await page.route('**/nominatim.openstreetmap.org/**', async (route) => {
       await route.fulfill({
         status: 500,
@@ -244,7 +244,7 @@ test.describe('API 錯誤處理 - 網路狀態', () => {
   });
 
   test('網路斷線應顯示適當錯誤', async ({ page }) => {
-    await mockGeolocation(page, 25.0330, 121.5654);
+    await mockGeolocation(page, 25.033, 121.5654);
 
     // Mock 網路錯誤
     await page.route('**/nominatim.openstreetmap.org/**', async (route) => {
@@ -257,7 +257,7 @@ test.describe('API 錯誤處理 - 網路狀態', () => {
   });
 
   test('API 回傳空資料應顯示錯誤', async ({ page }) => {
-    await mockGeolocation(page, 25.0330, 121.5654);
+    await mockGeolocation(page, 25.033, 121.5654);
 
     await page.route('**/nominatim.openstreetmap.org/**', async (route) => {
       await route.fulfill({
