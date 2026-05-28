@@ -5,6 +5,7 @@ const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 
 const manifestFilename = 'ngsw.json';
+const gitCommand = '/usr/bin/git';
 const fixedCommandPath = '/usr/bin:/bin';
 const gitCommandEnv = { PATH: fixedCommandPath };
 let manifestDescriptor;
@@ -65,7 +66,7 @@ function resolveDeterministicTimestamp(manifest) {
 function getGitCommitTimestamp() {
   try {
     const dirtyWorkingTree = execFileSync(
-      'git',
+      gitCommand,
       ['status', '--porcelain', '--untracked-files=no'],
       {
         encoding: 'utf8',
@@ -78,7 +79,7 @@ function getGitCommitTimestamp() {
       return null;
     }
 
-    const commitEpochSeconds = execFileSync('git', ['log', '-1', '--format=%ct', 'HEAD'], {
+    const commitEpochSeconds = execFileSync(gitCommand, ['log', '-1', '--format=%ct', 'HEAD'], {
       encoding: 'utf8',
       env: gitCommandEnv,
       stdio: ['ignore', 'pipe', 'ignore'],
@@ -104,13 +105,13 @@ function parseEpochSeconds(rawValue, label) {
   const normalizedValue = rawValue.trim();
 
   if (!/^\d+$/.test(normalizedValue)) {
-    throw new Error(`${label} must be a whole-number Unix timestamp in seconds.`);
+    throw new TypeError(`${label} must be a whole-number Unix timestamp in seconds.`);
   }
 
   const milliseconds = Number(normalizedValue) * 1_000;
 
   if (!Number.isSafeInteger(milliseconds)) {
-    throw new Error(`${label} is outside the supported timestamp range.`);
+    throw new TypeError(`${label} is outside the supported timestamp range.`);
   }
 
   return milliseconds;
