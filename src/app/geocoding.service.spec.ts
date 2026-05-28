@@ -115,10 +115,10 @@ describe('GeocodingService', () => {
     it('should try fast positioning first, then fall back to high accuracy', async () => {
       const spy = stubGeolocation(
         (success: PositionCallback, error: PositionErrorCallback, options?: PositionOptions) => {
-          if (!options?.enableHighAccuracy) {
-            error(mockGeoError(3));
-          } else {
+          if (options?.enableHighAccuracy) {
             success(mockPosition);
+          } else {
+            error(mockGeoError(3));
           }
         },
       );
