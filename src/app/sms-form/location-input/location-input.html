@@ -1,15 +1,15 @@
 @if (manualInputFallback()) {
-  <div class="fallback-hint" role="status">
+  <output class="fallback-hint">
     <mat-icon>edit</mat-icon>
     <span>{{ i18n.location.fallbackHint }}</span>
-  </div>
+  </output>
 }
 
 @if (!isOnline()) {
-  <div class="offline-hint" role="status">
+  <output class="offline-hint">
     <mat-icon>cloud_off</mat-icon>
     <span>{{ i18n.location.offlineHint }}</span>
-  </div>
+  </output>
 }
 
 <mat-form-field appearance="outline">
