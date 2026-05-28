@@ -46,6 +46,20 @@ function createService(
   return TestBed.inject(SmsService);
 }
 
+function createMockDocument() {
+  return { location: { assign: vi.fn() } };
+}
+
+function expectSmsLink(
+  platform: Partial<Platform>,
+  phone: string,
+  body: string,
+  expected: string,
+) {
+  const service = createService(platform);
+  expect(service.generateSmsLink(phone, body)).toBe(expected);
+}
+
 describe('SmsService', () => {
   it('should be created', () => {
     const service = createService();
@@ -53,40 +67,51 @@ describe('SmsService', () => {
   });
 
   describe('generateSmsLink', () => {
-    it('should use ? separator for Android', () => {
-      const service = createService({ ANDROID: true });
-      const link = service.generateSmsLink('0912345678', 'Hello');
-      expect(link).toBe('sms:0912345678?body=Hello');
-    });
-
-    it('should use & separator for iOS', () => {
-      const service = createService({ IOS: true });
-      const link = service.generateSmsLink('0912345678', 'Hello');
-      expect(link).toBe('sms:0912345678&body=Hello');
-    });
-
-    it('should sanitize phone number by stripping non-numeric characters except +', () => {
-      const service = createService({ ANDROID: true });
-      const link = service.generateSmsLink('+886-912-345-678', 'Hi');
-      expect(link).toBe('sms:+886912345678?body=Hi');
-    });
-
-    it('should encode message body', () => {
-      const service = createService({ ANDROID: true });
-      const link = service.generateSmsLink('0912345678', 'Hello World & Goodbye');
-      expect(link).toBe('sms:0912345678?body=Hello%20World%20%26%20Goodbye');
-    });
-
-    it('should filter control characters in body', () => {
-      const service = createService({ ANDROID: true });
-      const link = service.generateSmsLink('0912345678', 'Hello\nWorld');
-      expect(link).toBe('sms:0912345678?body=Hello%20World');
-    });
-
-    it('should handle empty body', () => {
-      const service = createService({ ANDROID: true });
-      const link = service.generateSmsLink('0912345678', '');
-      expect(link).toBe('sms:0912345678?body=');
+    it.each([
+      {
+        description: 'use ? separator for Android',
+        platform: { ANDROID: true },
+        phone: '0912345678',
+        body: 'Hello',
+        expected: 'sms:0912345678?body=Hello',
+      },
+      {
+        description: 'use & separator for iOS',
+        platform: { IOS: true },
+        phone: '0912345678',
+        body: 'Hello',
+        expected: 'sms:0912345678&body=Hello',
+      },
+      {
+        description: 'sanitize phone number by stripping non-numeric characters except +',
+        platform: { ANDROID: true },
+        phone: '+886-912-345-678',
+        body: 'Hi',
+        expected: 'sms:+886912345678?body=Hi',
+      },
+      {
+        description: 'encode message body',
+        platform: { ANDROID: true },
+        phone: '0912345678',
+        body: 'Hello World & Goodbye',
+        expected: 'sms:0912345678?body=Hello%20World%20%26%20Goodbye',
+      },
+      {
+        description: 'filter control characters in body',
+        platform: { ANDROID: true },
+        phone: '0912345678',
+        body: 'Hello\nWorld',
+        expected: 'sms:0912345678?body=Hello%20World',
+      },
+      {
+        description: 'handle empty body',
+        platform: { ANDROID: true },
+        phone: '0912345678',
+        body: '',
+        expected: 'sms:0912345678?body=',
+      },
+    ])('should $description', ({ platform, phone, body, expected }) => {
+      expectSmsLink(platform, phone, body, expected);
     });
 
     it('should preserve phone sanitization invariants for Android links', () => {
@@ -136,7 +161,7 @@ describe('SmsService', () => {
 
   describe('sendSms', () => {
     it('should navigate to SMS link via location.assign', () => {
-      const mockDoc = { location: { assign: vi.fn() } };
+      const mockDoc = createMockDocument();
       const service = createService({ ANDROID: true }, mockDoc);
       service.sendSms('0912345678', 'Hello');
       expect(mockDoc.location.assign).toHaveBeenCalledWith('sms:0912345678?body=Hello');
@@ -144,19 +169,25 @@ describe('SmsService', () => {
   });
 
   describe('isDesktop', () => {
-    it('should return true for desktop platform', () => {
-      const service = createService({ ANDROID: false, IOS: false });
-      expect(service.isDesktop()).toBe(true);
-    });
-
-    it('should return false for Android', () => {
-      const service = createService({ ANDROID: true });
-      expect(service.isDesktop()).toBe(false);
-    });
-
-    it('should return false for iOS', () => {
-      const service = createService({ IOS: true });
-      expect(service.isDesktop()).toBe(false);
+    it.each([
+      {
+        description: 'desktop platform',
+        platform: { ANDROID: false, IOS: false },
+        expected: true,
+      },
+      {
+        description: 'Android',
+        platform: { ANDROID: true },
+        expected: false,
+      },
+      {
+        description: 'iOS',
+        platform: { IOS: true },
+        expected: false,
+      },
+    ])('should return $expected for $description', ({ platform, expected }) => {
+      const service = createService(platform);
+      expect(service.isDesktop()).toBe(expected);
     });
   });
 });
