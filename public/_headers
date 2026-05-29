@@ -1,0 +1,17 @@
+/
+  Link: </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </index.md>; rel="alternate service-doc"; type="text/markdown", </manifest.webmanifest>; rel="manifest"; type="application/manifest+json", </auth.md>; rel="service-doc"; type="text/markdown", <https://github.com/Willseed/report-via-mobile>; rel="service-doc"; type="text/html"
+/index.html
+  Link: </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </index.md>; rel="alternate service-doc"; type="text/markdown", </manifest.webmanifest>; rel="manifest"; type="application/manifest+json", </auth.md>; rel="service-doc"; type="text/markdown", <https://github.com/Willseed/report-via-mobile>; rel="service-doc"; type="text/html"
+/index.md
+  Content-Type: text/markdown; charset=utf-8
+  Link: </>; rel="canonical"; type="text/html", </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </auth.md>; rel="service-doc"; type="text/markdown"
+/.well-known/api-catalog
+  Content-Type: application/linkset+json; charset=utf-8
+/.well-known/oauth-protected-resource
+  Content-Type: application/json; charset=utf-8
+/auth.md
+  Content-Type: text/markdown; charset=utf-8
+/.well-known/agent-skills/index.json
+  Content-Type: application/json; charset=utf-8
+/.well-known/mcp/server-card.json
+  Content-Type: application/json; charset=utf-8

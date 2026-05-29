@@ -1,0 +1,130 @@
+{
+  "name": "簡訊報案工具",
+  "description": "Mobile-first static web app for composing traffic violation report SMS messages in Taiwan.",
+  "url": "https://tools.pylot.dev/.well-known/api-catalog",
+  "homepage": "https://tools.pylot.dev/",
+  "repository": "https://github.com/Willseed/report-via-mobile",
+  "interfaces": [
+    {
+      "id": "static-web-homepage",
+      "name": "Static web homepage",
+      "description": "Browser UI for GPS-assisted address lookup, police station matching, SMS preview, and user-confirmed SMS handoff.",
+      "url": "https://tools.pylot.dev/",
+      "mediaType": "text/html"
+    },
+    {
+      "id": "markdown-homepage",
+      "name": "Markdown homepage",
+      "description": "Markdown representation for agents and text-first clients.",
+      "url": "https://tools.pylot.dev/index.md",
+      "mediaType": "text/markdown"
+    },
+    {
+      "id": "oauth-protected-resource-metadata",
+      "name": "OAuth Protected Resource Metadata",
+      "description": "Public metadata declaring that this static site has no OAuth authorization servers or scopes.",
+      "url": "https://tools.pylot.dev/.well-known/oauth-protected-resource",
+      "mediaType": "application/json"
+    },
+    {
+      "id": "agent-skills",
+      "name": "Agent skills index",
+      "description": "Machine-readable summary of supported user-facing capabilities and limitations.",
+      "url": "https://tools.pylot.dev/.well-known/agent-skills/index.json",
+      "mediaType": "application/json"
+    },
+    {
+      "id": "mcp-server-card",
+      "name": "MCP server card",
+      "description": "Discovery document that explicitly states this static app has no hosted MCP transport.",
+      "url": "https://tools.pylot.dev/.well-known/mcp/server-card.json",
+      "mediaType": "application/json"
+    },
+    {
+      "id": "web-app-manifest",
+      "name": "Web app manifest",
+      "description": "PWA installation metadata.",
+      "url": "https://tools.pylot.dev/manifest.webmanifest",
+      "mediaType": "application/manifest+json"
+    },
+    {
+      "id": "authorization-and-data-use",
+      "name": "Authorization and data-use service document",
+      "description": "Markdown document explaining that this static app has no OAuth/OIDC authorization server or API token flow.",
+      "url": "https://tools.pylot.dev/auth.md",
+      "mediaType": "text/markdown"
+    }
+  ],
+  "linkset": [
+    {
+      "anchor": "https://tools.pylot.dev/",
+      "self": [
+        {
+          "href": "https://tools.pylot.dev/.well-known/api-catalog",
+          "type": "application/linkset+json"
+        }
+      ],
+      "alternate": [
+        {
+          "href": "https://tools.pylot.dev/index.md",
+          "type": "text/markdown",
+          "title": "Markdown homepage"
+        }
+      ],
+      "service-desc": [
+        {
+          "href": "https://tools.pylot.dev/.well-known/oauth-protected-resource",
+          "type": "application/json",
+          "title": "OAuth Protected Resource Metadata declaring no OAuth requirement"
+        },
+        {
+          "href": "https://tools.pylot.dev/manifest.webmanifest",
+          "type": "application/manifest+json",
+          "title": "PWA manifest for the public traffic-reporting SMS app"
+        },
+        {
+          "href": "https://tools.pylot.dev/.well-known/mcp/server-card.json",
+          "type": "application/json",
+          "title": "MCP server card declaring no hosted MCP transport"
+        },
+        {
+          "href": "https://tools.pylot.dev/.well-known/agent-skills/index.json",
+          "type": "application/json",
+          "title": "Agent Skills Discovery index"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://tools.pylot.dev/auth.md",
+          "type": "text/markdown",
+          "title": "Agent authentication and data-use instructions"
+        },
+        {
+          "href": "https://github.com/Willseed/report-via-mobile",
+          "type": "text/html",
+          "title": "Source repository and service documentation"
+        },
+        {
+          "href": "https://tools.pylot.dev/sitemap.xml",
+          "type": "application/xml",
+          "title": "Public sitemap"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://www.githubstatus.com/",
+          "type": "text/html",
+          "title": "GitHub Pages platform status"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "This static app does not expose a server-side API.",
+    "SMS sending is handed off to the user's native SMS application.",
+    "There is no login flow or authorization server metadata for this service.",
+    "OAuth Protected Resource Metadata is published with empty authorization_servers and scopes_supported arrays to make the no-auth requirement machine-readable.",
+    "GitHub Pages alone cannot emit custom response headers or perform Accept-based content negotiation.",
+    "Compatible browser clients may expose client-side WebMCP tools through navigator.modelContext; these are not a hosted MCP server."
+  ]
+}

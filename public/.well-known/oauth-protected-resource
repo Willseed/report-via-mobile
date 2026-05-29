@@ -1,0 +1,7 @@
+{
+  "resource": "https://tools.pylot.dev/",
+  "authorization_servers": [],
+  "scopes_supported": [],
+  "resource_documentation": "https://tools.pylot.dev/auth.md",
+  "notes": "Public app: no protected APIs, OAuth servers, access tokens, or agent registration."
+}

@@ -1,5 +1,5 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { ZH_TW } from '../i18n';
+import { composeSmsMessage } from '../domain/sms-message.utils';
 import { StationLookupService } from '../police-stations';
 import { ReportFormService } from './report-form.service';
 
@@ -32,7 +32,6 @@ export class MessageComposerService {
     const station = this.formService.station();
     if (!address || !violation || !station) return '';
     const licensePlate = this.formService.licensePlate();
-    const plateSegment = licensePlate ? `${ZH_TW.smsMessage.platePrefix}${licensePlate}` : '';
-    return `${address}，有${violation}${plateSegment}，請派員處理`;
+    return composeSmsMessage({ address, violation, licensePlate });
   });
 }

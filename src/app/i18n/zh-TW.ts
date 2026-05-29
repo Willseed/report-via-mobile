@@ -86,6 +86,25 @@ export const ZH_TW = {
     platePrefix: '，車牌號碼：',
   },
 
+  // WebMCP browser tools
+  webmcp: {
+    listViolationTypesDescription: '列出本站支援的交通違規事實選項與輸入限制。',
+    lookupPoliceStationDescription: '依事發地址或報案行政區查詢對應警察機關資料。',
+    generateSmsReportDescription: '依事發地址、違規事實、車牌與行政區資料產生簡訊報案內容與連結。',
+    addressDescription: '事發地址。',
+    violationDescription: '違規事實。',
+    licensePlateDescription: '車牌號碼，僅限英文與數字，可省略。',
+    districtDescription: '報案行政區；若提供，會優先使用此行政區的承辦單位。',
+    missingAddress: '請提供事發地址。',
+    missingViolation: '請提供違規事實。',
+    missingLookupInput: '請提供事發地址或報案行政區。',
+    invalidDistrict: '不支援的報案行政區。',
+    stationNotFound: '找不到對應警察機關。',
+    addressTooLong: '地址不可超過 100 字。',
+    violationTooLong: '違規事實不可超過 50 字。',
+    licensePlateTooLong: '車牌號碼不可超過 10 字。',
+  },
+
   // Theme Toggle
   theme: {
     switchToLight: '切換為淺色模式',
