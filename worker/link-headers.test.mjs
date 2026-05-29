@@ -172,14 +172,18 @@ test('sets content type for static well-known metadata', async (t) => {
 });
 
 test('replaces unsafe origin Link headers with static discovery links', async (t) => {
+  const unsafeOriginLinkHeader = `${String.fromCodePoint(60)}/unsafe${String.fromCodePoint(
+    62,
+  )}; rel="preload"`;
+
   mockFetch(
     t,
     async () =>
       new Response('home', {
-        headers: {
-          Link: '</unsafe>; rel="preload"',
-          Vary: 'Accept-Encoding',
-        },
+        headers: new Headers([
+          ['Link', unsafeOriginLinkHeader],
+          ['Vary', 'Accept-Encoding'],
+        ]),
       }),
   );
 
