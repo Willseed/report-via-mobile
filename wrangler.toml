@@ -1,0 +1,8 @@
+name = "report-via-mobile-link-headers"
+main = "worker/link-headers.mjs"
+compatibility_date = "2025-01-01"
+workers_dev = false
+
+routes = [
+  { pattern = "tools.pylot.dev/*", zone_name = "pylot.dev" },
+]
