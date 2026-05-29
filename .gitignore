@@ -45,6 +45,7 @@ e2e/*.map
 .sass-cache/
 /connect.lock
 /coverage
+/.wrangler
 /libpeerconnection.log
 testem.log
 /typings

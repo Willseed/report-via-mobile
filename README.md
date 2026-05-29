@@ -99,7 +99,20 @@ Highlights:
 
 ## Deployment
 
-Deployment is automated from `main` via GitHub Actions. The site is served as a static build on GitHub Pages.
+Deployment is automated from `main` via GitHub Actions. The site is served as a static build on
+GitHub Pages.
+
+GitHub Pages serves the app origin but cannot emit arbitrary HTTP response headers. The homepage
+RFC 8288 `Link` header is added at the edge by the Cloudflare Worker in
+`worker/link-headers.mjs`, configured by `wrangler.toml` for `tools.pylot.dev/*`. The Worker
+preserves the GitHub Pages response and appends:
+
+```http
+Link: </manifest.webmanifest>; rel="manifest", <https://github.com/Willseed/report-via-mobile>; rel="service-doc"
+```
+
+Deploy the Worker manually with the **Deploy Cloudflare Worker** workflow. The workflow requires
+`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` repository secrets.
 
 ## License
 
