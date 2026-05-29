@@ -9,6 +9,8 @@
     "build:analyze": "node scripts/build-with-normalized-ngsw.js --configuration production,analyze",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:coverage": "ng test --coverage --watch=false",
+    "quality": "npm run lint && npm run lint:styles && npm run test:coverage && npm run build",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "lint:styles": "stylelint \"src/**/*.scss\"",

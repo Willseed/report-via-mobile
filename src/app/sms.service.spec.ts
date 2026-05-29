@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { Platform } from '@angular/cdk/platform';
 import fc from 'fast-check';
+import { ZH_TW } from './i18n';
 import { SmsService } from './sms.service';
 
 const SMS_PROPERTY_CONFIG = {
@@ -61,6 +62,11 @@ function expectSmsLink(
 }
 
 describe('SmsService', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   it('should be created', () => {
     const service = createService();
     expect(service).toBeTruthy();
@@ -109,6 +115,20 @@ describe('SmsService', () => {
         phone: '0912345678',
         body: '',
         expected: 'sms:0912345678?body=',
+      },
+      {
+        description: 'encode iOS Unicode body after replacing newlines',
+        platform: { IOS: true },
+        phone: '0912345678',
+        body: '臺北市\n信義區，請派員處理',
+        expected: `sms:0912345678&body=${encodeURIComponent('臺北市 信義區，請派員處理')}`,
+      },
+      {
+        description: 'keep iOS empty body parameter explicit',
+        platform: { IOS: true },
+        phone: '0912345678',
+        body: '',
+        expected: 'sms:0912345678&body=',
       },
     ])('should $description', ({ platform, phone, body, expected }) => {
       expectSmsLink(platform, phone, body, expected);
@@ -166,6 +186,38 @@ describe('SmsService', () => {
       service.sendSms('0912345678', 'Hello');
       expect(mockDoc.location.assign).toHaveBeenCalledWith('sms:0912345678?body=Hello');
     });
+
+    it('should navigate with sanitized phone and iOS encoded Unicode body', () => {
+      const mockDoc = createMockDocument();
+      const service = createService({ IOS: true }, mockDoc);
+
+      service.sendSms('+886-912-345-678', '臺北市\n信義區，請派員處理');
+
+      expect(mockDoc.location.assign).toHaveBeenCalledWith(
+        `sms:+886912345678&body=${encodeURIComponent('臺北市 信義區，請派員處理')}`,
+      );
+    });
+
+    it('should keep an explicit empty body parameter when sending', () => {
+      const mockDoc = createMockDocument();
+      const service = createService({ ANDROID: true }, mockDoc);
+
+      service.sendSms('0912345678', '');
+
+      expect(mockDoc.location.assign).toHaveBeenCalledWith('sms:0912345678?body=');
+    });
+
+    it('should warn and avoid navigation for over-limit iOS messages', () => {
+      const mockDoc = createMockDocument();
+      const alertSpy = vi.fn();
+      vi.stubGlobal('alert', alertSpy);
+      const service = createService({ IOS: true }, mockDoc);
+
+      service.sendSms('0912345678', '警'.repeat(1600));
+
+      expect(alertSpy).toHaveBeenCalledWith(ZH_TW.smsForm.iosLengthWarning);
+      expect(mockDoc.location.assign).not.toHaveBeenCalled();
+    });
   });
 
   describe('isDesktop', () => {
@@ -183,6 +235,11 @@ describe('SmsService', () => {
       {
         description: 'iOS',
         platform: { IOS: true },
+        expected: false,
+      },
+      {
+        description: 'Android WebView-like platform',
+        platform: { ANDROID: true, isBrowser: false },
         expected: false,
       },
     ])('should return $expected for $description', ({ platform, expected }) => {

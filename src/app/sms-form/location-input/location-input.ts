@@ -13,9 +13,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { type PoliceStation } from '../../domain/police-stations';
 import { ZH_TW } from '../../i18n';
-import { ReportStateService } from '../../services/report-state.service';
+import { LocationWorkflowService } from '../../services/location-workflow.service';
 
-export const DISTRICT_SEARCH_DEBOUNCE_MS = 300;
+export {
+  ADDRESS_LOOKUP_DEBOUNCE_MS as DISTRICT_SEARCH_DEBOUNCE_MS,
+} from '../../services/location-workflow.service';
 export { ADDRESS_MAX_LENGTH } from '../../domain/address.utils';
 
 const readInputValue = (event: Event): string =>
@@ -36,24 +38,24 @@ const readInputValue = (event: Event): string =>
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LocationInput {
-  private readonly state = inject(ReportStateService);
+  private readonly workflow = inject(LocationWorkflowService);
   private readonly districtSelect = viewChild(MatSelect);
 
   protected readonly i18n = ZH_TW;
-  protected readonly addressForm = this.state.addressForm;
-  protected readonly stations = this.state.stations;
-  protected readonly manualInputFallback = this.state.manualInputFallback;
-  protected readonly isLocating = this.state.isLocating;
-  protected readonly isOnline = this.state.isOnline;
-  protected readonly locationError = this.state.locationError;
-  protected readonly locationStatus = this.state.locationStatus;
-  protected readonly compareStations = this.state.compareStations;
+  protected readonly addressForm = this.workflow.addressForm;
+  protected readonly stations = this.workflow.stations;
+  protected readonly isManualAddress = this.workflow.isManualAddress;
+  protected readonly isLocating = this.workflow.isLocating;
+  protected readonly isOnline = this.workflow.isOnline;
+  protected readonly locationError = this.workflow.locationError;
+  protected readonly locationStatus = this.workflow.locationStatus;
+  protected readonly compareStations = this.workflow.compareStations;
 
-  readonly address = this.state.address;
-  readonly district = this.state.station;
-  readonly districtMismatch = this.state.districtMismatch;
-  readonly valid = this.state.locationValid;
-  readonly districtRequired = this.state.districtRequired;
+  readonly address = this.workflow.address;
+  readonly district = this.workflow.station;
+  readonly districtMismatch = this.workflow.hasDistrictMismatch;
+  readonly valid = this.workflow.isAddressValid;
+  readonly districtRequired = this.workflow.districtRequired;
 
   constructor() {
     effect(() => {
@@ -66,23 +68,24 @@ export class LocationInput {
   }
 
   protected onAddressInput(event: Event): void {
-    this.state.handleAddressInput(readInputValue(event), DISTRICT_SEARCH_DEBOUNCE_MS);
+    this.workflow.updateAddress(readInputValue(event));
   }
 
   protected onAddressPaste(event: ClipboardEvent): void {
     const pasted = event.clipboardData?.getData('text') ?? '';
-    this.state.handleAddressPaste(pasted);
+    if (!pasted) return;
+    this.workflow.updateManualAddress(pasted);
   }
 
   protected onDistrictChange(station: PoliceStation): void {
-    this.state.setSelectedStation(station);
+    this.workflow.updateStation(station);
   }
 
   protected locateUser(): Promise<void> {
-    return this.state.locateUser();
+    return this.workflow.locateUser();
   }
 
   markAsTouched(): void {
-    this.state.markLocationTouched();
+    this.workflow.markAsTouched();
   }
 }

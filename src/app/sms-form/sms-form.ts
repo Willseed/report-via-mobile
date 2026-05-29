@@ -1,15 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDialog } from '@angular/material/dialog';
-import { firstValueFrom } from 'rxjs';
-import { SmsService } from '../sms.service';
 import { ZH_TW } from '../i18n';
-import type { ConfirmDialogData } from './confirm-dialog';
 import { LocationInput } from './location-input/location-input';
 import { ViolationInput } from './violation-input/violation-input';
 import { SmsPreview } from './sms-preview/sms-preview';
-import { ReportStateService } from '../services/report-state.service';
+import { ReportDraftService } from '../services/report-draft.service';
+import { SmsSubmissionService } from '../services/sms-submission.service';
 
 export { DISTRICT_SEARCH_DEBOUNCE_MS } from './location-input/location-input';
 export {
@@ -26,53 +23,16 @@ export {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SmsForm {
-  private readonly smsService = inject(SmsService);
-  private readonly dialog = inject(MatDialog);
-  private readonly state = inject(ReportStateService);
+  private readonly draft = inject(ReportDraftService);
+  private readonly submission = inject(SmsSubmissionService);
   protected readonly i18n = ZH_TW;
 
-  private readonly locationInput = viewChild(LocationInput);
-  private readonly violationInput = viewChild(ViolationInput);
+  protected readonly isDesktop = this.submission.isDesktop;
+  protected readonly composedMessage = this.draft.smsMessage;
+  protected readonly pendingPreview = this.draft.pendingPreview;
+  protected readonly districtMismatch = this.draft.hasDistrictMismatch;
 
-  protected readonly isDesktop = signal(this.smsService.isDesktop());
-  protected readonly composedMessage = this.state.composedMessage;
-  protected readonly pendingPreview = this.state.pendingPreview;
-  protected readonly districtMismatch = this.state.districtMismatch;
-
-  protected async sendSms(): Promise<void> {
-    const location = this.locationInput();
-    const violationComp = this.violationInput();
-
-    if (!location?.valid() || !violationComp?.valid() || this.districtMismatch()) {
-      location?.markAsTouched();
-      violationComp?.markAsTouched();
-      return;
-    }
-
-    const station = this.state.station();
-    if (!station) return;
-
-    const data: ConfirmDialogData = {
-      stationName: station.stationName,
-      phoneNumber: station.phoneNumber,
-      message: this.composedMessage(),
-      licensePlate: this.state.licensePlate() || undefined,
-    };
-
-    let ConfirmDialog;
-    try {
-      ({ ConfirmDialog } = await import('./confirm-dialog'));
-    } catch {
-      alert(ZH_TW.smsForm.chunkLoadError);
-      return;
-    }
-    const confirmed = await firstValueFrom(
-      this.dialog
-        .open(ConfirmDialog, { data, width: '92vw', maxWidth: '400px' })
-        .afterClosed(),
-    );
-    if (confirmed) {
-      this.smsService.sendSms(data.phoneNumber, data.message);
-    }
+  protected sendSms(): Promise<void> {
+    return this.submission.submit();
   }
 }

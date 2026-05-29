@@ -7,7 +7,7 @@ import {
   LICENSE_PLATE_MAX_LENGTH,
   VIOLATION_FILTER_DEBOUNCE_MS,
 } from './violation-input';
-import { ReportStateService } from '../../services/report-state.service';
+import { ReportDraftService } from '../../services/report-draft.service';
 import { NOMINATIM_USER_AGENT } from '../../app.config';
 
 function mockInputEvent(value: string): Event {
@@ -17,7 +17,7 @@ function mockInputEvent(value: string): Event {
 describe('ViolationInput', () => {
   let fixture: ComponentFixture<ViolationInput>;
   let component: ViolationInput;
-  let state: ReportStateService;
+  let draft: ReportDraftService;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -30,7 +30,7 @@ describe('ViolationInput', () => {
     });
     fixture = TestBed.createComponent(ViolationInput);
     component = fixture.componentInstance;
-    state = TestBed.inject(ReportStateService);
+    draft = TestBed.inject(ReportDraftService);
     fixture.detectChanges();
   });
 
@@ -64,14 +64,14 @@ describe('ViolationInput', () => {
   });
 
   it('should filter violations by input text', () => {
-    state.setViolationFilter('紅線');
+    draft.updateViolationFilter('紅線');
     const filtered = component['filteredViolations']();
     expect(filtered.length).toBeGreaterThan(0);
     expect(filtered.every((v) => v.includes('紅線'))).toBe(true);
   });
 
   it('should include the shared sidewalk and crosswalk temporary parking violation', () => {
-    state.setViolationFilter('行人穿越道');
+    draft.updateViolationFilter('行人穿越道');
     expect(component['filteredViolations']()).toEqual([
       '汽車於人行道、行人穿越道違規臨停',
       '機車於人行道、行人穿越道違規臨停',
@@ -80,7 +80,7 @@ describe('ViolationInput', () => {
 
   it('should return all violations when filter matches existing type', () => {
     const existingType = '汽車於紅線停車';
-    state.setViolationFilter(existingType);
+    draft.updateViolationFilter(existingType);
     const filtered = component['filteredViolations']();
     expect(filtered).toEqual(component['violationTypes']);
   });
@@ -109,8 +109,8 @@ describe('ViolationInput', () => {
   });
 
   it('should clear license plate', () => {
-    state.showLicensePlateField();
-    state.setLicensePlate('ABC123');
+    draft.showLicensePlateField();
+    draft.updateLicensePlate('ABC123');
 
     component['clearLicensePlate']();
 

@@ -137,6 +137,21 @@ export class ReportFormService {
     this.showLicensePlateState.set(false);
   }
 
+  clearLocation(): void {
+    this.setAddress('');
+    this.selectedStationState.set(null);
+    this.districtTouched.set(false);
+  }
+
+  resetForm(): void {
+    this.clearViolationDebounce();
+    this.clearLocation();
+    this.setViolation('');
+    this.setLicensePlate('');
+    this.violationFilterState.set('');
+    this.showLicensePlateState.set(false);
+  }
+
   clearViolationDebounce(): void {
     if (this.violationDebounceTimer) {
       clearTimeout(this.violationDebounceTimer);

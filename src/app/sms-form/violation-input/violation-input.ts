@@ -15,9 +15,11 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ZH_TW } from '../../i18n';
-import { ReportStateService } from '../../services/report-state.service';
+import { ReportDraftService } from '../../services/report-draft.service';
 
-export const VIOLATION_FILTER_DEBOUNCE_MS = 150;
+export {
+  VIOLATION_LOOKUP_DEBOUNCE_MS as VIOLATION_FILTER_DEBOUNCE_MS,
+} from '../../services/report-draft.service';
 export {
   VIOLATION_MAX_LENGTH,
   LICENSE_PLATE_MAX_LENGTH,
@@ -42,7 +44,7 @@ const readInputValue = (event: Event): string =>
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ViolationInput {
-  private readonly state = inject(ReportStateService);
+  private readonly draft = inject(ReportDraftService);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -50,29 +52,29 @@ export class ViolationInput {
   private readonly addPlateButton = viewChild<ElementRef<HTMLButtonElement>>('addPlateButton');
 
   protected readonly i18n = ZH_TW;
-  protected readonly violationForm = this.state.violationForm;
-  protected readonly violationTypes = this.state.violationTypes;
-  protected readonly filteredViolations = this.state.filteredViolations;
-  protected readonly showLicensePlate = this.state.showLicensePlate;
+  protected readonly violationForm = this.draft.form;
+  protected readonly violationTypes = this.draft.violationTypes;
+  protected readonly filteredViolations = this.draft.filteredViolations;
+  protected readonly showLicensePlate = this.draft.showLicensePlate;
 
-  readonly violation = this.state.violation;
-  readonly licensePlate = this.state.licensePlate;
-  readonly violationFilter = this.state.violationFilter;
+  readonly violation = this.draft.selectedViolation;
+  readonly licensePlate = this.draft.licensePlate;
+  readonly violationFilter = this.draft.violationFilter;
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.state.clearViolationDebounce());
+    this.destroyRef.onDestroy(() => this.draft.clearViolationDebounce());
   }
 
   protected onViolationInput(event: Event): void {
-    this.state.handleViolationInput(readInputValue(event), VIOLATION_FILTER_DEBOUNCE_MS);
+    this.draft.updateViolationInput(readInputValue(event));
   }
 
   protected onViolationChange(value?: string): void {
-    this.state.handleViolationChange(value);
+    this.draft.updateViolation(value);
   }
 
   protected toggleLicensePlate(): void {
-    this.state.showLicensePlateField();
+    this.draft.showLicensePlateField();
     afterNextRender(
       () => {
         this.licensePlateInputRef()?.nativeElement?.focus();
@@ -82,7 +84,7 @@ export class ViolationInput {
   }
 
   protected clearLicensePlate(): void {
-    this.state.clearLicensePlate();
+    this.draft.clearLicensePlate();
     afterNextRender(
       () => {
         this.addPlateButton()?.nativeElement?.focus();
@@ -93,15 +95,15 @@ export class ViolationInput {
 
   protected onLicensePlateInput(event: Event): void {
     const target = event.target as EventTarget & { value: string };
-    const cleaned = this.state.handleLicensePlateInput(target.value);
+    const cleaned = this.draft.updateLicensePlate(target.value);
     if (target.value !== cleaned) {
       target.value = cleaned;
     }
   }
 
   markAsTouched(): void {
-    this.state.markViolationTouched();
+    this.draft.markViolationTouched();
   }
 
-  readonly valid = this.state.violationFormValid;
+  readonly valid = this.draft.isViolationValid;
 }
