@@ -1,5 +1,6 @@
 const LINK_TARGET_START = String.fromCodePoint(60);
 const LINK_TARGET_END = String.fromCodePoint(62);
+const BACKSLASH = String.fromCodePoint(92);
 
 const PUBLIC_ORIGIN = 'https://tools.pylot.dev';
 const PUBLIC_HOSTNAME = new URL(PUBLIC_ORIGIN).hostname;
@@ -310,7 +311,7 @@ function formatLink({ target, rel, type }) {
 }
 
 function escapeLinkParameter(value) {
-  return value.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+  return value.replaceAll(BACKSLASH, String.raw`\\`).replaceAll('"', String.raw`\"`);
 }
 
 function prefersMarkdown(acceptHeader) {

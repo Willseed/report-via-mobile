@@ -26,10 +26,10 @@ function configureService(
   modelContext?: unknown,
   platformId: 'browser' | 'server' = 'browser',
 ): WebMcpService {
-  if (modelContext !== undefined) {
-    setModelContext(modelContext);
-  } else {
+  if (modelContext === undefined) {
     clearModelContext();
+  } else {
+    setModelContext(modelContext);
   }
 
   TestBed.configureTestingModule({

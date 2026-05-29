@@ -397,7 +397,7 @@ export class WebMcpService implements OnDestroy {
     if (typeof value !== 'string') return null;
 
     const trimmed = value.trim();
-    return trimmed ? trimmed : null;
+    return trimmed || null;
   }
 
   private findStationByDistrict(district: District): PoliceStation | null {
