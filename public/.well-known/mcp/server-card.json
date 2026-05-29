@@ -1,0 +1,22 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/server-card/draft.json",
+  "serverInfo": {
+    "name": "report-via-mobile-static-site",
+    "version": "1.0.0"
+  },
+  "description": "Public static Angular PWA for generating Taiwan traffic-violation SMS reports. It does not expose a hosted MCP server or protected API.",
+  "endpoint": "https://tools.pylot.dev/.well-known/mcp/server-card.json",
+  "transport": null,
+  "transports": [],
+  "capabilities": {
+    "prompts": false,
+    "resources": false,
+    "tools": false
+  },
+  "links": {
+    "site": "https://tools.pylot.dev/",
+    "auth": "https://tools.pylot.dev/auth.md",
+    "skills": "https://tools.pylot.dev/.well-known/agent-skills/index.json"
+  },
+  "notes": "No hosted MCP transport is exposed. Compatible browser clients may receive client-side WebMCP tools through navigator.modelContext; browser capabilities such as geolocation and sms: URI handling remain user-mediated app features."
+}

@@ -4,6 +4,7 @@ import { PwaUpdateService } from './pwa-update.service';
 import { PwaInstallService } from './pwa-install.service';
 import { ThemeService } from './theme.service';
 import { ThemeToggle } from './theme-toggle/theme-toggle';
+import { WebMcpService } from './webmcp.service';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,7 @@ export class App {
   constructor() {
     inject(PwaUpdateService).init();
     inject(PwaInstallService).init();
+    inject(WebMcpService).init();
     inject(ThemeService);
   }
 }

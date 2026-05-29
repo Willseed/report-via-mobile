@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "report-via-mobile",
+      "type": "skill-md",
+      "description": "Help agents guide users through the public Taiwan traffic-violation SMS reporting PWA without requiring OAuth or protected APIs.",
+      "url": "https://tools.pylot.dev/.well-known/agent-skills/report-via-mobile/SKILL.md",
+      "digest": "sha256:427969cb7d5eb26bfe6052e29032369e4b4e22719623947374ea6a9e4f199a56"
+    }
+  ]
+}

@@ -4,14 +4,20 @@ import { SwUpdate } from '@angular/service-worker';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EMPTY } from 'rxjs';
 import { App } from './app';
+import { WebMcpService } from './webmcp.service';
 
 describe('App', () => {
+  let webMcpService: { init: ReturnType<typeof vi.fn> };
+
   beforeEach(async () => {
+    webMcpService = { init: vi.fn() };
+
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
         { provide: SwUpdate, useValue: { isEnabled: false, versionUpdates: EMPTY } },
         { provide: MatSnackBar, useValue: { open: vi.fn() } },
+        { provide: WebMcpService, useValue: webMcpService },
       ],
     }).compileComponents();
   });
@@ -20,5 +26,6 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
+    expect(webMcpService.init).toHaveBeenCalledOnce();
   });
 });

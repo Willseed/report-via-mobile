@@ -102,17 +102,77 @@ Highlights:
 Deployment is automated from `main` via GitHub Actions. The site is served as a static build on
 GitHub Pages.
 
-GitHub Pages serves the app origin but cannot emit arbitrary HTTP response headers. The homepage
-RFC 8288 `Link` header is added at the edge by the Cloudflare Worker in
-`worker/link-headers.mjs`, configured by `wrangler.toml` for `tools.pylot.dev/*`. The Worker
-preserves the GitHub Pages response and appends:
+GitHub Pages serves the app origin as static files. It cannot emit arbitrary HTTP response
+headers or vary `/` by the `Accept` header on its own. The repo ships the best deployable
+static/edge-supported setup without claiming GitHub Pages can enforce it by itself:
 
-```http
-Link: </manifest.webmanifest>; rel="manifest", <https://github.com/Willseed/report-via-mobile>; rel="service-doc"
-```
+- Static discovery documents:
+  - `/index.md` — Markdown homepage for agents and text-first clients
+  - `/.well-known/api-catalog` — machine-readable catalog of public resources
+  - `/.well-known/oauth-protected-resource` — metadata declaring no OAuth requirement
+  - `/.well-known/agent-skills/index.json` — machine-readable user capability summary
+  - `/.well-known/mcp/server-card.json` — MCP server card that declares no hosted MCP transport
+  - `/auth.md` — service documentation for authorization and data-use limitations
+- Compatible browser agents may also receive client-side WebMCP tools through
+  `navigator.modelContext`; those tools are not a hosted MCP server or protected API.
+- HTML discovery tags in `src/index.html` for clients that inspect the document.
+- `public/_headers` is copied to the build output for hosts that honor that convention,
+  such as Cloudflare Pages or Netlify. GitHub Pages will only serve it as a static file.
+- The Cloudflare Worker in `worker/link-headers.mjs`, configured by `wrangler.toml` for
+  `tools.pylot.dev/*`, appends homepage RFC 8288 `Link` response headers and serves
+  `/index.md` when the homepage request explicitly prefers `Accept: text/markdown`.
+
+The homepage `Link` response advertises discovery relation types:
+
+- `rel="api-catalog"` → `/.well-known/api-catalog`
+- `rel="describedby"` → `/.well-known/oauth-protected-resource`
+- `rel="service-desc"` → `/.well-known/agent-skills/index.json`
+- `rel="service-desc"` → `/.well-known/mcp/server-card.json`
+- `rel="alternate service-doc"` → `/index.md`
+- `rel="manifest"` → `/manifest.webmanifest`
+- `rel="service-doc"` → `/auth.md`
+- `rel="service-doc"` → GitHub repository documentation
+
+This app has no server-side API, login flow, or authorization server, so it publishes
+OAuth Protected Resource Metadata with empty authorization server/scope arrays and does
+not publish authorization-server metadata.
 
 Deploy the Worker manually with the **Deploy Cloudflare Worker** workflow. The workflow requires
 `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` repository secrets.
+
+### DNS for AI Discovery (DNS-AID)
+
+The deployable origin is `tools.pylot.dev` (see `public/CNAME`, `wrangler.toml`, and
+`src/index.html`). This repo contains GitHub Pages and Cloudflare Worker configuration, but no
+authoritative DNS-as-code for the `pylot.dev` zone; publish the DNS records below in the DNS
+provider or zone repository. App deployment alone does not publish them.
+
+This static site now ships the discovery resources referenced by the records:
+
+- `https://tools.pylot.dev/.well-known/api-catalog`
+- `https://tools.pylot.dev/.well-known/agent-skills/index.json`
+
+Publish a DNSSEC-signed ServiceMode SVCB record for the organization index:
+
+```dns
+_index._agents.tools.pylot.dev. 3600 IN SVCB 1 tools.pylot.dev. (
+  alpn=h2
+  port=443
+  endpoint="/.well-known/api-catalog"
+  well-known="api-catalog"
+)
+```
+
+The `endpoint` value resolves to the API catalog above, which links the agent skills index.
+
+If the DNS provider only exposes the SVCB-compatible `HTTPS` RR type, enter the same owner name
+and RDATA as an `HTTPS` record instead of `SVCB`; do not publish both unless the final DNS-AID
+draft requires it. Keep DNSSEC enabled for `pylot.dev` and publish the DS record at the registrar.
+If DANE/TLSA records are added later, those records must also be DNSSEC-signed.
+
+Do not publish `_a2a._agents.tools.pylot.dev` yet: this app does not implement an Agent-to-Agent
+server endpoint. When such an endpoint exists, add a separate ServiceMode record with `alpn=a2a,h2`
+and an `endpoint` value for that implemented endpoint.
 
 ## License
 

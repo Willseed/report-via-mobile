@@ -23,6 +23,9 @@ jobs:
       - name: Validate Worker syntax
         run: node --check worker/link-headers.mjs
 
+      - name: Test Worker behavior
+        run: npm run test:worker
+
       - name: Check Cloudflare secrets
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
