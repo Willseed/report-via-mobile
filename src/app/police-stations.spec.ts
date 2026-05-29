@@ -102,6 +102,28 @@ describe('findStationByAddress', () => {
     expect(findStationByAddress('東京都渋谷区')).toBeNull();
   });
 
+  it('should not fall back to any station when no district is present', () => {
+    expect(findStationByAddress('國道服務區停車場')).toBeNull();
+  });
+
+  it('should resolve New Taipei without confusing it with Taipei', () => {
+    const result = findStationByAddress('新北市三重區重新路，鄰近臺北市交界');
+
+    expect(result?.district).toBe(District.NewTaipei);
+  });
+
+  it('should use the first recognizable district for ambiguous pasted text', () => {
+    const result = findStationByAddress('臺北市信義區；備註：車輛往新北市方向移動');
+
+    expect(result?.district).toBe(District.Taipei);
+  });
+
+  it('should normalize pasted Taipei variants before matching', () => {
+    const result = findStationByAddress('110 Taiwan 台北市信義區信義路五段7號');
+
+    expect(result?.district).toBe(District.Taipei);
+  });
+
   it('should match all defined districts', () => {
     for (const station of POLICE_STATIONS) {
       const result = findStationByAddress(station.district + '某路100號');

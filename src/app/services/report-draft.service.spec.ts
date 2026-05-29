@@ -7,6 +7,7 @@ import { ReportFormService } from './report-form.service';
 
 const VALID_ADDRESS = '臺北市信義區信義路五段7號';
 const VALID_VIOLATION = '汽車於紅線停車';
+const MANUAL_ADDRESS = '國道服務區停車場';
 
 describe('ReportDraftService', () => {
   let draft: ReportDraftService;
@@ -45,6 +46,21 @@ describe('ReportDraftService', () => {
       phoneNumber: POLICE_STATIONS[0].phoneNumber,
       message: `${VALID_ADDRESS}，有${VALID_VIOLATION}，車牌號碼：ABC123，請派員處理`,
       licensePlate: 'ABC123',
+    });
+  });
+
+  it('should use the explicitly selected station phone for submit data', () => {
+    const selectedStation = POLICE_STATIONS[5];
+    form.setAddress(MANUAL_ADDRESS);
+    form.setSelectedStation(selectedStation);
+    draft.updateViolation(VALID_VIOLATION);
+
+    expect(draft.isFormValid()).toBe(true);
+    expect(draft.submitData()).toEqual({
+      stationName: selectedStation.stationName,
+      phoneNumber: selectedStation.phoneNumber,
+      message: `${MANUAL_ADDRESS}，有${VALID_VIOLATION}，請派員處理`,
+      licensePlate: undefined,
     });
   });
 
