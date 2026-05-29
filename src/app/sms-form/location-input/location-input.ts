@@ -13,12 +13,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { type PoliceStation } from '../../domain/police-stations';
 import { ZH_TW } from '../../i18n';
-import {
-  ADDRESS_LOOKUP_DEBOUNCE_MS,
-  LocationWorkflowService,
-} from '../../services/location-workflow.service';
+import { LocationWorkflowService } from '../../services/location-workflow.service';
 
-export const DISTRICT_SEARCH_DEBOUNCE_MS = ADDRESS_LOOKUP_DEBOUNCE_MS;
+export {
+  ADDRESS_LOOKUP_DEBOUNCE_MS as DISTRICT_SEARCH_DEBOUNCE_MS,
+} from '../../services/location-workflow.service';
 export { ADDRESS_MAX_LENGTH } from '../../domain/address.utils';
 
 const readInputValue = (event: Event): string =>

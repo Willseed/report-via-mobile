@@ -4,7 +4,6 @@ import { MessageComposerService } from './message-composer.service';
 import { ReportFormService } from './report-form.service';
 
 export const VIOLATION_LOOKUP_DEBOUNCE_MS = 150;
-export type ViolationType = string;
 
 export interface ReportSubmitData {
   readonly stationName: string;
@@ -49,7 +48,7 @@ export class ReportDraftService {
     };
   });
 
-  updateViolation(value: ViolationType = this.form.violation().value()): void {
+  updateViolation(value: string = this.form.violation().value()): void {
     this.formService.handleViolationChange(value);
   }
 

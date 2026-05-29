@@ -15,12 +15,11 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ZH_TW } from '../../i18n';
-import {
-  ReportDraftService,
-  VIOLATION_LOOKUP_DEBOUNCE_MS,
-} from '../../services/report-draft.service';
+import { ReportDraftService } from '../../services/report-draft.service';
 
-export const VIOLATION_FILTER_DEBOUNCE_MS = VIOLATION_LOOKUP_DEBOUNCE_MS;
+export {
+  VIOLATION_LOOKUP_DEBOUNCE_MS as VIOLATION_FILTER_DEBOUNCE_MS,
+} from '../../services/report-draft.service';
 export {
   VIOLATION_MAX_LENGTH,
   LICENSE_PLATE_MAX_LENGTH,
