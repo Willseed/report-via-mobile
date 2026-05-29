@@ -49,6 +49,21 @@ describe('LocationWorkflowService', () => {
     expect(workflow.displayStation()?.district).toBe(District.Taichung);
   });
 
+  it('should keep a pasted address from being overwritten by pending typed lookup', async () => {
+    vi.useFakeTimers();
+
+    workflow.updateAddress('臺北');
+    workflow.updateManualAddress('臺中市西屯區某路');
+
+    expect(workflow.address()).toBe('臺中市西屯區某路');
+    expect(workflow.station()?.district).toBe(District.Taichung);
+
+    await vi.advanceTimersByTimeAsync(350);
+
+    expect(workflow.address()).toBe('臺中市西屯區某路');
+    expect(workflow.station()?.district).toBe(District.Taichung);
+  });
+
   it('should clear location form and resolver state', async () => {
     geocoding.getCurrentPosition.mockRejectedValue(new Error('定位權限被拒絕'));
 

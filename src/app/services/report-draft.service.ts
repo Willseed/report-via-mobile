@@ -1,4 +1,5 @@
 import { Injectable, computed, inject } from '@angular/core';
+import { LocationResolverService } from './location-resolver.service';
 import { MessageComposerService } from './message-composer.service';
 import { ReportFormService } from './report-form.service';
 
@@ -15,6 +16,7 @@ export interface ReportSubmitData {
 @Injectable({ providedIn: 'root' })
 export class ReportDraftService {
   private readonly formService = inject(ReportFormService);
+  private readonly location = inject(LocationResolverService);
   private readonly composer = inject(MessageComposerService);
 
   readonly form = this.formService.violationForm;
@@ -73,7 +75,9 @@ export class ReportDraftService {
   }
 
   resetForm(): void {
+    this.location.clearAddressDebounce();
     this.formService.resetForm();
+    this.location.resetLocationState();
   }
 
   showLicensePlateField(): void {

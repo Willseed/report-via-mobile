@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { POLICE_STATIONS } from '../police-stations';
+import { LocationResolverService } from './location-resolver.service';
 import { ReportDraftService } from './report-draft.service';
 import { ReportFormService } from './report-form.service';
 
@@ -10,9 +11,20 @@ const VALID_VIOLATION = '汽車於紅線停車';
 describe('ReportDraftService', () => {
   let draft: ReportDraftService;
   let form: ReportFormService;
+  let location: {
+    clearAddressDebounce: ReturnType<typeof vi.fn>;
+    resetLocationState: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    location = {
+      clearAddressDebounce: vi.fn(),
+      resetLocationState: vi.fn(),
+    };
+
+    TestBed.configureTestingModule({
+      providers: [{ provide: LocationResolverService, useValue: location }],
+    });
     draft = TestBed.inject(ReportDraftService);
     form = TestBed.inject(ReportFormService);
   });
@@ -59,5 +71,7 @@ describe('ReportDraftService', () => {
     expect(draft.selectedViolation()).toBe('');
     expect(draft.licensePlate()).toBe('');
     expect(draft.smsMessage()).toBe('');
+    expect(location.clearAddressDebounce).toHaveBeenCalledOnce();
+    expect(location.resetLocationState).toHaveBeenCalledOnce();
   });
 });

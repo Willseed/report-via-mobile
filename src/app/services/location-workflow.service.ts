@@ -63,6 +63,7 @@ export class LocationWorkflowService {
   }
 
   updateManualAddress(value: string): void {
+    this.location.clearAddressDebounce();
     this.location.resolveManualAddress(value);
   }
 
