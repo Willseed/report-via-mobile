@@ -50,6 +50,46 @@
     </button>
   </form>
 
+  <section class="onpage-content" aria-labelledby="onpage-content-title">
+    <h2 id="onpage-content-title">{{ i18n.smsForm.onpageContent.title }}</h2>
+
+    <section class="content-section" aria-labelledby="how-to-use-title">
+      <h3 id="how-to-use-title">{{ i18n.smsForm.onpageContent.howToUseTitle }}</h3>
+      <ol>
+        @for (step of i18n.smsForm.onpageContent.howToUseSteps; track step) {
+          <li>{{ step }}</li>
+        }
+      </ol>
+    </section>
+
+    <section class="content-section" aria-labelledby="scenarios-title">
+      <h3 id="scenarios-title">{{ i18n.smsForm.onpageContent.scenariosTitle }}</h3>
+      <ul>
+        @for (scenario of i18n.smsForm.onpageContent.scenarios; track scenario) {
+          <li>{{ scenario }}</li>
+        }
+      </ul>
+    </section>
+
+    <section class="content-section" aria-labelledby="checklist-title">
+      <h3 id="checklist-title">{{ i18n.smsForm.onpageContent.checklistTitle }}</h3>
+      <ul>
+        @for (item of i18n.smsForm.onpageContent.checklist; track item) {
+          <li>{{ item }}</li>
+        }
+      </ul>
+    </section>
+
+    <section class="content-section" aria-labelledby="caveats-title">
+      <h3 id="caveats-title">{{ i18n.smsForm.onpageContent.caveatsTitle }}</h3>
+      <ul>
+        @for (caveat of i18n.smsForm.onpageContent.caveats; track caveat) {
+          <li>{{ caveat }}</li>
+        }
+      </ul>
+    </section>
+  </section>
+
   @defer (on viewport) {
     <details class="disclaimer">
       <summary>{{ i18n.smsForm.disclaimerTitle }}</summary>

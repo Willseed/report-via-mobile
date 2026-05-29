@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>簡訊報案工具｜快速產生交通違規檢舉格式</title>
-  <meta name="description" content="快速整理交通違規簡訊報案格式，依所在行政區帶出對應的簡訊受理警政機關，協助你檢舉違規停車與其他交通違規。">
+  <meta name="description" content="免費的繁體中文交通違規簡訊報案輔助工具，可用手機 GPS 目前位置或手動輸入地址，對應在地警政簡訊受理單位，填寫違規事實與車牌後產生可傳送的簡訊內容。">
   <base href="/">
   <link rel="canonical" href="https://tools.pylot.dev/">
   <link rel="alternate service-doc" type="text/markdown" href="/index.md">
@@ -15,7 +15,7 @@
   <meta property="og:locale" content="zh_TW">
   <meta property="og:type" content="website">
   <meta property="og:title" content="簡訊報案工具｜快速產生交通違規檢舉格式">
-  <meta property="og:description" content="快速整理交通違規簡訊報案格式，依所在行政區帶出對應的簡訊受理警政機關，協助你檢舉違規停車與其他交通違規。">
+  <meta property="og:description" content="免費的繁體中文交通違規簡訊報案輔助工具，可用手機 GPS 目前位置或手動輸入地址，對應在地警政簡訊受理單位，填寫違規事實與車牌後產生可傳送的簡訊內容。">
   <meta property="og:url" content="https://tools.pylot.dev/">
   <meta property="og:image" content="https://tools.pylot.dev/og-image.png">
   <meta property="og:image:type" content="image/png">
@@ -59,6 +59,18 @@
       text-rendering: optimizeLegibility;
       font-feature-settings: "liga";
     }
+    .seo-static-content {
+      box-sizing: border-box;
+      max-width: 48rem;
+      margin: 0 auto;
+      padding: 1.5rem;
+      font-family: Roboto, "Noto Sans TC", sans-serif;
+      line-height: 1.7;
+    }
+    app-root[ng-version] + .seo-static-content,
+    app-root:not(:empty) + .seo-static-content {
+      display: none;
+    }
     @font-face {
       font-family: "Roboto";
       font-style: normal;
@@ -88,10 +100,18 @@
       "alternateName": "簡訊報案工具｜快速產生交通違規檢舉格式",
       "url": "https://tools.pylot.dev/",
       "image": "https://tools.pylot.dev/og-image.png",
-      "description": "快速整理交通違規簡訊報案格式，依所在行政區帶出對應的簡訊受理警政機關，協助你檢舉違規停車與其他交通違規。",
+      "description": "免費的繁體中文交通違規簡訊報案輔助工具，可用手機 GPS 目前位置或手動輸入地址，對應在地警政簡訊受理單位，填寫違規事實與車牌後產生可傳送的簡訊內容。",
       "applicationCategory": "UtilityApplication",
       "operatingSystem": "Android, iOS, Web",
-      "browserRequirements": "Requires JavaScript and a modern mobile browser.",
+      "browserRequirements": "需要 JavaScript 與現代行動瀏覽器。",
+      "featureList": [
+        "使用手機 GPS 目前位置或手動輸入地址",
+        "依地址對應在地警政簡訊受理單位",
+        "整理違規事實、車牌號碼與地點",
+        "產生手機簡訊 App 可使用的報案內容"
+      ],
+      "softwareVersion": "1.0.0",
+      "isAccessibleForFree": true,
       "inLanguage": "zh-TW",
       "offers": {
         "@type": "Offer",
@@ -103,8 +123,19 @@
 </head>
 <body>
   <app-root></app-root>
+  <section class="seo-static-content" aria-labelledby="seo-static-title">
+    <h1 id="seo-static-title">簡訊報案工具</h1>
+    <p>
+      免費的繁體中文交通違規簡訊報案輔助工具，可使用手機 GPS 目前位置或手動輸入地址，協助對應在地警政簡訊受理單位。
+    </p>
+    <ul>
+      <li>填寫違規事實、車牌號碼與發生地點，整理成手機簡訊內容。</li>
+      <li>確認內容後，可在行動裝置上交由簡訊 App 傳送。</li>
+      <li>若瀏覽器不支援 JavaScript，仍可閱讀本服務用途說明。</li>
+    </ul>
+  </section>
   <noscript>
-    這個工具可協助你在手機上快速整理交通違規檢舉簡訊，包含定位目前位置、判斷所在行政區、帶出對應的簡訊受理警政機關、選擇違規類型與產生可直接傳送的訊息內容。若停用 JavaScript，將無法使用自動定位、行政區判斷、受理機關帶入與簡訊產生功能。
+    這個免費的繁體中文工具可協助你在手機上整理交通違規檢舉簡訊，包含使用目前位置或輸入地址、對應在地警政簡訊受理單位、填寫違規事實與車牌，以及準備可傳送的簡訊內容。若停用 JavaScript，將無法使用自動定位、受理單位帶入與簡訊產生功能。
   </noscript>
 </body>
 </html>
