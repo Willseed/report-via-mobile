@@ -1,8 +1,30 @@
 const LINK_TARGET_START = String.fromCodePoint(60);
 const LINK_TARGET_END = String.fromCodePoint(62);
 
+const PUBLIC_ORIGIN = 'https://tools.pylot.dev';
+const PUBLIC_HOSTNAME = new URL(PUBLIC_ORIGIN).hostname;
 const HOMEPAGE_PATHS = new Set(['/', '/index.html']);
 const MARKDOWN_HOMEPAGE_PATH = '/index.md';
+const MARKDOWN_MEDIA_TYPE = 'text/markdown';
+const WEB_PAGE_MEDIA_TYPE = 'text/html';
+const ALLOWED_METHODS = new Set(['GET', 'HEAD']);
+const SAFE_FORWARD_REQUEST_HEADERS = Object.freeze([
+  'accept',
+  'accept-encoding',
+  'accept-language',
+  'if-match',
+  'if-modified-since',
+  'if-none-match',
+  'if-unmodified-since',
+]);
+const MAX_FORWARD_HEADER_VALUE_LENGTH = 1024;
+const MAX_QUERY_LENGTH = 1024;
+const MAX_ACCEPT_HEADER_LENGTH = 2048;
+const MAX_ACCEPT_RANGES = 32;
+const MAX_VARY_HEADER_LENGTH = 512;
+const MAX_VARY_VALUES = 16;
+const MEDIA_TOKEN_PATTERN = /^[a-z0-9!#$&^_.+-]+$/i;
+const HEADER_TOKEN_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 
 const DISCOVERY_LINKS = [
   {
@@ -28,7 +50,7 @@ const DISCOVERY_LINKS = [
   {
     target: MARKDOWN_HOMEPAGE_PATH,
     rel: 'alternate service-doc',
-    type: 'text/markdown',
+    type: MARKDOWN_MEDIA_TYPE,
   },
   {
     target: '/manifest.webmanifest',
@@ -38,12 +60,12 @@ const DISCOVERY_LINKS = [
   {
     target: '/auth.md',
     rel: 'service-doc',
-    type: 'text/markdown',
+    type: MARKDOWN_MEDIA_TYPE,
   },
   {
     target: 'https://github.com/Willseed/report-via-mobile',
     rel: 'service-doc',
-    type: 'text/html',
+    type: WEB_PAGE_MEDIA_TYPE,
   },
 ];
 
@@ -51,7 +73,7 @@ const MARKDOWN_DISCOVERY_LINKS = [
   {
     target: '/',
     rel: 'canonical',
-    type: 'text/html',
+    type: WEB_PAGE_MEDIA_TYPE,
   },
   ...DISCOVERY_LINKS,
 ];
@@ -67,28 +89,35 @@ const STATIC_CONTENT_TYPES = new Map([
 
 export default {
   async fetch(request) {
-    const url = new URL(request.url);
-    const pathname = normalizePathname(url.pathname);
+    const url = normalizeRequestUrl(request);
 
-    if (shouldServeMarkdownHomepage(request, pathname)) {
-      return fetchMarkdownHomepage(request, url);
+    if (!url) {
+      return notFoundResponse();
     }
 
-    const response = await fetch(request);
+    if (!isSafeMethod(request.method)) {
+      return methodNotAllowedResponse();
+    }
 
-    if (!shouldDecorateResponse(pathname)) {
+    if (shouldServeMarkdownHomepage(request, url.pathname)) {
+      return fetchMarkdownHomepage(request.method);
+    }
+
+    const response = await fetchStaticAsset(request, url);
+
+    if (!shouldDecorateResponse(url.pathname)) {
       return response;
     }
 
     const headers = new Headers(response.headers);
-    const contentType = STATIC_CONTENT_TYPES.get(pathname);
+    const contentType = STATIC_CONTENT_TYPES.get(url.pathname);
 
     if (contentType) {
       headers.set('Content-Type', contentType);
     }
 
-    if (HOMEPAGE_PATHS.has(pathname)) {
-      appendLinkHeader(headers, DISCOVERY_LINKS);
+    if (HOMEPAGE_PATHS.has(url.pathname)) {
+      setLinkHeader(headers, DISCOVERY_LINKS);
       appendVaryHeader(headers, 'Accept');
     }
 
@@ -96,8 +125,55 @@ export default {
   },
 };
 
-function normalizePathname(pathname) {
-  return pathname === '' ? '/' : pathname;
+function normalizeRequestUrl(request) {
+  let url;
+
+  try {
+    url = new URL(request.url);
+  } catch {
+    return null;
+  }
+
+  if (
+    url.protocol !== 'https:' ||
+    url.port ||
+    url.username ||
+    url.password ||
+    url.hostname.toLowerCase() !== PUBLIC_HOSTNAME ||
+    url.search.length > MAX_QUERY_LENGTH ||
+    hasUnsafePathSegment(url.pathname)
+  ) {
+    return null;
+  }
+
+  const normalizedUrl = new URL(PUBLIC_ORIGIN);
+  normalizedUrl.pathname = url.pathname;
+  normalizedUrl.search = url.search;
+  return normalizedUrl;
+}
+
+function hasUnsafePathSegment(pathname) {
+  let currentPathname = pathname;
+
+  try {
+    for (let index = 0; index < 2; index += 1) {
+      const decodedPathname = decodeURIComponent(currentPathname);
+
+      if (decodedPathname.split('/').some((segment) => segment === '.' || segment === '..')) {
+        return true;
+      }
+
+      if (decodedPathname === currentPathname) {
+        return false;
+      }
+
+      currentPathname = decodedPathname;
+    }
+
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 function shouldDecorateResponse(pathname) {
@@ -105,31 +181,39 @@ function shouldDecorateResponse(pathname) {
 }
 
 function shouldServeMarkdownHomepage(request, pathname) {
-  return (
-    isSafeMethod(request.method) &&
-    HOMEPAGE_PATHS.has(pathname) &&
-    prefersMarkdown(request.headers.get('Accept'))
-  );
+  return HOMEPAGE_PATHS.has(pathname) && prefersMarkdown(request.headers.get('Accept'));
 }
 
 function isSafeMethod(method) {
-  return method === 'GET' || method === 'HEAD';
+  return ALLOWED_METHODS.has(method.toUpperCase());
 }
 
-async function fetchMarkdownHomepage(request, url) {
-  const markdownUrl = new URL(url);
-  markdownUrl.pathname = MARKDOWN_HOMEPAGE_PATH;
-  markdownUrl.search = '';
+function fetchStaticAsset(request, url) {
+  return fetch(
+    new Request(url, {
+      method: request.method.toUpperCase(),
+      headers: safeForwardHeaders(request.headers),
+      redirect: 'manual',
+    }),
+  );
+}
 
-  const response = await fetch(new Request(markdownUrl, request));
+async function fetchMarkdownHomepage(method) {
+  const response = await fetch(
+    new Request(new URL(MARKDOWN_HOMEPAGE_PATH, PUBLIC_ORIGIN), {
+      method: method.toUpperCase(),
+      headers: new Headers({ Accept: MARKDOWN_MEDIA_TYPE }),
+      redirect: 'manual',
+    }),
+  );
   const headers = new Headers(response.headers);
 
   headers.set('Content-Type', 'text/markdown; charset=utf-8');
   headers.set('Content-Location', MARKDOWN_HOMEPAGE_PATH);
-  appendLinkHeader(headers, MARKDOWN_DISCOVERY_LINKS);
+  setLinkHeader(headers, MARKDOWN_DISCOVERY_LINKS);
   appendVaryHeader(headers, 'Accept');
 
-  return new Response(request.method === 'HEAD' ? null : response.body, {
+  return new Response(method.toUpperCase() === 'HEAD' ? null : response.body, {
     status: response.status,
     statusText: response.statusText,
     headers,
@@ -144,28 +228,77 @@ function cloneResponse(response, headers) {
   });
 }
 
-function appendLinkHeader(headers, links) {
-  const linkHeader = links.map(formatLink).join(', ');
-  const existingLink = headers.get('Link');
+function safeForwardHeaders(requestHeaders) {
+  const headers = new Headers();
 
-  headers.set('Link', existingLink ? `${existingLink}, ${linkHeader}` : linkHeader);
+  for (const headerName of SAFE_FORWARD_REQUEST_HEADERS) {
+    const value = requestHeaders.get(headerName);
+
+    if (isSafeForwardHeaderValue(value)) {
+      headers.set(headerName, value);
+    }
+  }
+
+  return headers;
+}
+
+function isSafeForwardHeaderValue(value) {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    value.length <= MAX_FORWARD_HEADER_VALUE_LENGTH &&
+    !value.includes('\r') &&
+    !value.includes('\n')
+  );
+}
+
+function notFoundResponse() {
+  return new Response('Not found', {
+    status: 404,
+    headers: new Headers({ 'Content-Type': 'text/plain; charset=utf-8' }),
+  });
+}
+
+function methodNotAllowedResponse() {
+  return new Response('Method not allowed', {
+    status: 405,
+    headers: new Headers({
+      Allow: 'GET, HEAD',
+      'Content-Type': 'text/plain; charset=utf-8',
+    }),
+  });
+}
+
+function setLinkHeader(headers, links) {
+  headers.set('Link', links.map(formatLink).join(', '));
 }
 
 function appendVaryHeader(headers, headerName) {
-  const existingVary = headers.get('Vary');
+  const existingValues = parseSafeVaryValues(headers.get('Vary'));
+  const normalizedHeaderName = headerName.toLowerCase();
 
-  if (!existingVary) {
-    headers.set('Vary', headerName);
+  const alreadyVaries = existingValues.some(
+    (value) => value.toLowerCase() === '*' || value.toLowerCase() === normalizedHeaderName,
+  );
+
+  if (alreadyVaries) {
+    headers.set('Vary', existingValues.join(', '));
     return;
   }
 
-  const varyParts = existingVary.split(',').map((part) => part.trim().toLowerCase());
+  headers.set('Vary', [...existingValues, headerName].join(', '));
+}
 
-  if (varyParts.includes('*') || varyParts.includes(headerName.toLowerCase())) {
-    return;
+function parseSafeVaryValues(varyHeader) {
+  if (!varyHeader || varyHeader.length > MAX_VARY_HEADER_LENGTH) {
+    return [];
   }
 
-  headers.set('Vary', `${existingVary}, ${headerName}`);
+  return varyHeader
+    .split(',')
+    .slice(0, MAX_VARY_VALUES)
+    .map((part) => part.trim())
+    .filter((part) => HEADER_TOKEN_PATTERN.test(part));
 }
 
 function formatLink({ target, rel, type }) {
@@ -181,7 +314,7 @@ function escapeLinkParameter(value) {
 }
 
 function prefersMarkdown(acceptHeader) {
-  if (!acceptHeader) {
+  if (!acceptHeader || acceptHeader.length > MAX_ACCEPT_HEADER_LENGTH) {
     return false;
   }
 
@@ -195,39 +328,40 @@ function prefersMarkdown(acceptHeader) {
   }
 
   const markdown = getMediaPreference(acceptedTypes, 'text', 'markdown');
-  const html = getMediaPreference(acceptedTypes, 'text', 'html');
+  const webPage = getMediaPreference(acceptedTypes, 'text', 'html');
 
   if (!markdown || markdown.quality <= 0) {
     return false;
   }
 
-  if (!html || html.quality <= 0) {
+  if (!webPage || webPage.quality <= 0) {
     return true;
   }
 
-  if (markdown.quality !== html.quality) {
-    return markdown.quality > html.quality;
+  if (markdown.quality !== webPage.quality) {
+    return markdown.quality > webPage.quality;
   }
 
-  if (markdown.specificity !== html.specificity) {
-    return markdown.specificity > html.specificity;
+  if (markdown.specificity !== webPage.specificity) {
+    return markdown.specificity > webPage.specificity;
   }
 
-  return markdown.index <= html.index;
+  return markdown.index <= webPage.index;
 }
 
 function parseAcceptHeader(acceptHeader) {
   return acceptHeader
     .split(',')
+    .slice(0, MAX_ACCEPT_RANGES)
     .map((entry, index) => parseAcceptEntry(entry, index))
     .filter((entry) => entry !== undefined);
 }
 
 function parseAcceptEntry(entry, index) {
   const [mediaRange, ...parameters] = entry.split(';').map((part) => part.trim());
-  const [type, subtype] = mediaRange.toLowerCase().split('/');
+  const [type, subtype, extra] = mediaRange.toLowerCase().split('/');
 
-  if (!type || !subtype) {
+  if (extra !== undefined || !isSupportedMediaToken(type) || !isSupportedMediaToken(subtype)) {
     return undefined;
   }
 
@@ -240,17 +374,37 @@ function parseAcceptEntry(entry, index) {
   };
 }
 
-function parseQuality(parameters) {
-  const qualityMatch = parameters
-    .map((parameter) => /^q\s*=\s*"?([^"]*)"?$/i.exec(parameter))
-    .find((match) => match !== null);
+function isSupportedMediaToken(value) {
+  return value === '*' || MEDIA_TOKEN_PATTERN.test(value);
+}
 
-  if (!qualityMatch) {
-    return 1;
+function parseQuality(parameters) {
+  for (const parameter of parameters.slice(0, 8)) {
+    const separatorIndex = parameter.indexOf('=');
+
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = parameter.slice(0, separatorIndex).trim().toLowerCase();
+
+    if (key !== 'q') {
+      continue;
+    }
+
+    return normalizeQuality(parameter.slice(separatorIndex + 1));
   }
 
-  const [, value] = qualityMatch;
-  const quality = Number(value.trim());
+  return 1;
+}
+
+function normalizeQuality(rawValue) {
+  const trimmedValue = rawValue.trim();
+  const unquotedValue =
+    trimmedValue.startsWith('"') && trimmedValue.endsWith('"')
+      ? trimmedValue.slice(1, -1)
+      : trimmedValue;
+  const quality = Number(unquotedValue.trim());
 
   if (!Number.isFinite(quality)) {
     return 0;

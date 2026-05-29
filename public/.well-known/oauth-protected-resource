@@ -2,7 +2,6 @@
   "resource": "https://tools.pylot.dev/",
   "authorization_servers": [],
   "scopes_supported": [],
-  "bearer_methods_supported": ["header"],
   "resource_documentation": "https://tools.pylot.dev/auth.md",
-  "notes": "This public static app has no protected APIs, OAuth authorization servers, access-token requirement, or agent registration flow."
+  "notes": "Public app: no protected APIs, OAuth servers, access tokens, or agent registration."
 }

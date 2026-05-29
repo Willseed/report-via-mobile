@@ -125,9 +125,27 @@ type WebMcpToolResult =
   | ListViolationTypesResult
   | LookupPoliceStationResult
   | WebMcpFailure;
+type WebMcpInputKey = 'address' | 'district' | 'licensePlate' | 'violation';
 
 function isInputRecord(input: unknown): input is Record<string, unknown> {
-  return typeof input === 'object' && input !== null && !Array.isArray(input);
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(input);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function isModelContext(input: unknown): input is ModelContext {
+  if (typeof input !== 'object' || input === null) {
+    return false;
+  }
+
+  const modelContext = input as ModelContext;
+  return (
+    typeof modelContext.registerTool === 'function' ||
+    typeof modelContext.provideContext === 'function'
+  );
 }
 
 function isDistrict(value: string): value is District {
@@ -148,7 +166,7 @@ export class WebMcpService implements OnDestroy {
     if (this.registeredState()) return;
     if (!isPlatformBrowser(this.platformId)) return;
 
-    const modelContext = globalThis.navigator?.modelContext;
+    const modelContext = this.modelContext();
     if (!modelContext) return;
 
     const tools = this.createTools();
@@ -362,12 +380,20 @@ export class WebMcpService implements OnDestroy {
     };
   }
 
+  private modelContext(): ModelContext | null {
+    const modelContext = globalThis.navigator?.modelContext;
+    return isModelContext(modelContext) ? modelContext : null;
+  }
+
   private inputRecord(input: unknown): Record<string, unknown> {
     return isInputRecord(input) ? input : {};
   }
 
-  private optionalString(input: Record<string, unknown>, key: string): string | null {
-    const value = input[key];
+  private optionalString(input: Record<string, unknown>, key: WebMcpInputKey): string | null {
+    const descriptor = Object.getOwnPropertyDescriptor(input, key);
+    if (!descriptor || !('value' in descriptor)) return null;
+
+    const value = descriptor.value;
     if (typeof value !== 'string') return null;
 
     const trimmed = value.trim();

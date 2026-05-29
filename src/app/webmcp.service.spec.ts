@@ -11,7 +11,7 @@ interface ModelContextMock {
   registerTool?: ReturnType<typeof vi.fn>;
 }
 
-function setModelContext(modelContext: ModelContextMock | undefined): void {
+function setModelContext(modelContext: unknown): void {
   Object.defineProperty(navigator, 'modelContext', {
     configurable: true,
     value: modelContext,
@@ -23,10 +23,10 @@ function clearModelContext(): void {
 }
 
 function configureService(
-  modelContext?: ModelContextMock,
+  modelContext?: unknown,
   platformId: 'browser' | 'server' = 'browser',
 ): WebMcpService {
-  if (modelContext) {
+  if (modelContext !== undefined) {
     setModelContext(modelContext);
   } else {
     clearModelContext();
@@ -72,6 +72,13 @@ describe('WebMcpService', () => {
 
   it('does not throw or register when navigator.modelContext is unavailable', () => {
     const service = configureService();
+
+    expect(() => service.init()).not.toThrow();
+    expect(service.registered()).toBe(false);
+  });
+
+  it('does not register when navigator.modelContext does not expose WebMCP methods', () => {
+    const service = configureService({ registerTool: 'not a function' });
 
     expect(() => service.init()).not.toThrow();
     expect(service.registered()).toBe(false);
@@ -141,7 +148,11 @@ describe('WebMcpService', () => {
       violation,
       licensePlate: 'abc-123',
     });
-    const expectedMessage = `${address}，有${violation}，車牌號碼：ABC123，請派員處理`;
+    const expectedMessage = [
+      `${address}，有${violation}`,
+      '車牌號碼：ABC123',
+      '請派員處理',
+    ].join('，');
 
     expect(listResult).toMatchObject({
       ok: true,
@@ -174,6 +185,40 @@ describe('WebMcpService', () => {
         stationSource: 'address',
         districtMismatch: false,
       },
+    });
+  });
+
+  it('only reads own data properties from tool inputs', () => {
+    const modelContext = { registerTool: vi.fn() };
+    const service = configureService(modelContext);
+    const address = '臺北市信義區市府路1號';
+    const violation = VIOLATION_TYPES[0];
+
+    service.init();
+
+    const reportTool = findTool(registeredTools(modelContext), 'generate_sms_report');
+    const inheritedInput = Object.create({ address, violation });
+    const accessorInput = Object.create(null, {
+      address: {
+        enumerable: true,
+        get: () => {
+          throw new Error('getter should not run');
+        },
+      },
+      violation: {
+        enumerable: true,
+        value: violation,
+      },
+    });
+
+    expect(reportTool.execute(inheritedInput)).toMatchObject({
+      ok: false,
+      error: { code: 'missing_address' },
+    });
+    expect(() => reportTool.execute(accessorInput)).not.toThrow();
+    expect(reportTool.execute(accessorInput)).toMatchObject({
+      ok: false,
+      error: { code: 'missing_address' },
     });
   });
 });
