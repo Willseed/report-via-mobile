@@ -3,8 +3,8 @@ const HOMEPAGE_LINKS = [
   { target: '/manifest.webmanifest', rel: 'manifest' },
   { target: 'https://github.com/Willseed/report-via-mobile', rel: 'service-doc' },
 ];
-const LINK_TARGET_START = String.fromCharCode(60);
-const LINK_TARGET_END = String.fromCharCode(62);
+const LINK_TARGET_START = String.fromCodePoint(60);
+const LINK_TARGET_END = String.fromCodePoint(62);
 
 export default {
   async fetch(request) {
