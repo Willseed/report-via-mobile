@@ -8,18 +8,13 @@ import { LocationInput, DISTRICT_SEARCH_DEBOUNCE_MS, ADDRESS_MAX_LENGTH } from '
 import { GeocodingService } from '../../geocoding.service';
 import { POLICE_STATIONS, District } from '../../police-stations';
 import { ZH_TW } from '../../i18n';
-import { ReportStateService } from '../../services/report-state.service';
+import { LocationWorkflowService } from '../../services/location-workflow.service';
 
 function fireAddressInput(component: LocationInput, value: string): void {
   component['onAddressInput']({ target: { value } } as unknown as Event);
 }
 
-function firePasteEvent(
-  component: LocationInput,
-  state: ReportStateService,
-  value: string,
-): void {
-  state.setAddress(value);
+function firePasteEvent(component: LocationInput, value: string): void {
   component['onAddressPaste']({
     clipboardData: { getData: () => value },
   } as unknown as ClipboardEvent);
@@ -28,7 +23,7 @@ function firePasteEvent(
 describe('LocationInput', () => {
   let fixture: ComponentFixture<LocationInput>;
   let component: LocationInput;
-  let state: ReportStateService;
+  let workflow: LocationWorkflowService;
   let mockGeocodingService: {
     getCurrentPosition: ReturnType<typeof vi.fn>;
     reverseGeocode: ReturnType<typeof vi.fn>;
@@ -56,7 +51,7 @@ describe('LocationInput', () => {
 
     fixture = TestBed.createComponent(LocationInput);
     component = fixture.componentInstance;
-    state = TestBed.inject(ReportStateService);
+    workflow = TestBed.inject(LocationWorkflowService);
     fixture.detectChanges();
   });
 
@@ -122,7 +117,7 @@ describe('LocationInput', () => {
     fireAddressInput(component, '臺北市信義區信義路');
     vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS);
     // Reset district to null
-    state.setSelectedStation(null);
+    workflow.updateStation(null);
 
     expect(component.districtMismatch()).toBe(false);
   });
@@ -200,14 +195,14 @@ describe('LocationInput', () => {
 
   describe('paste handling', () => {
     it('should immediately match district on paste without debounce', async () => {
-      firePasteEvent(component, state, '臺北市信義區信義路五段7號');
+      firePasteEvent(component, '臺北市信義區信義路五段7號');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['district']()).not.toBeNull();
       expect(component['district']()?.district).toBe(District.Taipei);
     });
 
     it('should normalize pasted address with 台灣 prefix', async () => {
-      firePasteEvent(component, state, '台灣臺中市西屯區某路');
+      firePasteEvent(component, '台灣臺中市西屯區某路');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['address']()).toBe('臺中市西屯區某路');
       const result = component['district']();
@@ -216,7 +211,7 @@ describe('LocationInput', () => {
     });
 
     it('should normalize pasted address with postal code', async () => {
-      firePasteEvent(component, state, '242 新北市新莊區某路');
+      firePasteEvent(component, '242 新北市新莊區某路');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['address']()).toBe('新北市新莊區某路');
       const result = component['district']();
@@ -235,7 +230,7 @@ describe('LocationInput', () => {
       // Start typing to trigger debounce timer
       fireAddressInput(component, '臺北');
       // Paste before debounce fires — should cancel the timer
-      firePasteEvent(component, state, '臺中市西屯區某路');
+      firePasteEvent(component, '臺中市西屯區某路');
       await vi.advanceTimersByTimeAsync(0);
       expect(component['district']()?.district).toBe(District.Taichung);
       vi.advanceTimersByTime(DISTRICT_SEARCH_DEBOUNCE_MS + 50);

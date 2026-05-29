@@ -53,17 +53,24 @@ export class LocationResolverService {
     this.clearAddressDebounce();
     this.formService.addressForm.address().value.set(pasted);
     queueMicrotask(() => {
-      const normalized = normalizeAddress(this.formService.addressForm.address().value());
-      if (normalized !== this.formService.addressForm.address().value()) {
-        this.formService.addressForm.address().value.set(normalized);
-      }
-      this.formService.setAddress(normalized);
-      this.autoSelectDistrict(normalized);
+      this.resolveManualAddress(this.formService.addressForm.address().value());
     });
+  }
+
+  resolveManualAddress(value: string): void {
+    const normalized = normalizeAddress(value);
+    this.formService.setAddress(normalized);
+    this.autoSelectDistrict(normalized);
   }
 
   clearAddressDebounce(): void {
     this.addressCancel$.next();
+  }
+
+  resetLocationState(): void {
+    this.isLocatingState.set(false);
+    this.locationErrorState.set('');
+    this.locationStatusState.set('');
   }
 
   async locateUser(): Promise<void> {

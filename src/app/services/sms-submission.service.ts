@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ZH_TW } from '../i18n';
 import { SmsService } from '../sms.service';
 import type { ConfirmDialogData } from '../sms-form/confirm-dialog';
-import { ReportStateService } from './report-state.service';
+import { ReportDraftService } from './report-draft.service';
 
 type ConfirmDialogComponent = typeof import('../sms-form/confirm-dialog').ConfirmDialog;
 
@@ -12,25 +12,18 @@ type ConfirmDialogComponent = typeof import('../sms-form/confirm-dialog').Confir
 export class SmsSubmissionService {
   private readonly smsService = inject(SmsService);
   private readonly dialog = inject(MatDialog);
-  private readonly state = inject(ReportStateService);
+  private readonly draft = inject(ReportDraftService);
 
   readonly isDesktop: Signal<boolean> = signal(this.smsService.isDesktop()).asReadonly();
 
   async submit(): Promise<void> {
     if (!this.canSubmit()) {
-      this.markFormsAsTouched();
+      this.draft.touchAllFields();
       return;
     }
 
-    const station = this.state.station();
-    if (!station) return;
-
-    const data: ConfirmDialogData = {
-      stationName: station.stationName,
-      phoneNumber: station.phoneNumber,
-      message: this.state.composedMessage(),
-      licensePlate: this.state.licensePlate() || undefined,
-    };
+    const data: ConfirmDialogData | null = this.draft.submitData();
+    if (!data) return;
 
     const ConfirmDialog = await this.loadConfirmDialog();
     if (!ConfirmDialog) return;
@@ -47,16 +40,7 @@ export class SmsSubmissionService {
   }
 
   private canSubmit(): boolean {
-    return (
-      this.state.locationValid() &&
-      this.state.violationFormValid() &&
-      !this.state.districtMismatch()
-    );
-  }
-
-  private markFormsAsTouched(): void {
-    this.state.markLocationTouched();
-    this.state.markViolationTouched();
+    return this.draft.isFormValid();
   }
 
   private async loadConfirmDialog(): Promise<ConfirmDialogComponent | null> {

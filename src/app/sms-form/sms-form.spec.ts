@@ -5,7 +5,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SmsForm, DISTRICT_SEARCH_DEBOUNCE_MS } from './sms-form';
 import { POLICE_STATIONS, findStationByAddress, normalizeAddress } from '../police-stations';
 import { GeocodingService } from '../geocoding.service';
-import { ReportStateService } from '../services/report-state.service';
+import { ReportDraftService } from '../services/report-draft.service';
+import { LocationWorkflowService } from '../services/location-workflow.service';
 import { SmsSubmissionService } from '../services/sms-submission.service';
 import { LocationInput } from './location-input/location-input';
 import {
@@ -50,7 +51,8 @@ function getViolationInput(fixture: ComponentFixture<SmsForm>): ViolationInput {
 }
 
 function setFormState(
-  state: ReportStateService,
+  locationWorkflow: LocationWorkflowService,
+  draft: ReportDraftService,
   {
     address = VALID_ADDRESS,
     station = POLICE_STATIONS[0],
@@ -58,14 +60,18 @@ function setFormState(
     plate,
   }: FormState = {},
 ): void {
-  if (address !== undefined) state.setAddress(address);
-  if (station !== undefined) state.setSelectedStation(station);
-  if (violation !== undefined) state.setViolation(violation);
-  if (plate !== undefined) state.setLicensePlate(plate);
+  if (address !== undefined) locationWorkflow.updateManualAddress(address);
+  if (station !== undefined) locationWorkflow.updateStation(station);
+  if (violation !== undefined) draft.updateViolation(violation);
+  if (plate !== undefined) draft.updateLicensePlate(plate);
 }
 
-function fillValidForm(state: ReportStateService, station = POLICE_STATIONS[0]): void {
-  setFormState(state, { station });
+function fillValidForm(
+  locationWorkflow: LocationWorkflowService,
+  draft: ReportDraftService,
+  station = POLICE_STATIONS[0],
+): void {
+  setFormState(locationWorkflow, draft, { station });
 }
 
 function hostElement(fixture: ComponentFixture<SmsForm>): HTMLElement {
@@ -142,7 +148,8 @@ describe('SmsForm', () => {
     reverseGeocode: ReturnType<typeof vi.fn>;
     fallbackToManualInput: ReturnType<typeof signal<boolean>>;
   };
-  let state: ReportStateService;
+  let locationWorkflow: LocationWorkflowService;
+  let draft: ReportDraftService;
 
   beforeEach(async () => {
     submissionServiceSpy = {
@@ -166,7 +173,8 @@ describe('SmsForm', () => {
 
     fixture = TestBed.createComponent(SmsForm);
     component = fixture.componentInstance;
-    state = TestBed.inject(ReportStateService);
+    locationWorkflow = TestBed.inject(LocationWorkflowService);
+    draft = TestBed.inject(ReportDraftService);
     fixture.detectChanges();
 
     const deferBlocks = await fixture.getDeferBlocks();
@@ -201,16 +209,16 @@ describe('SmsForm', () => {
   });
 
   it('should accept valid form values with all required fields', async () => {
-    fillValidForm(state);
+    fillValidForm(locationWorkflow, draft);
     expect(getLocationInput(fixture).valid()).toBe(true);
     expect(getViolationInput(fixture).valid()).toBe(true);
   });
 
   it('should return district from location input', async () => {
-    expect(state.station()).toBeNull();
+    expect(locationWorkflow.station()).toBeNull();
 
-    state.setSelectedStation(POLICE_STATIONS[0]);
-    expect(state.station()).toBe(POLICE_STATIONS[0]);
+    locationWorkflow.updateStation(POLICE_STATIONS[0]);
+    expect(locationWorkflow.station()).toBe(POLICE_STATIONS[0]);
   });
 
   describe('address input and auto-select district', () => {
@@ -274,17 +282,18 @@ describe('SmsForm', () => {
         expected: false,
       },
     ])('should $name', ({ formState, expected }) => {
-      setFormState(state, formState);
+      setFormState(locationWorkflow, draft, formState);
       expect(getLocationInput(fixture).districtMismatch()).toBe(expected);
     });
 
     it('should not detect mismatch when no district is selected', () => {
-      state.setAddress(VALID_ADDRESS);
+      locationWorkflow.updateManualAddress(VALID_ADDRESS);
+      locationWorkflow.updateStation(null);
       expect(getLocationInput(fixture).districtMismatch()).toBe(false);
     });
 
     it('should disable submit button when district mismatches', async () => {
-      setFormState(state, { station: kaohsiungStation });
+      setFormState(locationWorkflow, draft, { station: kaohsiungStation });
       fixture.detectChanges();
       const buttonDebug = fixture.debugElement.query(
         (el) => el.name === 'button' && el.attributes['mat-flat-button'] !== undefined,
@@ -293,13 +302,13 @@ describe('SmsForm', () => {
     });
 
     it('should show warning message when district mismatches', () => {
-      setFormState(state, { station: kaohsiungStation });
+      setFormState(locationWorkflow, draft, { station: kaohsiungStation });
       fixture.detectChanges();
       expect(districtWarning(fixture)).toBeTruthy();
     });
 
     it('should not show warning when district matches', () => {
-      fillValidForm(state);
+      fillValidForm(locationWorkflow, draft);
       fixture.detectChanges();
       expect(districtWarning(fixture)).toBeNull();
     });
@@ -307,37 +316,38 @@ describe('SmsForm', () => {
 
   describe('composedMessage', () => {
     it('should compose message from address and violation', () => {
-      fillValidForm(state);
+      fillValidForm(locationWorkflow, draft);
       expect(component['composedMessage']()).toBe(EXPECTED_MESSAGE);
     });
 
     it('should return empty string when address is missing', () => {
-      state.setViolation(VALID_VIOLATION);
+      draft.updateViolation(VALID_VIOLATION);
       expect(component['composedMessage']()).toBe('');
     });
 
     it('should return empty string when violation is missing', () => {
-      state.setAddress(VALID_ADDRESS);
-      state.setSelectedStation(POLICE_STATIONS[0]);
+      locationWorkflow.updateManualAddress(VALID_ADDRESS);
+      locationWorkflow.updateStation(POLICE_STATIONS[0]);
       expect(component['composedMessage']()).toBe('');
     });
 
     it('should return empty string when district is not set', () => {
-      state.setAddress(VALID_ADDRESS);
-      state.setViolation(VALID_VIOLATION);
+      locationWorkflow.updateManualAddress(VALID_ADDRESS);
+      locationWorkflow.updateStation(null);
+      draft.updateViolation(VALID_VIOLATION);
       expect(component['composedMessage']()).toBe('');
     });
   });
 
   describe('pendingPreview', () => {
     it('should show pending hint when address is set but district is null', () => {
-      state.setAddress('某地址');
+      locationWorkflow.updateManualAddress('某地址');
       expect(component['pendingPreview']()).toBe(true);
     });
 
     it('should not show pending hint when district is set', () => {
-      state.setAddress('臺北市信義區');
-      state.setSelectedStation(POLICE_STATIONS[0]);
+      locationWorkflow.updateManualAddress('臺北市信義區');
+      locationWorkflow.updateStation(POLICE_STATIONS[0]);
       expect(component['pendingPreview']()).toBe(false);
     });
 
@@ -348,25 +358,25 @@ describe('SmsForm', () => {
 
   describe('sms preview', () => {
     it('should show preview when address and violation are filled', async () => {
-      fillValidForm(state);
+      fillValidForm(locationWorkflow, draft);
       fixture.detectChanges();
       expect(smsPreview(fixture)).toBeTruthy();
     });
 
     it('should hide preview when address is empty', async () => {
-      state.setViolation(VALID_VIOLATION);
+      draft.updateViolation(VALID_VIOLATION);
       fixture.detectChanges();
       expect(smsPreview(fixture)).toBeNull();
     });
 
     it('should hide preview when violation is empty', async () => {
-      state.setAddress(VALID_ADDRESS);
+      locationWorkflow.updateManualAddress(VALID_ADDRESS);
       fixture.detectChanges();
       expect(smsPreview(fixture)).toBeNull();
     });
 
     it('should display composed message in bubble', async () => {
-      fillValidForm(state);
+      fillValidForm(locationWorkflow, draft);
       fixture.detectChanges();
       expect(smsBubble(fixture)?.textContent?.trim()).toBe(EXPECTED_MESSAGE);
     });
@@ -378,7 +388,7 @@ describe('SmsForm', () => {
     });
 
     it('should filter violations by keyword', () => {
-      state.setViolationFilter('紅線');
+      draft.updateViolationFilter('紅線');
       expect(getViolationInput(fixture)['filteredViolations']()).toEqual([
         VALID_VIOLATION,
         '機車於紅線停車',
@@ -386,19 +396,19 @@ describe('SmsForm', () => {
     });
 
     it('should filter by vehicle type', () => {
-      state.setViolationFilter('機車');
+      draft.updateViolationFilter('機車');
       const filtered = getViolationInput(fixture)['filteredViolations']();
       expect(filtered.length).toBe(9);
       expect(filtered.every((v) => v.includes('機車'))).toBe(true);
     });
 
     it('should return all violations when filter matches an exact option', () => {
-      state.setViolationFilter(VALID_VIOLATION);
+      draft.updateViolationFilter(VALID_VIOLATION);
       expect(getViolationInput(fixture)['filteredViolations']().length).toBe(27);
     });
 
     it('should include car-only violation for disabled parking space', () => {
-      state.setViolationFilter('身心障礙');
+      draft.updateViolationFilter('身心障礙');
       const results = getViolationInput(fixture)['filteredViolations']();
       expect(results).toEqual(['汽車違法佔用身心障礙者專用停車位']);
     });
@@ -410,7 +420,7 @@ describe('SmsForm', () => {
     });
 
     it('should include the shared sidewalk and crosswalk temporary parking violation', () => {
-      state.setViolationFilter('行人穿越道');
+      draft.updateViolationFilter('行人穿越道');
       expect(getViolationInput(fixture)['filteredViolations']()).toEqual([
         '汽車於人行道、行人穿越道違規臨停',
         '機車於人行道、行人穿越道違規臨停',
@@ -420,12 +430,12 @@ describe('SmsForm', () => {
 
   describe('smsOverLimit', () => {
     it('should detect when message exceeds 70 characters', () => {
-      setFormState(state, { address: LONG_ADDRESS });
+      setFormState(locationWorkflow, draft, { address: LONG_ADDRESS });
       expect(component['composedMessage']().length).toBeGreaterThan(70);
     });
 
     it('should not flag when message is within limit', () => {
-      setFormState(state, { address: SHORT_ADDRESS });
+      setFormState(locationWorkflow, draft, { address: SHORT_ADDRESS });
       expect(component['composedMessage']().length).toBeLessThanOrEqual(70);
     });
   });
@@ -499,7 +509,7 @@ describe('SmsForm', () => {
     it('should hide field and clear value on clearLicensePlate', () => {
       const vi = getViolationInput(fixture);
       vi['toggleLicensePlate']();
-      state.setLicensePlate(VALID_PLATE);
+      draft.updateLicensePlate(VALID_PLATE);
       vi['clearLicensePlate']();
       expect(vi['showLicensePlate']()).toBe(false);
       expect(vi['violationForm'].licensePlate().value()).toBe('');
@@ -516,19 +526,19 @@ describe('SmsForm', () => {
     it('should not modify value when input is already clean uppercase', () => {
       const vi = getViolationInput(fixture);
       vi['toggleLicensePlate']();
-      state.setLicensePlate(VALID_PLATE);
+      draft.updateLicensePlate(VALID_PLATE);
       const event = { target: { value: VALID_PLATE } } as unknown as Event;
       vi['onLicensePlateInput'](event);
       expect(vi['violationForm'].licensePlate().value()).toBe(VALID_PLATE);
     });
 
     it('should include plate in composed message when provided', () => {
-      setFormState(state, { plate: VALID_PLATE });
+      setFormState(locationWorkflow, draft, { plate: VALID_PLATE });
       expect(component['composedMessage']()).toBe(EXPECTED_MESSAGE_WITH_PLATE);
     });
 
     it('should not include plate segment when plate is empty', () => {
-      fillValidForm(state);
+      fillValidForm(locationWorkflow, draft);
       expect(component['composedMessage']()).toBe(EXPECTED_MESSAGE);
     });
 
@@ -553,28 +563,28 @@ describe('SmsForm', () => {
     });
 
     it('should keep form valid when license plate is empty (optional field)', () => {
-      fillValidForm(state);
+      fillValidForm(locationWorkflow, draft);
       expect(getLocationInput(fixture).valid()).toBe(true);
       expect(getViolationInput(fixture).valid()).toBe(true);
     });
 
     it('should keep form valid with a valid license plate', () => {
-      fillValidForm(state);
-      state.setLicensePlate(VALID_PLATE);
+      fillValidForm(locationWorkflow, draft);
+      draft.updateLicensePlate(VALID_PLATE);
       expect(getViolationInput(fixture).valid()).toBe(true);
     });
   });
 
   describe('sms preview over-limit warning', () => {
     it('should show over-limit warning when message exceeds 70 chars', async () => {
-      setFormState(state, { address: LONG_ADDRESS });
+      setFormState(locationWorkflow, draft, { address: LONG_ADDRESS });
       fixture.detectChanges();
       expect(lengthWarning(fixture)).toBeTruthy();
       expect(lengthWarning(fixture)?.textContent).toContain('可能被拆為多則傳送');
     });
 
     it('should not show over-limit warning when message is within limit', async () => {
-      setFormState(state, { address: SHORT_ADDRESS, station: null });
+      setFormState(locationWorkflow, draft, { address: SHORT_ADDRESS, station: null });
       fixture.detectChanges();
       expect(lengthWarning(fixture)).toBeNull();
     });

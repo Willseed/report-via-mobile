@@ -3,52 +3,47 @@ import { TestBed } from '@angular/core/testing';
 import { MatDialog, type MatDialogRef } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { POLICE_STATIONS, type PoliceStation } from '../police-stations';
+import { POLICE_STATIONS } from '../police-stations';
 import { SmsService } from '../sms.service';
-import { ConfirmDialog } from '../sms-form/confirm-dialog';
-import { ReportStateService } from './report-state.service';
+import { ConfirmDialog, type ConfirmDialogData } from '../sms-form/confirm-dialog';
+import { ReportDraftService } from './report-draft.service';
 import { SmsSubmissionService } from './sms-submission.service';
 
 const VALID_MESSAGE = '臺北市信義區信義路五段7號，有汽車於紅線停車，請派員處理';
 const VALID_PLATE = 'ABC1234';
 
-interface StateStubOptions {
-  locationValid?: boolean;
-  violationFormValid?: boolean;
-  districtMismatch?: boolean;
-  station?: PoliceStation | null;
+interface DraftStubOptions {
+  isFormValid?: boolean;
+  submitData?: ConfirmDialogData | null;
   licensePlate?: string;
   message?: string;
 }
 
-interface StateStub {
-  readonly locationValid: Signal<boolean>;
-  readonly violationFormValid: Signal<boolean>;
-  readonly districtMismatch: Signal<boolean>;
-  readonly station: Signal<PoliceStation | null>;
-  readonly licensePlate: Signal<string>;
-  readonly composedMessage: Signal<string>;
-  readonly markLocationTouched: ReturnType<typeof vi.fn>;
-  readonly markViolationTouched: ReturnType<typeof vi.fn>;
+interface DraftStub {
+  readonly isFormValid: Signal<boolean>;
+  readonly submitData: Signal<ConfirmDialogData | null>;
+  readonly touchAllFields: ReturnType<typeof vi.fn>;
 }
 
-function createStateStub({
-  locationValid = true,
-  violationFormValid = true,
-  districtMismatch = false,
-  station = POLICE_STATIONS[0],
+function createDraftStub({
+  isFormValid = true,
+  submitData,
   licensePlate = '',
   message = VALID_MESSAGE,
-}: StateStubOptions = {}): StateStub {
+}: DraftStubOptions = {}): DraftStub {
   return {
-    locationValid: signal(locationValid).asReadonly(),
-    violationFormValid: signal(violationFormValid).asReadonly(),
-    districtMismatch: signal(districtMismatch).asReadonly(),
-    station: signal<PoliceStation | null>(station).asReadonly(),
-    licensePlate: signal(licensePlate).asReadonly(),
-    composedMessage: signal(message).asReadonly(),
-    markLocationTouched: vi.fn(),
-    markViolationTouched: vi.fn(),
+    isFormValid: signal(isFormValid).asReadonly(),
+    submitData: signal(
+      submitData === undefined
+        ? {
+            stationName: POLICE_STATIONS[0].stationName,
+            phoneNumber: POLICE_STATIONS[0].phoneNumber,
+            message,
+            licensePlate: licensePlate || undefined,
+          }
+        : submitData,
+    ).asReadonly(),
+    touchAllFields: vi.fn(),
   };
 }
 
@@ -59,7 +54,7 @@ function dialogRefWithResult(result: boolean | undefined): Partial<MatDialogRef<
 }
 
 describe('SmsSubmissionService', () => {
-  let state: StateStub;
+  let draft: DraftStub;
   let smsServiceSpy: {
     sendSms: ReturnType<typeof vi.fn>;
     isDesktop: ReturnType<typeof vi.fn>;
@@ -67,13 +62,13 @@ describe('SmsSubmissionService', () => {
   let dialogSpy: { open: ReturnType<typeof vi.fn> };
 
   function setup(
-    stateOptions: StateStubOptions = {},
+    draftOptions: DraftStubOptions = {},
     dialogResult?: boolean,
     isDesktop = false,
   ): SmsSubmissionService {
     const resolvedDialogResult = arguments.length >= 2 ? dialogResult : true;
     TestBed.resetTestingModule();
-    state = createStateStub(stateOptions);
+    draft = createDraftStub(draftOptions);
     smsServiceSpy = {
       sendSms: vi.fn(),
       isDesktop: vi.fn().mockReturnValue(isDesktop),
@@ -84,7 +79,7 @@ describe('SmsSubmissionService', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        { provide: ReportStateService, useValue: state },
+        { provide: ReportDraftService, useValue: draft },
         { provide: SmsService, useValue: smsServiceSpy },
         { provide: MatDialog, useValue: dialogSpy },
       ],
@@ -131,24 +126,32 @@ describe('SmsSubmissionService', () => {
   });
 
   it('should mark forms as touched and skip dialog when form is invalid', async () => {
-    const service = setup({ locationValid: false, violationFormValid: false });
+    const service = setup({ isFormValid: false });
 
     await service.submit();
 
-    expect(state.markLocationTouched).toHaveBeenCalled();
-    expect(state.markViolationTouched).toHaveBeenCalled();
+    expect(draft.touchAllFields).toHaveBeenCalled();
     expect(dialogSpy.open).not.toHaveBeenCalled();
     expect(smsServiceSpy.sendSms).not.toHaveBeenCalled();
   });
 
   it('should mark forms as touched and skip dialog when district mismatches', async () => {
-    const service = setup({ districtMismatch: true });
+    const service = setup({ isFormValid: false });
 
     await service.submit();
 
-    expect(state.markLocationTouched).toHaveBeenCalled();
-    expect(state.markViolationTouched).toHaveBeenCalled();
+    expect(draft.touchAllFields).toHaveBeenCalled();
     expect(dialogSpy.open).not.toHaveBeenCalled();
+  });
+
+  it('should skip dialog when submit data is unavailable', async () => {
+    const service = setup({ submitData: null });
+
+    await service.submit();
+
+    expect(draft.touchAllFields).not.toHaveBeenCalled();
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+    expect(smsServiceSpy.sendSms).not.toHaveBeenCalled();
   });
 
   it('should pass license plate to confirmation dialog when present', async () => {
