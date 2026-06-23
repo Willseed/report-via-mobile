@@ -23,8 +23,6 @@ export class LocationResolverService {
     () => this.geocodingService.fallbackToManualInput(),
   );
 
-  constructor() {}
-
   handleAddressInput(value: string, debounceMs: number): void {
     this.formService.addressForm.address().value.set(value);
     this.clearAddressDebounce();

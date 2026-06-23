@@ -11,8 +11,6 @@ import { PwaInstallService } from './pwa-install.service';
 import { ThemeService } from './theme.service';
 import { ThemeToggle } from './theme-toggle/theme-toggle';
 
-type IdleCallbackHandle = number;
-
 interface IdleDeadline {
   readonly didTimeout: boolean;
   timeRemaining(): number;
@@ -25,8 +23,8 @@ interface IdleRequestOptions {
 type IdleRequestCallback = (deadline: IdleDeadline) => void;
 
 interface WindowWithIdleCallback {
-  requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => IdleCallbackHandle;
-  cancelIdleCallback?: (handle: IdleCallbackHandle) => void;
+  requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+  cancelIdleCallback?: (handle: number) => void;
 }
 
 @Component({
@@ -54,7 +52,7 @@ export class App {
     this.pwaUpdate.init();
     this.pwaInstall.init();
     this.scheduleWebMcpInit();
-    void this.theme;
+    this.theme.preference();
   }
 
   private scheduleWebMcpInit(): void {
