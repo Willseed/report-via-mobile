@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   effect,
   inject,
@@ -35,7 +34,6 @@ const readInputValue = (event: Event): string =>
   ],
   templateUrl: './location-input.html',
   styleUrl: './location-input.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LocationInput {
   private readonly workflow = inject(LocationWorkflowService);

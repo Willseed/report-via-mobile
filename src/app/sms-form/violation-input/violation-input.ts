@@ -1,6 +1,5 @@
 import {
   afterNextRender,
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
@@ -41,7 +40,6 @@ const readInputValue = (event: Event): string =>
   ],
   templateUrl: './violation-input.html',
   styleUrl: './violation-input.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ViolationInput {
   private readonly draft = inject(ReportDraftService);

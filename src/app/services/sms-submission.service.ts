@@ -1,6 +1,5 @@
 import { Injectable, inject, signal, type Signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { firstValueFrom } from 'rxjs';
 import { ZH_TW } from '../i18n';
 import { SmsService } from '../sms.service';
 import type { ConfirmDialogData } from '../sms-form/confirm-dialog';
@@ -28,11 +27,12 @@ export class SmsSubmissionService {
     const ConfirmDialog = await this.loadConfirmDialog();
     if (!ConfirmDialog) return;
 
-    const confirmed = await firstValueFrom(
+    const confirmed = await new Promise<boolean | undefined>((resolve) => {
       this.dialog
         .open(ConfirmDialog, { data, width: '92vw', maxWidth: '400px' })
-        .afterClosed(),
-    );
+        .afterClosed()
+        .subscribe({ next: resolve, complete: () => resolve(undefined) });
+    });
 
     if (confirmed) {
       this.smsService.sendSms(data.phoneNumber, data.message);

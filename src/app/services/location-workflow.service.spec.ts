@@ -34,7 +34,11 @@ describe('LocationWorkflowService', () => {
   });
 
   it('should update typed address and auto-select the station', () => {
+    vi.useFakeTimers();
+
     workflow.updateAddress('臺北市信義區信義路');
+
+    vi.advanceTimersByTime(350);
 
     expect(workflow.address()).toBe('臺北市信義區信義路');
     expect(workflow.station()?.district).toBe(District.Taipei);

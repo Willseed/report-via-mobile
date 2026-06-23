@@ -1,6 +1,4 @@
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, debounceTime, of, switchMap, takeUntil } from 'rxjs';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { DEFAULT_GEOLOCATION_ERROR_MSG, GeocodingService } from '../geocoding.service';
 import { StationLookupService } from '../police-stations';
 import { ZH_TW } from '../i18n';
@@ -12,10 +10,7 @@ export class LocationResolverService {
   private readonly geocodingService = inject(GeocodingService);
   private readonly stationLookup = inject(StationLookupService);
   private readonly formService = inject(ReportFormService);
-  private readonly destroyRef = inject(DestroyRef);
-
-  private readonly addressInput$ = new Subject<{ value: string; debounceMs: number }>();
-  private readonly addressCancel$ = new Subject<void>();
+  private addressDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly isLocatingState = signal(false);
   private readonly locationErrorState = signal('');
@@ -28,24 +23,14 @@ export class LocationResolverService {
     () => this.geocodingService.fallbackToManualInput(),
   );
 
-  constructor() {
-    this.addressInput$
-      .pipe(
-        switchMap(({ value, debounceMs }) =>
-          of(value).pipe(debounceTime(debounceMs), takeUntil(this.addressCancel$)),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((value) => {
-        this.formService.setAddress(value);
-        this.autoSelectDistrict(value);
-      });
-  }
-
   handleAddressInput(value: string, debounceMs: number): void {
     this.formService.addressForm.address().value.set(value);
     this.clearAddressDebounce();
-    this.addressInput$.next({ value, debounceMs });
+    this.addressDebounceTimer = setTimeout(() => {
+      this.addressDebounceTimer = null;
+      this.formService.setAddress(value);
+      this.autoSelectDistrict(value);
+    }, debounceMs);
   }
 
   handleAddressPaste(pasted: string): void {
@@ -64,7 +49,9 @@ export class LocationResolverService {
   }
 
   clearAddressDebounce(): void {
-    this.addressCancel$.next();
+    if (this.addressDebounceTimer === null) return;
+    clearTimeout(this.addressDebounceTimer);
+    this.addressDebounceTimer = null;
   }
 
   resetLocationState(): void {
