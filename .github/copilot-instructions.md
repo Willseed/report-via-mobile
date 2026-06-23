@@ -25,6 +25,7 @@
 ### Project Structure
 - **Standalone components** — No NgModules. Components declare `imports: []` directly in `@Component()`.
 - **Signals for state** — Use `signal()` and `computed()` for reactive state. Avoid RxJS subjects in components. Use `toSignal()` if bridging an Observable to a signal is needed (currently unused in the codebase).
+- **Zoneless-first** — Angular 22 should be treated as zoneless-first. Avoid assumptions that ZoneJS is present, and prefer Angular reactivity/render APIs over zone-stability hooks.
 - **Routing** — Configured in `src/app/app.routes.ts` using `HashLocationStrategy` (required for GitHub Pages). `SmsForm` is loaded directly. `ConfirmDialog` is lazy-loaded at call-site via dynamic `import()`.
 - **Services** — Dependency injection via `inject()`.
 - **Material 3** — Angular Material components with CSS custom properties theming.
@@ -53,6 +54,7 @@ App (app.ts)
 - Components use standalone `imports` array instead of module declarations.
 - Services are injected using `inject()` in component constructors or class bodies.
 - State flows through signals and computed properties. Async data (e.g., geocoding) uses `Promise` via `firstValueFrom()`, not Observables directly in components.
+- If code needs to wait for rendering or DOM reads/writes, prefer Angular render hooks such as `afterNextRender()` / `afterEveryRender()` instead of `NgZone.onStable`-style timing assumptions.
 
 ## Design Principles
 
@@ -79,6 +81,7 @@ App (app.ts)
 - **Strict mode** enabled (`strict`, `noImplicitReturns`, `noFallthroughCasesInSwitch`)
 - **Component selectors:** Prefix with `app-` (e.g., `app-sms-form`)
 - **Null/undefined:** Handle explicitly; strict mode enforces this
+- **HTTP setup:** Prefer `provideHttpClient()` and functional interceptors; do not reintroduce `HttpClientModule` or DI-first interceptor patterns unless there is a clear repo-specific reason.
 
 ### Styling
 - **Preprocessor:** SCSS
@@ -117,6 +120,7 @@ describe('MyComponent', () => {
 
 Key patterns:
 - Use `provideNoopAnimations()` and `provideHttpClientTesting()` in TestBed providers
+- Prefer tests that stay compatible with zoneless change detection; add `provideZonelessChangeDetection()` when aligning a testbed with production behavior matters.
 - Mock browser APIs with `vi.spyOn()` / `vi.fn()` (e.g., `navigator.geolocation`, `navigator.userAgent`)
 - No Karma configuration needed
 
