@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ZH_TW } from '../i18n';
@@ -20,7 +20,6 @@ export {
   imports: [MatButtonModule, MatIconModule, LocationInput, ViolationInput, SmsPreview],
   templateUrl: './sms-form.html',
   styleUrl: './sms-form.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SmsForm {
   private readonly draft = inject(ReportDraftService);
