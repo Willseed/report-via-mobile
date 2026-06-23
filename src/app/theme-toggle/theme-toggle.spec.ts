@@ -25,14 +25,14 @@ describe('ThemeToggle', () => {
   it('should show dark_mode icon when in light mode', () => {
     service.preference.set('light');
     fixture.detectChanges();
-    const icon = fixture.nativeElement.querySelector('mat-icon');
+    const icon = fixture.nativeElement.querySelector('.theme-toggle-icon');
     expect(icon.textContent.trim()).toBe('dark_mode');
   });
 
   it('should show light_mode icon when in dark mode', () => {
     service.preference.set('dark');
     fixture.detectChanges();
-    const icon = fixture.nativeElement.querySelector('mat-icon');
+    const icon = fixture.nativeElement.querySelector('.theme-toggle-icon');
     expect(icon.textContent.trim()).toBe('light_mode');
   });
 
@@ -44,6 +44,13 @@ describe('ThemeToggle', () => {
     expect(service.preference()).toBe('dark');
   });
 
+  it('should expose the tooltip text through the title attribute', () => {
+    service.preference.set('light');
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('button');
+    expect(button.getAttribute('title')).toBe('切換為深色模式');
+  });
+
   it('should have accessible aria-label', () => {
     service.preference.set('light');
     fixture.detectChanges();
@@ -51,10 +58,11 @@ describe('ThemeToggle', () => {
     expect(button.getAttribute('aria-label')).toBe('切換為深色模式');
   });
 
-  it('should update aria-label when toggled to dark', () => {
+  it('should update aria-label and title when toggled to dark', () => {
     service.preference.set('dark');
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('button');
     expect(button.getAttribute('aria-label')).toBe('切換為淺色模式');
+    expect(button.getAttribute('title')).toBe('切換為淺色模式');
   });
 });
