@@ -68,7 +68,7 @@
     "stylelint-config-standard-scss": "^17.0.0",
     "typescript": "~6.0.0",
     "typescript-eslint": "^8.61.1",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.9"
   },
   "overrides": {
     "@hono/node-server": "1.19.13",
