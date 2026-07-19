@@ -42,7 +42,7 @@
     "@angular/material": "22.0.3",
     "@angular/platform-browser": "22.0.6",
     "@angular/router": "22.0.6",
-    "@angular/service-worker": "22.0.6",
+    "@angular/service-worker": "22.0.7",
     "@fontsource/roboto": "^5.2.10",
     "material-icons": "^1.13.14",
     "rxjs": "~7.8.0",
