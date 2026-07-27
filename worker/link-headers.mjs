@@ -8,6 +8,18 @@ const HOMEPAGE_PATHS = new Set(['/', '/index.html']);
 const MARKDOWN_HOMEPAGE_PATH = '/index.md';
 const MARKDOWN_MEDIA_TYPE = 'text/markdown';
 const WEB_PAGE_MEDIA_TYPE = 'text/html';
+const OAUTH_PROTECTED_RESOURCE_PATH = '/.well-known/oauth-protected-resource';
+const OAUTH_PROTECTED_RESOURCE_METADATA = `${JSON.stringify(
+  {
+    resource: `${PUBLIC_ORIGIN}/`,
+    authorization_servers: [],
+    scopes_supported: [],
+    resource_documentation: `${PUBLIC_ORIGIN}/auth.md`,
+    notes: 'Public app: no protected APIs, OAuth servers, access tokens, or agent registration.',
+  },
+  null,
+  2,
+)}\n`;
 const ALLOWED_METHODS = new Set(['GET', 'HEAD']);
 const SAFE_FORWARD_REQUEST_HEADERS = Object.freeze([
   'accept',
@@ -88,6 +100,16 @@ const STATIC_CONTENT_TYPES = new Map([
   [MARKDOWN_HOMEPAGE_PATH, 'text/markdown; charset=utf-8'],
 ]);
 
+const STATIC_DOCUMENTS = new Map([
+  [
+    OAUTH_PROTECTED_RESOURCE_PATH,
+    {
+      body: OAUTH_PROTECTED_RESOURCE_METADATA,
+      contentType: 'application/json; charset=utf-8',
+    },
+  ],
+]);
+
 export default {
   async fetch(request) {
     const url = normalizeRequestUrl(request);
@@ -98,6 +120,12 @@ export default {
 
     if (!isSafeMethod(request.method)) {
       return methodNotAllowedResponse();
+    }
+
+    const staticDocumentResponse = serveStaticDocument(request, url.pathname);
+
+    if (staticDocumentResponse) {
+      return staticDocumentResponse;
     }
 
     if (shouldServeMarkdownHomepage(request, url.pathname)) {
@@ -197,6 +225,23 @@ function fetchStaticAsset(request, url) {
       redirect: 'manual',
     }),
   );
+}
+
+function serveStaticDocument(request, pathname) {
+  const document = STATIC_DOCUMENTS.get(pathname);
+
+  if (!document) {
+    return null;
+  }
+
+  return new Response(request.method.toUpperCase() === 'HEAD' ? null : document.body, {
+    status: 200,
+    headers: new Headers({
+      'Cache-Control': 'max-age=600',
+      'Content-Type': document.contentType,
+      'X-Agent-Ready-Worker': 'active',
+    }),
+  });
 }
 
 async function fetchMarkdownHomepage(method) {
