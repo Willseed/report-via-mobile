@@ -17,6 +17,7 @@
   <input
     id="location-address"
     matInput
+    [attr.aria-label]="i18n.location.addressLabel"
     [formField]="addressForm.address"
     [placeholder]="i18n.location.addressPlaceholder"
     (input)="onAddressInput($event)"

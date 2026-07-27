@@ -3,6 +3,7 @@
   <input
     id="violation-input"
     matInput
+    [attr.aria-label]="i18n.violation.label"
     [formField]="violationForm.violation"
     [placeholder]="i18n.violation.placeholder"
     [matAutocomplete]="autoViolation"
@@ -42,6 +43,7 @@
     <input
       id="license-plate-input"
       matInput
+      [attr.aria-label]="i18n.violation.licensePlateLabel"
       [formField]="violationForm.licensePlate"
       [placeholder]="i18n.violation.licensePlatePlaceholder"
       autocapitalize="characters"
