@@ -49,7 +49,7 @@ export const ZH_TW = {
   smsForm: {
     title: '簡訊報案',
     subtitle: '填寫以下表單，透過您裝置的簡訊功能傳送報案訊息。',
-    lastUpdated: '📅 更新日期：2026-07-21',
+    lastUpdated: '📅 更新日期：2026-07-27',
     desktopWarning: '簡訊連結可能無法在桌面瀏覽器上使用，請使用行動裝置開啟。',
     freeNotice: '發送此簡訊是免費的。',
     pendingPreviewHint: '待選擇行政區後顯示簡訊預覽…',
