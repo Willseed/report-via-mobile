@@ -7,6 +7,7 @@ test.describe('表單驗證', () => {
   });
 
   test('空白表單提交應顯示必填錯誤', async ({ page, isMobile }) => {
+    // 發送按鈕只在行動裝置上啟用，因此桌面瀏覽器不適用此提交情境。
     test.skip(!isMobile, '桌面裝置發送按鈕停用');
 
     await page.getByRole('button', { name: '發送簡訊' }).click();

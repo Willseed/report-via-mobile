@@ -40,6 +40,7 @@ test.describe('桌面裝置警告', () => {
   });
 
   test('桌面瀏覽器發送按鈕應停用', async ({ page, isMobile }) => {
+    // 這個狀態只驗證桌面瀏覽器；行動裝置的發送按鈕應走不同情境。
     test.skip(isMobile, '僅限桌面瀏覽器測試');
     await page.goto('/');
     await expect(page.getByRole('button', { name: '發送簡訊' })).toBeDisabled();
@@ -48,6 +49,7 @@ test.describe('桌面裝置警告', () => {
 
 test.describe('行動裝置', () => {
   test('行動裝置不應顯示桌面警告', async ({ page, isMobile }) => {
+    // 這個狀態只驗證行動裝置；桌面警告不適用於桌面專案。
     test.skip(!isMobile, '僅限行動裝置測試');
     await page.goto('/');
     await expect(page.locator('.desktop-warning')).not.toBeVisible();
