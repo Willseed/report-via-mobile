@@ -120,7 +120,9 @@ static/edge-supported setup without claiming GitHub Pages can enforce it by itse
   such as Cloudflare Pages or Netlify. GitHub Pages will only serve it as a static file.
 - The Cloudflare Worker in `worker/link-headers.mjs`, configured by `wrangler.toml` for
   `tools.pylot.dev/*`, appends homepage RFC 8288 `Link` response headers and serves
-  `/index.md` when the homepage request explicitly prefers `Accept: text/markdown`.
+  `/index.md` when the homepage request explicitly prefers `Accept: text/markdown`. It also
+  serves `/.well-known/oauth-protected-resource` directly as an edge fallback when the static
+  origin does not expose dot-directory assets.
 
 The homepage `Link` response advertises discovery relation types:
 

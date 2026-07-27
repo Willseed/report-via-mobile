@@ -171,6 +171,27 @@ test('sets content type for static well-known metadata', async (t) => {
   assert.equal(response.headers.get('Content-Type'), 'application/linkset+json; charset=utf-8');
 });
 
+test('serves OAuth Protected Resource Metadata from the edge', async (t) => {
+  let fetchCalls = 0;
+  mockFetch(t, async () => {
+    fetchCalls += 1;
+    return new Response('unexpected');
+  });
+
+  const response = await worker.fetch(
+    new Request('https://tools.pylot.dev/.well-known/oauth-protected-resource'),
+  );
+  const metadata = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Content-Type'), 'application/json; charset=utf-8');
+  assert.equal(response.headers.get('X-Agent-Ready-Worker'), 'active');
+  assert.equal(metadata.resource, 'https://tools.pylot.dev/');
+  assert.deepEqual(metadata.authorization_servers, []);
+  assert.deepEqual(metadata.scopes_supported, []);
+  assert.equal(fetchCalls, 0);
+});
+
 test('replaces unsafe origin Link headers with static discovery links', async (t) => {
   const unsafeOriginLinkHeader = `${String.fromCodePoint(60)}/unsafe${String.fromCodePoint(
     62,
