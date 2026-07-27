@@ -384,7 +384,7 @@ describe('SmsForm', () => {
 
   describe('filteredViolations', () => {
     it('should return all violations when filter is empty', () => {
-      expect(getViolationInput(fixture)['filteredViolations']().length).toBe(27);
+      expect(getViolationInput(fixture)['filteredViolations']()).toHaveLength(27);
     });
 
     it('should filter violations by keyword', () => {
@@ -398,13 +398,13 @@ describe('SmsForm', () => {
     it('should filter by vehicle type', () => {
       draft.updateViolationFilter('機車');
       const filtered = getViolationInput(fixture)['filteredViolations']();
-      expect(filtered.length).toBe(9);
+      expect(filtered).toHaveLength(9);
       expect(filtered.every((v) => v.includes('機車'))).toBe(true);
     });
 
     it('should return all violations when filter matches an exact option', () => {
       draft.updateViolationFilter(VALID_VIOLATION);
-      expect(getViolationInput(fixture)['filteredViolations']().length).toBe(27);
+      expect(getViolationInput(fixture)['filteredViolations']()).toHaveLength(27);
     });
 
     it('should include car-only violation for disabled parking space', () => {
@@ -719,11 +719,18 @@ describe('SmsForm', () => {
     });
 
     it('should trigger violation input via DOM', () => {
+      vi.useFakeTimers();
       fixture.detectChanges();
       const el = queryEl<HTMLInputElement>(fixture, 'input[placeholder="請選擇違規事實..."]');
       el.value = '紅線';
       el.dispatchEvent(new Event('input'));
+      vi.advanceTimersByTime(VIOLATION_FILTER_DEBOUNCE_MS);
       fixture.detectChanges();
+      expect(getViolationInput(fixture)['filteredViolations']()).toEqual([
+        VALID_VIOLATION,
+        '機車於紅線停車',
+      ]);
+      vi.useRealTimers();
     });
 
     it('should trigger toggleLicensePlate via DOM click', () => {
@@ -838,51 +845,18 @@ describe('SmsForm desktop behavior', () => {
 });
 
 describe('findStationByAddress', () => {
-  it('should find station by district name', () => {
-    const result = findStationByAddress('臺北市信義區信義路');
-    expect(result).not.toBeNull();
-    expect(result?.district).toBe('臺北市');
-  });
-
-  it('should normalize 台 to 臺', () => {
-    const result = findStationByAddress('台中市西屯區');
-    expect(result).not.toBeNull();
-    expect(result?.district).toBe('臺中市');
-  });
-
-  it('should return null for unmatched address', () => {
-    const result = findStationByAddress(UNKNOWN_ADDRESS);
-    expect(result).toBeNull();
-  });
-
-  it('should match 台東縣 after normalization', () => {
-    const result = findStationByAddress('台東縣太麻里鄉');
-    expect(result).not.toBeNull();
-    expect(result?.district).toBe('臺東縣');
-  });
-
-  it('should match district anywhere in address using includes', () => {
-    const result = findStationByAddress('中華民國臺北市信義區信義路');
-    expect(result).not.toBeNull();
-    expect(result?.district).toBe('臺北市');
-  });
-
-  it('should strip 台灣 prefix before matching', () => {
-    const result = findStationByAddress('台灣台中市西屯區');
-    expect(result).not.toBeNull();
-    expect(result?.district).toBe('臺中市');
-  });
-
-  it('should strip 中華民國 prefix before matching', () => {
-    const result = findStationByAddress('中華民國高雄市前鎮區');
-    expect(result).not.toBeNull();
-    expect(result?.district).toBe('高雄市');
-  });
-
-  it('should strip postal code before matching', () => {
-    const result = findStationByAddress('242 新北市新莊區某路');
-    expect(result).not.toBeNull();
-    expect(result?.district).toBe('新北市');
+  it.each([
+    { address: '臺北市信義區信義路', expectedDistrict: '臺北市' },
+    { address: '台中市西屯區', expectedDistrict: '臺中市' },
+    { address: UNKNOWN_ADDRESS, expectedDistrict: null },
+    { address: '台東縣太麻里鄉', expectedDistrict: '臺東縣' },
+    { address: '中華民國臺北市信義區信義路', expectedDistrict: '臺北市' },
+    { address: '台灣台中市西屯區', expectedDistrict: '臺中市' },
+    { address: '中華民國高雄市前鎮區', expectedDistrict: '高雄市' },
+    { address: '242 新北市新莊區某路', expectedDistrict: '新北市' },
+  ])('should resolve district for $address', ({ address, expectedDistrict }) => {
+    const result = findStationByAddress(address);
+    expect(result?.district ?? null).toBe(expectedDistrict);
   });
 });
 
