@@ -1,6 +1,7 @@
 <mat-form-field appearance="outline">
   <mat-label>{{ i18n.violation.label }}</mat-label>
   <input
+    id="violation-input"
     matInput
     [formField]="violationForm.violation"
     [placeholder]="i18n.violation.placeholder"
@@ -39,6 +40,7 @@
   <mat-form-field appearance="outline">
     <mat-label>{{ i18n.violation.licensePlateLabel }}</mat-label>
     <input
+      id="license-plate-input"
       matInput
       [formField]="violationForm.licensePlate"
       [placeholder]="i18n.violation.licensePlatePlaceholder"
