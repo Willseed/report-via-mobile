@@ -40,7 +40,7 @@
     "@angular/forms": "22.0.8",
     "@angular/localize": "22.0.8",
     "@angular/material": "22.0.6",
-    "@angular/platform-browser": "22.0.8",
+    "@angular/platform-browser": "22.1.0",
     "@angular/router": "22.0.8",
     "@angular/service-worker": "22.0.8",
     "@fontsource/roboto": "^5.2.10",
