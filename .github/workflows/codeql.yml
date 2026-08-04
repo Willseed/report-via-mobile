@@ -3,6 +3,7 @@ name: "CodeQL 程式碼分析"
 on:
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
   schedule:
     - cron: '30 2 * * 1'  # 每週一 02:30 UTC 執行
 
