@@ -1,4 +1,4 @@
-# Report via Mobile
+# Report via Mobile｜行動簡訊報案
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/df9a6a592af94cb298384bede0f5ef7f)](https://app.codacy.com/gh/Willseed/report-via-mobile/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Willseed/report-via-mobile/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Willseed/report-via-mobile)
@@ -8,123 +8,139 @@
 ![License](https://img.shields.io/github/license/Willseed/report-via-mobile)
 ![Dependabot](https://img.shields.io/badge/dependabot-enabled-blue?logo=dependabot)
 
-行動裝置簡訊報案應用程式。使用者輸入事發地址或使用 GPS 定位後，應用程式會協助查找承辦警局、組合簡訊內容，並透過裝置原生簡訊功能（`sms:` URI scheme）交由使用者送出。
+這是一個為行動裝置設計的交通違規簡訊報案工具。輸入事發地址（或使用 GPS
+定位）與違規情形後，工具會找出對應的警察機關、整理簡訊內容，再交給手機內建的
+簡訊 App；**最後仍由使用者確認並送出**。
 
-**工具網址：** [https://tools.pylot.dev](https://tools.pylot.dev)
+**立即使用：[tools.pylot.dev](https://tools.pylot.dev)**
 
-## Quick links / 快速連結
+## 可以用它做什麼？
 
-| Topic | Link |
-| --- | --- |
-| Quick start | [Local development](#local-development) |
-| Contribution process | [CONTRIBUTING.md](./CONTRIBUTING.md) |
-| Code of conduct | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) |
-| Governance | [GOVERNANCE.md](./GOVERNANCE.md) |
-| Architecture | [docs/architecture.md](./docs/architecture.md) |
-| 12-month roadmap | [docs/roadmap.md](./docs/roadmap.md) |
-| Security requirements | [docs/security-requirements.md](./docs/security-requirements.md) |
-| Assurance case | [docs/assurance-case.md](./docs/assurance-case.md) |
-| Vulnerability reporting | [SECURITY.md](./SECURITY.md) |
+- 透過 GPS 取得目前位置並轉換成地址，也可以直接手動輸入地址。
+- 依行政區找出承辦警察機關與簡訊號碼。
+- 快速選擇違規情形，並視需要加入車牌號碼。
+- 先預覽完整報案內容，再開啟手機的簡訊 App。
+- 將網站安裝成 PWA，並在基本功能上支援離線使用。
 
-## Current release: 1.0.0 (2026-03-13)
+## 使用方式
 
-## What the app does
+1. 輸入事發地址，或允許瀏覽器使用定位功能。
+2. 確認工具自動帶入的行政區與警察機關。
+3. 選擇違規情形；若知道車牌號碼，也可以一併填寫。
+4. 檢查簡訊預覽內容。
+5. 開啟手機簡訊 App，確認收件人與內容後自行送出。
 
-- **GPS 定位**：可取得目前位置並反查地址
-- **行政區／警局對應**：依地址對應承辦警局與簡訊號碼
-- **違規事實輸入**：支援快速篩選違規類型與車牌欄位
-- **簡訊內容組合**：依地址、違規事實與車牌組成報案訊息
-- **原生簡訊交接**：由使用者在裝置的 SMS App 中確認與發送
-- **PWA**：支援安裝提示、版本更新通知與基本離線能力
+> 本工具只負責產生簡訊草稿，不會在背景自動報案。實際內容與是否送出，均以手機
+> 簡訊 App 中的最後確認為準。
 
-## Tech stack
+## 隱私與資料流
 
-- **Framework:** Angular 21 (standalone components, signals, strict mode)
-- **UI:** Angular Material 3
-- **State:** Angular signals + injectable services
-- **Testing:** Vitest + jsdom, Playwright
-- **Hosting:** GitHub Pages (static site)
-- **Geocoding:** OpenStreetMap Nominatim
+本專案是靜態網站，沒有帳號系統或專案自有的後端 API。手動輸入的報案內容由瀏覽器
+組合，之後透過 `sms:` 連結交給裝置的簡訊 App。
 
-## Local development
+如果使用 GPS 定位，瀏覽器會先徵求定位權限，並將座標傳送至
+[OpenStreetMap Nominatim](https://nominatim.openstreetmap.org/) 以取得地址。若不希望使用
+定位服務，可以直接手動輸入地址。
 
-### Requirements
+## 給開發者
 
-- Node.js 24.x recommended (matches CI); Angular 21 minimum is Node.js 20.19+
-- npm 11.x
+### 技術架構
 
-### Start the app
+- Angular 22：standalone components、signals、strict mode
+- Angular Material 3
+- Vitest + jsdom、Playwright
+- OpenStreetMap Nominatim 反向地理編碼
+- GitHub Pages 靜態網站與 Cloudflare Worker
+
+更完整的系統組成、資料流與設計限制，請參閱
+[架構文件](./docs/architecture.md)。
+
+### 本機開發
+
+需要 Node.js 24.x（與 CI 相同）及 npm 11.x。Angular 22 最低支援的 Node.js 版本為
+20.19。
 
 ```bash
 npm install
 npm start
 ```
 
-Open <http://localhost:4200/>.
+開啟 <http://localhost:4200/>。正式版建置輸出位於
+`dist/report-via-mobile/browser/`。
 
-### Common commands
+### 品質檢查
 
-```bash
-npm test
-npm run lint
-npm run lint:styles
-npm run e2e
-npm run build
-```
+| 指令 | 用途 |
+| --- | --- |
+| `npm test` | 執行單元測試 |
+| `npm run test:coverage` | 執行單元測試並產生覆蓋率 |
+| `npm run lint` | 檢查 TypeScript |
+| `npm run lint:styles` | 檢查 SCSS |
+| `npm run e2e` | 執行 Playwright 端對端測試 |
+| `npm run build` | 建置正式版網站 |
+| `npm run build:analyze` | 在本機分析 bundle，不改變部署設定 |
+| `npm run quality` | 依序執行 lint、樣式檢查、覆蓋率與建置 |
 
-Production build output: `dist/report-via-mobile/browser`
+## 參與專案
 
-For local bundle inspection without changing the deployed production build:
+歡迎回報問題、改善文件或提交程式碼。開始前請先閱讀
+[貢獻指南](./CONTRIBUTING.md)與[行為準則](./CODE_OF_CONDUCT.md)。新功能與錯誤修正原則上
+應包含測試；若不適合自動化測試，請在 pull request 中說明原因。
 
-```bash
-npm run build:analyze
-```
+合併至 `main` 前，pull request 必須通過必要檢查並取得核准。維護者也應依
+`CODEOWNERS` 政策確認適當的審查者，即使目前分支規則未強制要求
+`require_code_owner_reviews`。
 
-## Contribution and review
+## 安全、治理與專案透明度
 
-Contributions are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
+本專案保留可公開檢查的安全政策、治理方式與開發證據，以符合 OpenSSF Baseline
+與安全開源專案的實務要求。
 
-Highlights:
+| 資訊 | 文件 |
+| --- | --- |
+| 安全漏洞私下回報方式與支援版本 | [SECURITY.md](./SECURITY.md) |
+| 貢獻流程與程式碼審查要求 | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+| 專案角色與決策方式 | [GOVERNANCE.md](./GOVERNANCE.md) |
+| 社群行為準則 | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) |
+| 安全需求與非目標 | [docs/security-requirements.md](./docs/security-requirements.md) |
+| 威脅模型、緩解措施與證據 | [docs/assurance-case.md](./docs/assurance-case.md) |
+| 未來 12 個月規劃 | [docs/roadmap.md](./docs/roadmap.md) |
+| 系統架構與信任邊界 | [docs/architecture.md](./docs/architecture.md) |
 
-- New functionality and bug fixes should include tests, or explain why automated tests are not practical.
-- Pull requests to `main` must pass the required checks and receive an approving review before merge; while `main` does not enforce `require_code_owner_reviews`, maintainers should also ensure the review satisfies the documented `CODEOWNERS` policy.
-- Security-sensitive reports should **not** be filed publicly; use [SECURITY.md](./SECURITY.md).
+**請勿在公開 issue 中揭露安全漏洞。** 請依
+[安全政策](./SECURITY.md)提供的私人管道回報。
 
-## Architecture and security notes
+目前版本為 **1.0.0**，發布日期為 **2026-03-13**。
 
-- High-level design: [docs/architecture.md](./docs/architecture.md)
-- Security requirements and non-goals: [docs/security-requirements.md](./docs/security-requirements.md)
-- Threat model and mitigations: [docs/assurance-case.md](./docs/assurance-case.md)
-- Project direction: [docs/roadmap.md](./docs/roadmap.md)
+## 部署與進階探索設定
 
-## Deployment
+網站會在 `main` 通過 GitHub Actions 後，自動建置並部署至 GitHub Pages。CI
+會依提交時間自動更新建置產物中的「更新日期」。由於 GitHub Pages 只能提供靜態檔案，
+部分 HTTP 回應標頭與內容協商由 Cloudflare Worker 補足。
 
-Deployment is automated from `main` via GitHub Actions. The site is served as a static build on
-GitHub Pages.
+<details>
+<summary>給維護者：AI／代理程式探索資源與 HTTP Link 設定</summary>
 
-GitHub Pages serves the app origin as static files. It cannot emit arbitrary HTTP response
-headers or vary `/` by the `Accept` header on its own. The repo ships the best deployable
-static/edge-supported setup without claiming GitHub Pages can enforce it by itself:
+專案提供以下靜態探索資源：
 
-- Static discovery documents:
-  - `/index.md` — Markdown homepage for agents and text-first clients
-  - `/.well-known/api-catalog` — machine-readable catalog of public resources
-  - `/.well-known/oauth-protected-resource` — metadata declaring no OAuth requirement
-  - `/.well-known/agent-skills/index.json` — machine-readable user capability summary
-  - `/.well-known/mcp/server-card.json` — MCP server card that declares no hosted MCP transport
-  - `/auth.md` — service documentation for authorization and data-use limitations
-- Compatible browser agents may also receive client-side WebMCP tools through
-  `navigator.modelContext`; those tools are not a hosted MCP server or protected API.
-- HTML discovery tags in `src/index.html` for clients that inspect the document.
-- `public/_headers` is copied to the build output for hosts that honor that convention,
-  such as Cloudflare Pages or Netlify. GitHub Pages will only serve it as a static file.
-- The Cloudflare Worker in `worker/link-headers.mjs`, configured by `wrangler.toml` for
-  `tools.pylot.dev/*`, appends homepage RFC 8288 `Link` response headers and serves
-  `/index.md` when the homepage request explicitly prefers `Accept: text/markdown`. It also
-  serves `/.well-known/oauth-protected-resource` directly as an edge fallback when the static
-  origin does not expose dot-directory assets.
+- `/index.md`：供代理程式與純文字客戶端閱讀的 Markdown 首頁。
+- `/.well-known/api-catalog`：公開資源的機器可讀目錄。
+- `/.well-known/oauth-protected-resource`：宣告不需要 OAuth 的 metadata。
+- `/.well-known/agent-skills/index.json`：機器可讀的使用者能力摘要。
+- `/.well-known/mcp/server-card.json`：宣告本專案沒有託管 MCP transport 的 server card。
+- `/auth.md`：授權與資料使用限制說明。
 
-The homepage `Link` response advertises discovery relation types:
+相容的瀏覽器代理程式也可能透過 `navigator.modelContext` 取得 client-side WebMCP
+工具；這些工具不構成託管 MCP server 或受保護 API。`src/index.html` 提供供客戶端探索
+的 HTML tags。`public/_headers` 會複製到建置輸出，可供 Cloudflare Pages、Netlify 等
+支援該慣例的主機使用；GitHub Pages 只會將它當成靜態檔案。
+
+`worker/link-headers.mjs` 由 `wrangler.toml` 設定於 `tools.pylot.dev/*`，負責附加首頁的
+RFC 8288 `Link` 回應標頭。當首頁請求明確偏好 `Accept: text/markdown` 時，它會提供
+`/index.md`；若靜態來源沒有公開 dot-directory assets，也會直接提供
+`/.well-known/oauth-protected-resource` 作為 edge fallback。
+
+首頁的 `Link` 回應包含：
 
 - `rel="api-catalog"` → `/.well-known/api-catalog`
 - `rel="describedby"` → `/.well-known/oauth-protected-resource`
@@ -135,26 +151,29 @@ The homepage `Link` response advertises discovery relation types:
 - `rel="service-doc"` → `/auth.md`
 - `rel="service-doc"` → GitHub repository documentation
 
-This app has no server-side API, login flow, or authorization server, so it publishes
-OAuth Protected Resource Metadata with empty authorization server/scope arrays and does
-not publish authorization-server metadata.
+本專案沒有 server-side API、登入流程或 authorization server，因此 OAuth Protected
+Resource Metadata 使用空的 authorization server 與 scope arrays，也不發布
+authorization-server metadata。
 
-Deploy the Worker manually with the **Deploy Cloudflare Worker** workflow. The workflow requires
-`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` repository secrets.
+Cloudflare Worker 需透過 **Deploy Cloudflare Worker** workflow 手動部署，並在
+repository secrets 中設定 `CLOUDFLARE_ACCOUNT_ID` 與 `CLOUDFLARE_API_TOKEN`。
 
-### DNS for AI Discovery (DNS-AID)
+</details>
 
-The deployable origin is `tools.pylot.dev` (see `public/CNAME`, `wrangler.toml`, and
-`src/index.html`). This repo contains GitHub Pages and Cloudflare Worker configuration, but no
-authoritative DNS-as-code for the `pylot.dev` zone; publish the DNS records below in the DNS
-provider or zone repository. App deployment alone does not publish them.
+<details>
+<summary>給維護者：DNS for AI Discovery（DNS-AID）</summary>
 
-This static site now ships the discovery resources referenced by the records:
+可部署的 origin 是 `tools.pylot.dev`（參考 `public/CNAME`、`wrangler.toml` 與
+`src/index.html`）。此 repository 包含 GitHub Pages 與 Cloudflare Worker 設定，但沒有
+`pylot.dev` zone 的 authoritative DNS-as-code；以下記錄必須在 DNS provider 或 zone
+repository 發布，部署 App 本身不會建立記錄。
+
+相關探索資源：
 
 - `https://tools.pylot.dev/.well-known/api-catalog`
 - `https://tools.pylot.dev/.well-known/agent-skills/index.json`
 
-Publish a DNSSEC-signed ServiceMode SVCB record for the organization index:
+為組織索引發布一筆經 DNSSEC 簽署的 ServiceMode SVCB record：
 
 ```dns
 _index._agents.tools.pylot.dev. 3600 IN SVCB 1 tools.pylot.dev. (
@@ -165,17 +184,19 @@ _index._agents.tools.pylot.dev. 3600 IN SVCB 1 tools.pylot.dev. (
 )
 ```
 
-The `endpoint` value resolves to the API catalog above, which links the agent skills index.
+`endpoint` 會解析至上述 API catalog，並由它連至 agent skills index。
 
-If the DNS provider only exposes the SVCB-compatible `HTTPS` RR type, enter the same owner name
-and RDATA as an `HTTPS` record instead of `SVCB`; do not publish both unless the final DNS-AID
-draft requires it. Keep DNSSEC enabled for `pylot.dev` and publish the DS record at the registrar.
-If DANE/TLSA records are added later, those records must also be DNSSEC-signed.
+如果 DNS provider 只提供相容 SVCB 的 `HTTPS` RR type，請以 `HTTPS` record 輸入相同
+owner name 與 RDATA；除非 DNS-AID 最終草案要求，否則不要同時發布 SVCB 與 HTTPS。
+請保持 `pylot.dev` 的 DNSSEC 啟用，並在 registrar 發布 DS record。若未來加入
+DANE/TLSA records，它們也必須經 DNSSEC 簽署。
 
-Do not publish `_a2a._agents.tools.pylot.dev` yet: this app does not implement an Agent-to-Agent
-server endpoint. When such an endpoint exists, add a separate ServiceMode record with `alpn=a2a,h2`
-and an `endpoint` value for that implemented endpoint.
+目前不要發布 `_a2a._agents.tools.pylot.dev`：本專案尚未實作 Agent-to-Agent server
+endpoint。實作後再加入獨立的 ServiceMode record，設定 `alpn=a2a,h2` 並將 `endpoint`
+指向真正存在的 endpoint。
 
-## License
+</details>
 
-This project is licensed under the MIT License. See [LICENSE](./LICENSE).
+## 授權
+
+本專案採用 MIT License，詳見 [LICENSE](./LICENSE)。
