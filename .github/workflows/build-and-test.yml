@@ -68,7 +68,7 @@ jobs:
         run: |
           perl -pi -e \
             's/📅 更新日期：\d{4}-\d{2}-\d{2}/📅 更新日期：$ENV{REPORT_BUILD_DATE}/' \
-            src/index.html public/index.md
+            src/index.html public/index.md src/app/i18n/zh-TW.ts
 
       - name: Build
         run: npm run build -- --configuration production
@@ -81,6 +81,10 @@ jobs:
           grep -Fxq \
             "📅 更新日期：${REPORT_BUILD_DATE}" \
             dist/report-via-mobile/browser/index.md
+          grep -RFq \
+            --include='*.js' \
+            "📅 更新日期：${REPORT_BUILD_DATE}" \
+            dist/report-via-mobile/browser
 
       - name: Save Angular CLI artifacts
         if: ${{ !cancelled() }}

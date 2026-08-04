@@ -39,14 +39,14 @@ jobs:
         run: |
           perl -pi -e \
             's/更新日期：\K\d{4}-\d{2}-\d{2}/$ENV{REPORT_UPDATE_DATE}/' \
-            src/index.html public/index.md
+            src/index.html public/index.md src/app/i18n/zh-TW.ts
 
       - name: Detect source changes
         id: changes
         env:
           REPORT_UPDATE_DATE: ${{ steps.metadata.outputs.date }}
         run: |
-          if git diff --quiet -- src/index.html public/index.md; then
+          if git diff --quiet -- src/index.html public/index.md src/app/i18n/zh-TW.ts; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Source dates already use ${REPORT_UPDATE_DATE}." >> "$GITHUB_STEP_SUMMARY"
           else
@@ -64,7 +64,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$REPORT_UPDATE_BRANCH"
-          git add src/index.html public/index.md
+          git add src/index.html public/index.md src/app/i18n/zh-TW.ts
           git commit -m "chore: update site date to ${REPORT_UPDATE_DATE}"
 
           if [ -n "$report_remote_sha" ]; then
@@ -92,7 +92,7 @@ jobs:
 
           if [ -z "$report_pr_number" ]; then
             report_pr_body="CI 偵測到來源檔的更新日期已過期。"
-            report_pr_body="${report_pr_body} 此 PR 同步更新兩個首頁日期，並保留 main 的審查與必要檢查。"
+            report_pr_body="${report_pr_body} 此 PR 同步更新預載頁、Markdown 首頁與 Angular 畫面的日期，並保留 main 的審查與必要檢查。"
             report_pr_url=$(gh pr create \
               --base main \
               --head "$REPORT_UPDATE_BRANCH" \
