@@ -73,8 +73,11 @@ jobs:
       - name: Build
         run: npm run build -- --configuration production
 
-      - name: Verify build update dates
+      - name: Verify build metadata
         run: |
+          grep -Fxq \
+            '  <meta name="mobile-web-app-capable" content="yes">' \
+            dist/report-via-mobile/browser/index.html
           grep -Fxq \
             "    <p>📅 更新日期：${REPORT_BUILD_DATE}</p>" \
             dist/report-via-mobile/browser/index.html
