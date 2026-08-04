@@ -55,11 +55,29 @@ jobs:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: coverage/report-via-mobile/lcov.info
 
-      - name: Set reproducible build timestamp
-        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)" >> "$GITHUB_ENV"
+      - name: Set reproducible build metadata
+        run: |
+          report_source_date_epoch=$(git log -1 --format=%ct HEAD)
+          report_build_date=$(TZ=Asia/Taipei node -e \
+            'process.stdout.write(new Date(Number(process.argv[1]) * 1000).toLocaleDateString("en-CA"))' \
+            "$report_source_date_epoch")
+          echo "SOURCE_DATE_EPOCH=${report_source_date_epoch}" >> "$GITHUB_ENV"
+          echo "REPORT_BUILD_DATE=${report_build_date}" >> "$GITHUB_ENV"
+
+      - name: Update site date
+        run: |
+          perl -pi -e \
+            's/📅 更新日期：\d{4}-\d{2}-\d{2}/📅 更新日期：$ENV{REPORT_BUILD_DATE}/' \
+            src/index.html
 
       - name: Build
         run: npm run build -- --configuration production
+
+      - name: Verify build update date
+        run: |
+          grep -Fxq \
+            "    <p>📅 更新日期：${REPORT_BUILD_DATE}</p>" \
+            dist/report-via-mobile/browser/index.html
 
       - name: Save Angular CLI artifacts
         if: ${{ !cancelled() }}
