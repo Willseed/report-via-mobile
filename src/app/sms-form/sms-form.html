@@ -6,7 +6,27 @@
   @if (isDesktop()) {
     <div class="desktop-warning">
       <mat-icon>warning</mat-icon>
-      <span>{{ i18n.smsForm.desktopWarning }}</span>
+      <span>
+        {{ i18n.smsForm.desktopWarning }}
+        <span class="desktop-link-container">
+          <a
+            href="https://tools.pylot.dev/"
+            [attr.aria-label]="i18n.smsForm.desktopLinkAriaLabel"
+            aria-describedby="desktop-qr-tooltip"
+          >
+            {{ i18n.smsForm.desktopLinkLabel }}
+          </a>
+          <span id="desktop-qr-tooltip" class="desktop-qr-tooltip" role="tooltip">
+            <img
+              src="tools-pylot-dev-qr.svg"
+              width="150"
+              height="150"
+              [alt]="i18n.smsForm.desktopQrAlt"
+            />
+            <span>{{ i18n.smsForm.desktopQrHint }}</span>
+          </span>
+        </span>
+      </span>
     </div>
   }
 

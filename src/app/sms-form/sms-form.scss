@@ -38,6 +38,60 @@ h1 {
   @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
 
   margin-bottom: 1.5rem;
+
+  a {
+    color: inherit;
+    font-weight: 500;
+    text-underline-offset: 0.15em;
+  }
+}
+
+.desktop-link-container {
+  position: relative;
+  display: inline-block;
+}
+
+.desktop-qr-tooltip {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 0.625rem);
+  right: 0;
+  display: flex;
+  width: 174px;
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  box-sizing: border-box;
+  background: var(--mat-sys-surface-container-highest);
+  box-shadow: var(--mat-sys-level3);
+  color: var(--mat-sys-on-surface);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+  transform: translateY(-0.25rem);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+  visibility: hidden;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+
+  img {
+    display: block;
+    width: 150px;
+    height: 150px;
+    border-radius: 0.25rem;
+  }
+}
+
+.desktop-link-container:hover .desktop-qr-tooltip,
+.desktop-link-container:focus-within .desktop-qr-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
 }
 
 .info-banner {

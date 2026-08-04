@@ -831,6 +831,19 @@ describe('SmsForm desktop behavior', () => {
     expect(warning?.textContent).toContain('簡訊連結可能無法在桌面瀏覽器上使用');
   });
 
+  it('should show the site QR Code when the desktop link is hovered or focused', () => {
+    const link = queryEl<HTMLAnchorElement>(fixture, '.desktop-link-container a');
+    const tooltip = queryEl<HTMLElement>(fixture, '#desktop-qr-tooltip');
+    const qrCode = queryEl<HTMLImageElement>(fixture, '#desktop-qr-tooltip img');
+
+    expect(link.href).toBe('https://tools.pylot.dev/');
+    expect(link.getAttribute('aria-describedby')).toBe('desktop-qr-tooltip');
+    expect(link.getAttribute('aria-label')).toContain('停留或聚焦可顯示 QR Code');
+    expect(tooltip.getAttribute('role')).toBe('tooltip');
+    expect(qrCode.getAttribute('src')).toBe('tools-pylot-dev-qr.svg');
+    expect(qrCode.alt).toContain('https://tools.pylot.dev/');
+  });
+
   it('should disable submit button when on desktop', async () => {
     fixture.detectChanges();
     expect(submitButton(fixture)?.disabled).toBe(true);

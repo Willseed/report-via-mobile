@@ -39,6 +39,31 @@ test.describe('桌面裝置警告', () => {
     await expect(page.locator('.desktop-warning')).toContainText('行動裝置');
   });
 
+  test('應依裝置顯示桌面 QR Code', async ({ page, isMobile }) => {
+    await page.goto('/');
+
+    const link = page.getByRole('link', { name: /https:\/\/tools\.pylot\.dev\// });
+    const tooltip = page.getByRole('tooltip');
+
+    if (isMobile) {
+      await expect(link).toHaveCount(0);
+      await expect(tooltip).toHaveCount(0);
+      return;
+    }
+
+    const qrCode = tooltip.locator('img');
+
+    await expect(link).toHaveAttribute('href', 'https://tools.pylot.dev/');
+    await expect(tooltip).toBeHidden();
+    await link.hover();
+    await expect(tooltip).toBeVisible();
+    await expect(qrCode).toHaveAttribute('src', 'tools-pylot-dev-qr.svg');
+    await expect(qrCode).toHaveJSProperty('complete', true);
+    await expect
+      .poll(() => qrCode.evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .toBeGreaterThan(0);
+  });
+
   test('桌面瀏覽器發送按鈕應停用', async ({ page, isMobile }) => {
     // 這個狀態只驗證桌面瀏覽器；行動裝置的發送按鈕應走不同情境。
     test.skip(isMobile, '僅限桌面瀏覽器測試');
