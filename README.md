@@ -118,6 +118,10 @@ npm start
 會依提交時間自動更新建置產物中的「更新日期」。由於 GitHub Pages 只能提供靜態檔案，
 部分 HTTP 回應標頭與內容協商由 Cloudflare Worker 補足。
 
+當 `main` 上的 `src/index.html` 與 `public/index.md` 日期過期時，
+`Sync site update date` workflow 會以台北日期建立自動更新 PR。該 PR 仍需通過
+專案的必要檢查與 `main` branch protection 要求的審查。
+
 <details>
 <summary>給維護者：AI／代理程式探索資源與 HTTP Link 設定</summary>
 
