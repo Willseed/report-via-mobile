@@ -6,9 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: sync-site-update-date
@@ -18,6 +16,10 @@ jobs:
   sync-date:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      actions: write # Dispatch required checks for the automation branch.
+      contents: write # Push the generated date-update branch.
+      pull-requests: write # Create or reuse the date-update pull request.
 
     steps:
       - name: Checkout main
