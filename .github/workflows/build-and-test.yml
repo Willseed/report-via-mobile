@@ -68,16 +68,19 @@ jobs:
         run: |
           perl -pi -e \
             's/📅 更新日期：\d{4}-\d{2}-\d{2}/📅 更新日期：$ENV{REPORT_BUILD_DATE}/' \
-            src/index.html
+            src/index.html public/index.md
 
       - name: Build
         run: npm run build -- --configuration production
 
-      - name: Verify build update date
+      - name: Verify build update dates
         run: |
           grep -Fxq \
             "    <p>📅 更新日期：${REPORT_BUILD_DATE}</p>" \
             dist/report-via-mobile/browser/index.html
+          grep -Fxq \
+            "📅 更新日期：${REPORT_BUILD_DATE}" \
+            dist/report-via-mobile/browser/index.md
 
       - name: Save Angular CLI artifacts
         if: ${{ !cancelled() }}
