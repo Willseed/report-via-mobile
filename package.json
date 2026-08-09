@@ -62,7 +62,7 @@
     "angular-eslint": "22.1.0",
     "eslint": "^10.6.0",
     "fast-check": "^4.9.0",
-    "jsdom": "^29.1.1",
+    "jsdom": "^30.0.1",
     "playwright": "^1.61.0",
     "stylelint": "^17.13.0",
     "stylelint-config-standard-scss": "^17.0.0",
