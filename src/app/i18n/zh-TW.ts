@@ -49,7 +49,7 @@ export const ZH_TW = {
   smsForm: {
     title: '簡訊報案',
     subtitle: '填寫以下表單，透過您裝置的簡訊功能傳送報案訊息。',
-    lastUpdated: '📅 更新日期：2026-08-12',
+    lastUpdated: '📅 更新日期：2026-08-17',
     desktopWarning: '簡訊連結可能無法在桌面瀏覽器上使用，請用行動裝置掃描',
     desktopLinkLabel: 'https://tools.pylot.dev/',
     desktopLinkAriaLabel: '開啟 https://tools.pylot.dev/；停留或聚焦可顯示 QR Code',
