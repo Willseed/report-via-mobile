@@ -71,14 +71,20 @@ export class App {
   }
 
   private async initWebMcp(): Promise<void> {
-    const { WebMcpService } = await import('./webmcp.service');
+    try {
+      const { WebMcpService } = await import('./webmcp.service');
 
-    if (this.webMcpInitCancelled) {
-      return;
+      if (this.webMcpInitCancelled) {
+        return;
+      }
+
+      runInInjectionContext(this.injector, () => {
+        inject(WebMcpService).init();
+      });
+    } catch (error: unknown) {
+      if (!this.webMcpInitCancelled) {
+        console.error('無法初始化 WebMCP 整合。', error);
+      }
     }
-
-    runInInjectionContext(this.injector, () => {
-      inject(WebMcpService).init();
-    });
   }
 }
