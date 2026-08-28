@@ -4,7 +4,7 @@
     "name": "report-via-mobile-static-site",
     "version": "1.0.0"
   },
-  "description": "Public static Angular PWA for generating Taiwan traffic-violation SMS reports. It does not expose a hosted MCP server or protected API.",
+  "description": "台灣交通違規簡訊報案工具的公開靜態 PWA；沒有託管 MCP server 或受保護 API。",
   "endpoint": "https://tools.pylot.dev/.well-known/mcp/server-card.json",
   "transport": null,
   "transports": [],
@@ -18,5 +18,5 @@
     "auth": "https://tools.pylot.dev/auth.md",
     "skills": "https://tools.pylot.dev/.well-known/agent-skills/index.json"
   },
-  "notes": "No hosted MCP transport is exposed. Compatible browser clients may receive client-side WebMCP tools through navigator.modelContext; browser capabilities such as geolocation and sms: URI handling remain user-mediated app features."
+  "notes": "沒有託管 MCP transport。工具僅透過使用者裝置、本站已開啟頁面的 navigator.modelContext 提供瀏覽器 WebMCP；遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。"
 }

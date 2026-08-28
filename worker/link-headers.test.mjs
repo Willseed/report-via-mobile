@@ -159,6 +159,60 @@ test('serves the markdown homepage bodyless for HEAD requests', async (t) => {
   });
 });
 
+test('returns the same markdown body for the homepage negotiation and index.md', async (t) => {
+  const markdownBody = '# 台灣交通違規簡訊報案工具\\n';
+  mockFetch(t, async () => new Response(markdownBody));
+
+  const directResponse = await worker.fetch(
+    new Request('https://tools.pylot.dev/index.md', {
+      headers: { Accept: 'text/markdown' },
+    }),
+  );
+  const negotiatedResponse = await worker.fetch(
+    new Request('https://tools.pylot.dev/', {
+      headers: { Accept: 'text/markdown' },
+    }),
+  );
+
+  assert.equal(await negotiatedResponse.text(), await directResponse.text());
+});
+
+test('adds public CORS headers to agent documents and supports preflight', async (t) => {
+  let fetchCalls = 0;
+  mockFetch(t, async () => {
+    fetchCalls += 1;
+    return new Response('document');
+  });
+
+  for (const path of ['/llms.txt', '/index.md', '/auth.md', '/.well-known/api-catalog']) {
+    const response = await worker.fetch(
+      new Request(`https://tools.pylot.dev${path}`, {
+        headers: { Origin: 'https://example.com' },
+      }),
+    );
+
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), '*');
+    assert.equal(response.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD, OPTIONS');
+    assert.equal(response.headers.get('Access-Control-Allow-Credentials'), null);
+  }
+
+  const optionsResponse = await worker.fetch(
+    new Request('https://tools.pylot.dev/llms.txt', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'https://example.com',
+        'Access-Control-Request-Method': 'GET',
+      },
+    }),
+  );
+
+  assert.equal(optionsResponse.status, 204);
+  assert.equal(optionsResponse.headers.get('Access-Control-Allow-Origin'), '*');
+  assert.equal(optionsResponse.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD, OPTIONS');
+  assert.equal(optionsResponse.headers.get('Access-Control-Allow-Credentials'), null);
+  assert.equal(fetchCalls, 4);
+});
+
 test('sets content type for static well-known metadata', async (t) => {
   mockFetch(
     t,
@@ -191,7 +245,7 @@ test('serves ARD manifests from the edge with public CORS', async (t) => {
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('Content-Type'), 'application/json; charset=utf-8');
     assert.equal(response.headers.get('Access-Control-Allow-Origin'), '*');
-    assert.equal(response.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD');
+    assert.equal(response.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD, OPTIONS');
     assert.equal(response.headers.get('Cache-Control'), 'public, max-age=3600');
     assert.equal(response.headers.get('X-Agent-Ready-Worker'), 'active');
     assert.equal(manifest.specVersion, '1.0');
@@ -251,7 +305,10 @@ test('serves OAuth discovery metadata from the edge', async (t) => {
         assert.equal(metadata.issuer, 'https://tools.pylot.dev');
         assert.equal(metadata.agent_auth.skill, 'https://tools.pylot.dev/auth.md');
         assert.equal(metadata.agent_auth.register_uri, 'https://tools.pylot.dev/auth.md');
-        assert.equal(metadata.agent_auth.claim_uri, 'https://tools.pylot.dev/auth.md#step-4--claim');
+        assert.equal(
+          metadata.agent_auth.claim_uri,
+          'https://tools.pylot.dev/auth.md#anonymous--no-credential',
+        );
         assert.deepEqual(metadata.agent_auth.identity_types_supported, ['anonymous']);
         assert.deepEqual(metadata.agent_auth.credential_types_supported, ['none']);
         assert.deepEqual(metadata.agent_auth.anonymous.credential_types_supported, ['none']);
@@ -260,9 +317,7 @@ test('serves OAuth discovery metadata from the edge', async (t) => {
   ];
 
   for (const metadataCase of metadataCases) {
-    const response = await worker.fetch(
-      new Request(`https://tools.pylot.dev${metadataCase.path}`),
-    );
+    const response = await worker.fetch(new Request(`https://tools.pylot.dev${metadataCase.path}`));
     const metadata = await response.json();
 
     assert.equal(response.status, 200);
@@ -321,7 +376,7 @@ test('rejects unsafe requests before origin fetch', async (t) => {
   assert.equal(untrustedHost.status, 404);
   assert.equal(unsafePath.status, 404);
   assert.equal(unsupportedMethod.status, 405);
-  assert.equal(unsupportedMethod.headers.get('Allow'), 'GET, HEAD');
+  assert.equal(unsupportedMethod.headers.get('Allow'), 'GET, HEAD, OPTIONS');
   assert.equal(fetchCalls, 0);
 });
 

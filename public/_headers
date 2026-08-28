@@ -4,30 +4,38 @@
   Link: </.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/json", </.well-known/ard.json>; rel="ard"; type="application/json", </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/oauth-authorization-server>; rel="service-desc"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </index.md>; rel="alternate service-doc"; type="text/markdown", </llms.txt>; rel="alternate"; type="text/plain", </manifest.webmanifest>; rel="manifest"; type="application/manifest+json", </auth.md>; rel="service-doc"; type="text/markdown", <https://github.com/Willseed/report-via-mobile>; rel="service-doc"; type="text/html"
 /index.md
   Content-Type: text/markdown; charset=utf-8
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+  Access-Control-Allow-Headers: Content-Type
   Link: </>; rel="canonical"; type="text/html", </.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/json", </.well-known/ard.json>; rel="ard"; type="application/json", </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/oauth-authorization-server>; rel="service-desc"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </llms.txt>; rel="alternate"; type="text/plain", </auth.md>; rel="service-doc"; type="text/markdown"
 /llms.txt
   Content-Type: text/plain; charset=utf-8
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+  Access-Control-Allow-Headers: Content-Type
+/auth.md
+  Content-Type: text/markdown; charset=utf-8
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+  Access-Control-Allow-Headers: Content-Type
 /.well-known/ai-catalog.json
   Content-Type: application/json; charset=utf-8
-  Access-Control-Allow-Origin: *
-  Access-Control-Allow-Methods: GET, HEAD
-  Access-Control-Allow-Headers: Content-Type
-  Cache-Control: public, max-age=3600
 /.well-known/ard.json
   Content-Type: application/json; charset=utf-8
-  Access-Control-Allow-Origin: *
-  Access-Control-Allow-Methods: GET, HEAD
-  Access-Control-Allow-Headers: Content-Type
-  Cache-Control: public, max-age=3600
 /.well-known/api-catalog
   Content-Type: application/linkset+json; charset=utf-8
+/.well-known/agent-skills/index.json
+  Content-Type: application/json; charset=utf-8
+/.well-known/agent-skills/report-via-mobile/SKILL.md
+  Content-Type: text/markdown; charset=utf-8
+/.well-known/mcp/server-card.json
+  Content-Type: application/json; charset=utf-8
 /.well-known/oauth-protected-resource
   Content-Type: application/json; charset=utf-8
 /.well-known/oauth-authorization-server
   Content-Type: application/json; charset=utf-8
-/auth.md
-  Content-Type: text/markdown; charset=utf-8
-/.well-known/agent-skills/index.json
-  Content-Type: application/json; charset=utf-8
-/.well-known/mcp/server-card.json
-  Content-Type: application/json; charset=utf-8
+/.well-known/*
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+  Access-Control-Allow-Headers: Content-Type
+  Cache-Control: public, max-age=3600

@@ -64,11 +64,12 @@ jobs:
           echo "SOURCE_DATE_EPOCH=${report_source_date_epoch}" >> "$GITHUB_ENV"
           echo "REPORT_BUILD_DATE=${report_build_date}" >> "$GITHUB_ENV"
 
-      - name: Update site date
+      - name: Generate site copy with build date
         run: |
           perl -pi -e \
-            's/📅 更新日期：\d{4}-\d{2}-\d{2}/📅 更新日期：$ENV{REPORT_BUILD_DATE}/' \
-            src/index.html public/index.md src/app/i18n/zh-TW.ts
+            's/"updated": "\d{4}-\d{2}-\d{2}"/"updated": "$ENV{REPORT_BUILD_DATE}"/' \
+            site-copy.json
+          npm run generate:site-copy
 
       - name: Build
         run: npm run build -- --configuration production

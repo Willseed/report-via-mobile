@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "ng": "ng",
+    "generate:site-copy": "node scripts/generate-site-copy.mjs",
+    "prebuild": "npm run generate:site-copy",
     "start": "ng serve",
     "build": "node scripts/build-with-normalized-ngsw.js",
     "normalize:ngsw": "node scripts/normalize-ngsw.js",

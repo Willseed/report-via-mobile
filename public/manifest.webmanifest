@@ -1,7 +1,7 @@
 {
   "name": "台灣交通違規簡訊報案工具",
   "short_name": "簡訊報案",
-  "description": "免費開源的台灣交通違規簡訊報案輔助工具，可用 GPS 或地址對應警政受理單位並產生簡訊草稿。",
+  "description": "免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "./",

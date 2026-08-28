@@ -1,80 +1,36 @@
-# auth.md
+# 授權與資料使用
 
-This document describes the agent registration profile for the public static Angular
-PWA at https://tools.pylot.dev/. The app helps a user prepare a Taiwan traffic-violation
-SMS and hand it to the user's native SMS app.
+台灣交通違規簡訊報案工具是公開的靜態 PWA。免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。
 
-## Step 1 — Discover
+本工具不會自動報案、不代寄簡訊、不存車牌／地址，也不是官方系統。
 
-Fetch the OAuth Protected Resource Metadata before using this service:
+遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。
 
-```http
-GET https://tools.pylot.dev/.well-known/oauth-protected-resource
-```
+## 公開使用
 
-It identifies `https://tools.pylot.dev/` as the resource and points to the OAuth
-Authorization Server metadata at:
+本服務沒有帳號系統、受保護 API、OAuth token 或託管 MCP transport。Agent 不需要註冊、登入、API key 或 Authorization header；請直接在使用者裝置開啟本站，讓相容瀏覽器提供 WebMCP 工具。
 
-```http
-GET https://tools.pylot.dev/.well-known/oauth-authorization-server
-```
+## anonymous / no credential
 
-The `agent_auth` block in that document is the machine-readable registration profile.
-
-## Step 2 — Pick a method
-
-This service supports one registration method. Pick `anonymous` because this public
-resource does not have a user identity or a protected API:
-
-- **Identity type:** `anonymous`
-- **Credential type:** `none`
-- **Registration URI:** `https://tools.pylot.dev/auth.md`
-
-The `register_uri` is this read-only document. An agent must not POST an identity,
-email address, API key, or OAuth token to this site. Anonymous registration means that
-an agent may use the public app on a user's behalf without creating an account or
-receiving a credential. The `none` credential type explicitly means that no bearer
-credential is issued.
-
-To register, read this document and then use the public browser experience at
-https://tools.pylot.dev/. Ask the user to review the location, district, police station,
-violation details, license plate, and generated SMS before opening the `sms:` link.
-
-## Step 3 — Register
-
-Read the `register_uri` and then open the public app. No POST registration request is
-needed, and no identity assertion is accepted by this static service.
-
-## Step 4 — Claim
-
-No claim ceremony is supported because this site does not create server-side user
-accounts or issue credentials. The advertised `claim_uri` is the documentation anchor
-`https://tools.pylot.dev/auth.md#step-4--claim`; it is informational only and
-must not be called as an API. There is no revocation endpoint because there is no
-credential to revoke.
-
-## Step 5 — Use the credential
-
-There is no credential to present. Use the public app in a user-mediated browser
-session; do not add an `Authorization` header.
-
-## Step 6 — Handle revocation
-
-There is no revocation operation because no credential is issued. If a future version
-adds protected APIs or account-bound credentials, it must publish a real revocation URI
-and update this document and both OAuth metadata documents.
-
-## Credential use and privacy
-
-Do not request, store, or send OAuth tokens, API keys, ID-JAGs, or user credentials for
-this service. The app has no protected API or hosted MCP transport. Its bundled station
-data is public. Browser geolocation permission and SMS sending remain user-mediated in
-the user's browser or mobile operating system. If GPS is used, the browser sends the
-coordinates to OpenStreetMap Nominatim for reverse geocoding.
-
-The machine-readable discovery resources are:
+若 Agent 需要讀取授權探索文件，請先讀取：
 
 - `/.well-known/oauth-protected-resource`
 - `/.well-known/oauth-authorization-server`
-- `/.well-known/api-catalog`
-- `/.well-known/agent-skills/index.json`
+
+這兩份文件描述 anonymous 身分與 no credential。`register_uri` 是本文件的唯讀說明，不接受 POST，也不會核發憑證；`claim_uri` 只是文件錨點，不是 API。
+
+## 使用限制
+
+- 草稿尚未送出；需使用者確認收件人與內容。
+- 遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。
+- 本站沒有自有後端，不會儲存車牌或地址。若使用者同意定位，瀏覽器會將座標送至 OpenStreetMap Nominatim 反查地址；Agent 不會暗開 GPS。
+- 本站只提供瀏覽器 WebMCP 工具；沒有遠端 MCP server 或代寄簡訊服務。
+
+## 公開文件
+
+- [首頁](https://tools.pylot.dev/)
+- [Markdown 首頁](https://tools.pylot.dev/index.md)
+- [Agent Skill](https://tools.pylot.dev/.well-known/agent-skills/report-via-mobile/SKILL.md)
+- [API catalog](https://tools.pylot.dev/.well-known/api-catalog)
+- [MCP server-card](https://tools.pylot.dev/.well-known/mcp/server-card.json)
+- [原始碼](https://github.com/Willseed/report-via-mobile)

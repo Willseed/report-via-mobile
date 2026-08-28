@@ -11,5 +11,5 @@
     "header"
   ],
   "resource_documentation": "https://tools.pylot.dev/auth.md",
-  "notes": "Public app: anonymous use does not require a credential or protected API access."
+  "notes": "公開靜態 PWA：anonymous 使用不需要 credential，也沒有受保護 API。遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。"
 }

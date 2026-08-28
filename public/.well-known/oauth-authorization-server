@@ -14,7 +14,7 @@
   "agent_auth": {
     "skill": "https://tools.pylot.dev/auth.md",
     "register_uri": "https://tools.pylot.dev/auth.md",
-    "claim_uri": "https://tools.pylot.dev/auth.md#step-4--claim",
+    "claim_uri": "https://tools.pylot.dev/auth.md#anonymous--no-credential",
     "identity_types_supported": [
       "anonymous"
     ],

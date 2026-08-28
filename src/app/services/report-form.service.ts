@@ -19,6 +19,7 @@ export class ReportFormService {
   private readonly addressState = signal('');
   private readonly violationState = signal('');
   private readonly licensePlateState = signal('');
+  private readonly licensePlatesState = signal<readonly string[]>([]);
   private readonly selectedStationState = signal<PoliceStation | null>(null);
   private readonly districtTouched = signal(false);
   private readonly showLicensePlateState = signal(false);
@@ -45,6 +46,7 @@ export class ReportFormService {
   readonly address = this.addressState.asReadonly();
   readonly violation = this.violationState.asReadonly();
   readonly licensePlate = this.licensePlateState.asReadonly();
+  readonly licensePlates = this.licensePlatesState.asReadonly();
   readonly station = computed(() => this.selectedStationState());
   readonly district = computed(() => this.selectedStationState()?.district ?? null);
   readonly showLicensePlate = this.showLicensePlateState.asReadonly();
@@ -85,10 +87,16 @@ export class ReportFormService {
   }
 
   setLicensePlate(value: string): void {
-    const cleaned = cleanLicensePlate(value);
-    this.licensePlateState.set(cleaned);
-    if (this.violationForm.licensePlate().value() !== cleaned) {
-      this.violationForm.licensePlate().value.set(cleaned);
+    this.setLicensePlates(value ? [value] : []);
+  }
+
+  setLicensePlates(values: readonly string[]): void {
+    const cleaned = values.map((value) => cleanLicensePlate(value)).filter(Boolean);
+    const firstPlate = cleaned[0] ?? '';
+    this.licensePlatesState.set(cleaned);
+    this.licensePlateState.set(firstPlate);
+    if (this.violationForm.licensePlate().value() !== firstPlate) {
+      this.violationForm.licensePlate().value.set(firstPlate);
     }
   }
 
@@ -132,8 +140,7 @@ export class ReportFormService {
   }
 
   clearLicensePlate(): void {
-    this.violationForm.licensePlate().value.set('');
-    this.licensePlateState.set('');
+    this.setLicensePlates([]);
     this.showLicensePlateState.set(false);
   }
 

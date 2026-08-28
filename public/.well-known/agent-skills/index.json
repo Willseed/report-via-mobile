@@ -4,9 +4,9 @@
     {
       "name": "report-via-mobile",
       "type": "skill-md",
-      "description": "Help agents guide users through the public Taiwan traffic-violation SMS reporting PWA without requiring OAuth or protected APIs.",
+      "description": "台灣交通違規簡訊報案工具的瀏覽器 WebMCP 操作說明。",
       "url": "https://tools.pylot.dev/.well-known/agent-skills/report-via-mobile/SKILL.md",
-      "digest": "sha256:427969cb7d5eb26bfe6052e29032369e4b4e22719623947374ea6a9e4f199a56"
+      "digest": "sha256:a75856023dfa0bbdb373bc97e65f6143ef7d5f583c388d162a71cf86b340f52e"
     }
   ]
 }

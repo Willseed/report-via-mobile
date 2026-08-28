@@ -20,11 +20,28 @@ switch (process.argv[2] ?? 'public') {
 const aiCatalog = JSON.parse(readFileSync('.well-known/ai-catalog.json', 'utf8'));
 const ardManifest = JSON.parse(readFileSync('.well-known/ard.json', 'utf8'));
 const serverCard = JSON.parse(readFileSync('.well-known/mcp/server-card.json', 'utf8'));
+const skillsIndex = JSON.parse(readFileSync('.well-known/agent-skills/index.json', 'utf8'));
+const expectedWebMcpTools = [
+  'list_violation_types',
+  'lookup_station',
+  'set_report_form',
+  'preview_sms',
+  'open_sms_composer',
+];
 
 validateCatalog(aiCatalog);
 validateCatalog(ardManifest);
 assert.deepEqual(ardManifest, aiCatalog, 'ARD aliases must publish the same entries.');
 validateServerCard(serverCard);
+assert.equal(skillsIndex.skills?.[0]?.name, 'report-via-mobile');
+assert.deepEqual(
+  aiCatalog.entries.find((entry) => entry.identifier.endsWith(':skill:report-via-mobile'))?.capabilities,
+  expectedWebMcpTools,
+);
+assert.deepEqual(
+  ardManifest.entries.find((entry) => entry.identifier.endsWith(':skill:report-via-mobile'))?.capabilities,
+  expectedWebMcpTools,
+);
 
 function validateCatalog(catalog) {
   assert.equal(catalog.specVersion, '1.0');
@@ -75,6 +92,8 @@ function validateServerCard(card) {
   assert.equal(typeof card.capabilities?.tools, 'boolean');
   assert.equal(typeof card.capabilities?.resources, 'boolean');
   assert.equal(typeof card.capabilities?.prompts, 'boolean');
+  assert.equal(card.transport, null);
+  assert.equal(card.capabilities.tools, false);
 }
 
 function isValidIdentifier(value) {

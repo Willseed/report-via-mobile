@@ -33,6 +33,7 @@ Angular PWA (GitHub Pages)
 - **`ReportStateService`**: exposes the composed workflow state through signals.
 - **`MessageComposerService`**: derives the final SMS content and mismatch warnings.
 - **`SmsService`**: sanitizes the SMS body and generates the platform-appropriate `sms:` link.
+- **`WebMcpService`**: registers five browser-only WebMCP tools backed by form state and bundled station data; it does not expose a hosted MCP transport.
 - **PWA services**: notify users about installation and available updates.
 
 ## Data flow
@@ -43,6 +44,7 @@ Angular PWA (GitHub Pages)
 4. The user selects the violation type and optionally enters a license plate.
 5. The app composes a text message locally and shows a preview.
 6. After explicit confirmation, the app opens the native SMS app with a prefilled message.
+7. When a compatible agent is running in the same user-device browser, it may list violations, look up a station, fill the form, and preview the draft through browser WebMCP; it cannot send the SMS remotely.
 
 ## Deployment and operations
 
@@ -55,5 +57,6 @@ Angular PWA (GitHub Pages)
 
 - Mobile-first UX
 - Traditional Chinese user-facing strings
-- No server-side case management
+- No server-side case management or remote SMS handoff
+- Browser WebMCP only; no hosted MCP transport
 - Hash-based routing for GitHub Pages compatibility

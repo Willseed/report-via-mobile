@@ -1,6 +1,10 @@
 # 台灣交通違規簡訊報案工具
 
-免費、開源、mobile-first 的台灣交通違規簡訊報案輔助工具。依 GPS 或手動地址對應地區與警政受理單位，整理違規內容後交給手機簡訊 App；**最後仍由使用者確認並送出**，不會自動報案。
+免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。
+
+本工具不會自動報案、不代寄簡訊、不存車牌／地址，也不是官方系統。
+
+遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。
 
 別名：簡訊報案工具、交通違規簡訊報案工具。
 
@@ -14,7 +18,7 @@
 ![License](https://img.shields.io/github/license/Willseed/report-via-mobile)
 ![Dependabot](https://img.shields.io/badge/dependabot-enabled-blue?logo=dependabot)
 
-流程：GPS／地址 → 地區 → 警政受理單位 → 違規內容 → 簡訊草稿（使用者自行送出）。
+流程：GPS／地址 → 地區 → 警政受理單位 → 填表 → 簡訊草稿 → 使用者確認。
 
 本工具沒有帳號系統，也不會把報案內容存到專案自有後端。定位座標僅在使用者同意後送至 OpenStreetMap Nominatim 反查地址。本工具與內政部警政署或各級警察局無官方隸屬關係。
 
@@ -23,8 +27,9 @@
 - 透過 GPS 取得目前位置並轉換成地址，也可以直接手動輸入地址。
 - 依行政區找出承辦警察機關與簡訊號碼；適用臺北、新北、桃園、臺中、臺南、高雄等臺灣縣市。
 - 快速選擇違規情形，並視需要加入車牌號碼。
-- 先預覽完整報案內容，再開啟手機的簡訊 App。
+- 先預覽完整簡訊草稿，再開啟裝置的系統簡訊 App。
 - 將網站安裝成 PWA，並在基本功能上支援離線使用。
+- 相容瀏覽器可在本站開啟時提供 5 個 WebMCP 工具；沒有遠端 MCP transport。
 
 ## 使用方式
 
@@ -34,7 +39,7 @@
 4. 檢查簡訊預覽內容。
 5. 開啟手機簡訊 App，確認收件人與內容後自行送出。
 
-> 本工具只負責產生簡訊草稿，不會在背景自動報案。實際內容與是否送出，均以手機
+> 本工具只負責查受理窗口、填表與產生簡訊草稿，不會在背景自動報案或代寄簡訊。實際內容與是否送出，均以手機
 > 簡訊 App 中的最後確認為準。
 
 ## 隱私與資料流
@@ -119,8 +124,8 @@ npm start
 ## 部署與進階探索設定
 
 網站會在 `main` 通過 GitHub Actions 後，自動建置並部署至 GitHub Pages。
-「更新日期」只在維護者合併 pull request 時一併更新（`src/index.html`、
-`public/index.md`、`src/app/i18n/zh-TW.ts`），部署完成後不會再開 Bot PR。
+網站文案集中在 `site-copy.json`；執行 `npm run generate:site-copy` 會同步產出 `src/index.html`、
+`public/index.md`、`public/llms.txt`、`public/auth.md`、Agent Skill 與探索 metadata。
 由於 GitHub Pages 只能提供靜態檔案，部分 HTTP 回應標頭與內容協商由 Cloudflare Worker 補足。
 
 <details>
@@ -139,17 +144,18 @@ npm start
 - `/.well-known/mcp/server-card.json`：宣告本專案沒有託管 MCP transport 的 server card。
 - `/auth.md`：授權與資料使用限制說明。
 
-相容的瀏覽器代理程式也可能透過 `navigator.modelContext` 取得 client-side WebMCP
-工具；這些工具不構成託管 MCP server 或受保護 API。`src/index.html` 提供供客戶端探索
-的 HTML tags。`public/_headers` 會複製到建置輸出，可供 Cloudflare Pages、Netlify 等
-支援該慣例的主機使用；GitHub Pages 只會將它當成靜態檔案。
+相容的瀏覽器代理程式也可能透過 `navigator.modelContext` 取得瀏覽器 WebMCP 工具；
+這些工具不構成託管 MCP server 或受保護 API。工具只有 `list_violation_types`、
+`lookup_station`、`set_report_form`、`preview_sms`、`open_sms_composer`，且只在本站已開啟的
+使用者裝置上可用。`src/index.html` 提供供客戶端探索的 HTML tags。`public/_headers` 會複製到建置輸出，
+可供支援該慣例的主機使用；GitHub Pages 只會將它當成靜態檔案。
 
 `worker/link-headers.mjs` 由 `wrangler.toml` 設定於 `tools.pylot.dev/*`，負責附加首頁的
 RFC 8288 `Link` 回應標頭。當首頁請求明確偏好 `Accept: text/markdown` 時，它會提供
 `/index.md`；若靜態來源沒有公開 dot-directory assets，也會直接提供 ARD manifests、
 `/.well-known/oauth-protected-resource` 與 `/.well-known/oauth-authorization-server` 作為 edge
-fallback。兩份 ARD manifests 使用 `Access-Control-Allow-Origin: *`，允許公開 registry
-跨來源索引。
+fallback。`/index.md`、`/llms.txt`、`/auth.md` 與所有 `/.well-known/*` 文件使用
+`Access-Control-Allow-Origin: *`，只允許 GET、HEAD、OPTIONS，且不使用 credentials。
 
 首頁的 `Link` 回應包含：
 
@@ -169,6 +175,7 @@ fallback。兩份 ARD manifests 使用 `Access-Control-Allow-Origin: *`，允許
 本專案沒有受保護的 server-side API、登入流程或 token 發行服務。PRM 宣告公開的
 `public` scope，並指向同源的 authorization-server metadata；其中 `agent_auth` 只描述
 anonymous/no-credential 的公開使用方式，不會核發 OAuth token、API key 或其他 bearer credential。
+MCP server-card 的 `transport` 維持 `null`；工具僅是瀏覽器 WebMCP。
 
 Cloudflare Worker 需透過 **Deploy Cloudflare Worker** workflow 手動部署，並在
 repository secrets 中設定 `CLOUDFLARE_ACCOUNT_ID` 與 `CLOUDFLARE_API_TOKEN`。
