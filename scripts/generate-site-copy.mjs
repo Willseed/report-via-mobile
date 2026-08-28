@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, '..');
 const sourcePath = path.join(repositoryRoot, 'site-copy.json');
+process.chdir(repositoryRoot);
 const copy = JSON.parse(readFileSync(sourcePath, 'utf8'));
 const expectedToolNames = [
   'list_violation_types',
@@ -36,19 +37,34 @@ const aiCatalog = renderAiCatalog();
 const apiCatalog = renderApiCatalog();
 const serverCard = renderServerCard();
 
-writeGenerated('src/index.html', renderIndexHtml());
-writeGenerated('public/index.md', renderIndexMarkdown());
-writeGenerated('public/llms.txt', renderLlms());
-writeGenerated('public/auth.md', renderAuth());
-writeGenerated(`public${skillPath}`, skillMarkdown);
-writeJson('public/.well-known/agent-skills/index.json', renderSkillsIndex(skillMarkdown));
-writeJson('public/.well-known/ai-catalog.json', aiCatalog);
-writeJson('public/.well-known/ard.json', aiCatalog);
-writeGenerated('public/.well-known/api-catalog', stringifyJson(apiCatalog));
-writeJson('public/.well-known/mcp/server-card.json', serverCard);
-writeJson('public/.well-known/oauth-protected-resource', renderProtectedResourceMetadata());
-writeJson('public/.well-known/oauth-authorization-server', renderAuthorizationServerMetadata());
-writeJson('public/manifest.webmanifest', renderManifest());
+writeFileSync('src/index.html', withTrailingNewline(renderIndexHtml()));
+writeFileSync('public/index.md', withTrailingNewline(renderIndexMarkdown()));
+writeFileSync('public/llms.txt', withTrailingNewline(renderLlms()));
+writeFileSync('public/auth.md', withTrailingNewline(renderAuth()));
+writeFileSync(
+  'public/.well-known/agent-skills/report-via-mobile/SKILL.md',
+  withTrailingNewline(skillMarkdown),
+);
+writeFileSync(
+  'public/.well-known/agent-skills/index.json',
+  withTrailingNewline(stringifyJson(renderSkillsIndex(skillMarkdown))),
+);
+writeFileSync('public/.well-known/ai-catalog.json', withTrailingNewline(stringifyJson(aiCatalog)));
+writeFileSync('public/.well-known/ard.json', withTrailingNewline(stringifyJson(aiCatalog)));
+writeFileSync('public/.well-known/api-catalog', withTrailingNewline(stringifyJson(apiCatalog)));
+writeFileSync(
+  'public/.well-known/mcp/server-card.json',
+  withTrailingNewline(stringifyJson(serverCard)),
+);
+writeFileSync(
+  'public/.well-known/oauth-protected-resource',
+  withTrailingNewline(stringifyJson(renderProtectedResourceMetadata())),
+);
+writeFileSync(
+  'public/.well-known/oauth-authorization-server',
+  withTrailingNewline(stringifyJson(renderAuthorizationServerMetadata())),
+);
+writeFileSync('public/manifest.webmanifest', withTrailingNewline(stringifyJson(renderManifest())));
 
 function validateCopy() {
   if (copy.name !== '台灣交通違規簡訊報案工具') {
@@ -71,17 +87,12 @@ function validateCopy() {
   }
 }
 
-function writeGenerated(relativePath, content) {
-  const absolutePath = path.join(repositoryRoot, relativePath);
-  writeFileSync(absolutePath, content.endsWith('\n') ? content : `${content}\n`);
-}
-
-function writeJson(relativePath, value) {
-  writeGenerated(relativePath, stringifyJson(value));
+function withTrailingNewline(content) {
+  return content.endsWith('\n') ? content : `${content}\n`;
 }
 
 function stringifyJson(value) {
-  return `${JSON.stringify(value, null, 2)}\n`;
+  return JSON.stringify(value, null, 2);
 }
 
 function html(value) {
