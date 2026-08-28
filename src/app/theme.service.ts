@@ -2,6 +2,7 @@ import { computed, effect, Injectable, signal } from '@angular/core';
 
 export type ThemePreference = 'light' | 'dark' | 'auto';
 
+// Non-sensitive UI preference only; not credentials or report data.
 const THEME_PREFERENCE_STORE = 'theme-preference';
 
 @Injectable({ providedIn: 'root' })

@@ -9,6 +9,7 @@ This document describes the security properties the project is trying to preserv
 
 2. **No server-side storage of report content**  
    The default deployment should remain a static, client-side application without storing user reports, phone numbers, or accounts on a project-operated backend.
+   Browser `localStorage` may only hold non-sensitive UI state (currently the theme preference). Do not persist credentials, tokens, PII, location, or report drafts there. Scanner findings that flag that theme key as information disclosure are false positives.
 
 3. **Untrusted input stays text**  
    User input, geocoding responses, and data-file content must be treated as untrusted. New features should avoid raw HTML rendering or unsafe DOM manipulation.
