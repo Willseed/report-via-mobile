@@ -88,17 +88,7 @@ jobs:
             --include='*.js' \
             "📅 更新日期：${REPORT_BUILD_DATE}" \
             dist/report-via-mobile/browser
-          node <<'NODE'
-          const assert = require('node:assert/strict');
-          const card = require('./dist/report-via-mobile/browser/.well-known/mcp/server-card.json');
-
-          assert.ok(card.serverInfo?.name);
-          assert.ok(card.serverInfo?.version);
-          assert.equal(new URL(card.endpoint).protocol, 'https:');
-          for (const capability of ['tools', 'resources', 'prompts']) {
-            assert.equal(typeof card.capabilities?.[capability], 'boolean');
-          }
-          NODE
+          node scripts/validate-agent-discovery.js dist/report-via-mobile/browser
 
       - name: Save Angular CLI artifacts
         if: ${{ !cancelled() }}

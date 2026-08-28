@@ -16,6 +16,8 @@
 ## Agent discovery
 
 - API catalog: `/.well-known/api-catalog`
+- ARD capability manifest: `/.well-known/ai-catalog.json`
+- Current ARD manifest alias: `/.well-known/ard.json`
 - OAuth Protected Resource Metadata: `/.well-known/oauth-protected-resource`
 - OAuth Authorization Server Metadata: `/.well-known/oauth-authorization-server`（包含 `agent_auth` registration profile）
 - Agent skills index: `/.well-known/agent-skills/index.json`
@@ -30,6 +32,8 @@
 - 預設瀏覽器首頁仍是 HTML：`/`
 - Markdown 版本固定提供於 `/index.md`
 - Cloudflare Worker 部署後，首頁請求若明確偏好 `Accept: text/markdown`，會回傳本檔案。
+- ARD manifests 以公開 CORS 回應，並透過 HTML links、HTTP `Link` 與 `robots.txt` 的
+  `Agentmap` 宣告供代理與 registry 探索。
 - GitHub Pages 靜態託管本身無法設定自訂 Link response headers，也無法依 `Accept` 標頭做內容協商。
 - 本網站沒有受保護的伺服器端 API、登入流程或 token 發行服務；authorization-server metadata
   僅用於公開 anonymous/no-credential 的 agent registration discovery。

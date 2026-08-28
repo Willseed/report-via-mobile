@@ -126,6 +126,8 @@ npm start
 
 - `/index.md`：供代理程式與純文字客戶端閱讀的 Markdown 首頁。
 - `/.well-known/api-catalog`：公開資源的機器可讀目錄。
+- `/.well-known/ai-catalog.json`：供 ARD／AI Catalog registry 索引的能力清單與代表查詢。
+- `/.well-known/ard.json`：目前 ARD 規格使用的同內容 discovery alias。
 - `/.well-known/oauth-protected-resource`：公開資源的 OAuth Protected Resource Metadata。
 - `/.well-known/oauth-authorization-server`：包含 anonymous/no-credential `agent_auth` registration profile 的 OAuth metadata。
 - `/.well-known/agent-skills/index.json`：機器可讀的使用者能力摘要。
@@ -139,11 +141,15 @@ npm start
 
 `worker/link-headers.mjs` 由 `wrangler.toml` 設定於 `tools.pylot.dev/*`，負責附加首頁的
 RFC 8288 `Link` 回應標頭。當首頁請求明確偏好 `Accept: text/markdown` 時，它會提供
-`/index.md`；若靜態來源沒有公開 dot-directory assets，也會直接提供
-`/.well-known/oauth-protected-resource` 與 `/.well-known/oauth-authorization-server` 作為 edge fallback。
+`/index.md`；若靜態來源沒有公開 dot-directory assets，也會直接提供 ARD manifests、
+`/.well-known/oauth-protected-resource` 與 `/.well-known/oauth-authorization-server` 作為 edge
+fallback。兩份 ARD manifests 使用 `Access-Control-Allow-Origin: *`，允許公開 registry
+跨來源索引。
 
 首頁的 `Link` 回應包含：
 
+- `rel="ai-catalog"` → `/.well-known/ai-catalog.json`
+- `rel="ard"` → `/.well-known/ard.json`
 - `rel="api-catalog"` → `/.well-known/api-catalog`
 - `rel="describedby"` → `/.well-known/oauth-protected-resource`
 - `rel="service-desc"` → `/.well-known/oauth-authorization-server`
@@ -174,6 +180,8 @@ repository 發布，部署 App 本身不會建立記錄。
 相關探索資源：
 
 - `https://tools.pylot.dev/.well-known/api-catalog`
+- `https://tools.pylot.dev/.well-known/ai-catalog.json`
+- `https://tools.pylot.dev/.well-known/ard.json`
 - `https://tools.pylot.dev/.well-known/agent-skills/index.json`
 
 為組織索引發布一筆經 DNSSEC 簽署的 ServiceMode SVCB record：
