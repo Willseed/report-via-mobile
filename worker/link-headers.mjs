@@ -11,13 +11,26 @@ const WEB_PAGE_MEDIA_TYPE = 'text/html';
 const OAUTH_PROTECTED_RESOURCE_PATH = '/.well-known/oauth-protected-resource';
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const AUTH_MD_URL = `${PUBLIC_ORIGIN}/auth.md`;
+const OAUTH_RESOURCE_METADATA_FIELDS = Object.freeze({
+  resource: `${PUBLIC_ORIGIN}/`,
+  authorization_servers: [PUBLIC_ORIGIN],
+  scopes_supported: ['public'],
+  bearer_methods_supported: ['header'],
+});
+const AGENT_AUTH_METADATA = Object.freeze({
+  skill: AUTH_MD_URL,
+  register_uri: AUTH_MD_URL,
+  claim_uri: `${AUTH_MD_URL}#step-4--claim`,
+  identity_types_supported: ['anonymous'],
+  credential_types_supported: ['none'],
+  anonymous: {
+    credential_types_supported: ['none'],
+  },
+});
 const OAUTH_PROTECTED_RESOURCE_METADATA = `${JSON.stringify(
   {
-    resource: `${PUBLIC_ORIGIN}/`,
+    ...OAUTH_RESOURCE_METADATA_FIELDS,
     resource_name: '簡訊報案工具',
-    authorization_servers: [PUBLIC_ORIGIN],
-    scopes_supported: ['public'],
-    bearer_methods_supported: ['header'],
     resource_documentation: AUTH_MD_URL,
     notes: 'Public app: anonymous use does not require a credential or protected API access.',
   },
@@ -26,22 +39,10 @@ const OAUTH_PROTECTED_RESOURCE_METADATA = `${JSON.stringify(
 )}\n`;
 const OAUTH_AUTHORIZATION_SERVER_METADATA = `${JSON.stringify(
   {
+    ...OAUTH_RESOURCE_METADATA_FIELDS,
     issuer: PUBLIC_ORIGIN,
-    resource: `${PUBLIC_ORIGIN}/`,
-    authorization_servers: [PUBLIC_ORIGIN],
-    scopes_supported: ['public'],
-    bearer_methods_supported: ['header'],
     service_documentation: AUTH_MD_URL,
-    agent_auth: {
-      skill: AUTH_MD_URL,
-      register_uri: AUTH_MD_URL,
-      claim_uri: `${AUTH_MD_URL}#step-4--claim`,
-      identity_types_supported: ['anonymous'],
-      credential_types_supported: ['none'],
-      anonymous: {
-        credential_types_supported: ['none'],
-      },
-    },
+    agent_auth: AGENT_AUTH_METADATA,
   },
   null,
   2,
