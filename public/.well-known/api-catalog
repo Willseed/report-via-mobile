@@ -1,6 +1,6 @@
 {
-  "name": "簡訊報案工具",
-  "description": "Mobile-first static web app for composing traffic violation report SMS messages in Taiwan.",
+  "name": "台灣交通違規簡訊報案工具",
+  "description": "Free, open-source, mobile-first helper for composing Taiwan traffic-violation SMS reports.",
   "url": "https://tools.pylot.dev/.well-known/api-catalog",
   "homepage": "https://tools.pylot.dev/",
   "repository": "https://github.com/Willseed/report-via-mobile",
@@ -18,6 +18,13 @@
       "description": "Markdown representation for agents and text-first clients.",
       "url": "https://tools.pylot.dev/index.md",
       "mediaType": "text/markdown"
+    },
+    {
+      "id": "llms-txt",
+      "name": "llms.txt",
+      "description": "Concise product description and documentation links for large language models and agents.",
+      "url": "https://tools.pylot.dev/llms.txt",
+      "mediaType": "text/plain"
     },
     {
       "id": "agentic-resource-discovery",
@@ -90,6 +97,11 @@
           "href": "https://tools.pylot.dev/index.md",
           "type": "text/markdown",
           "title": "Markdown homepage"
+        },
+        {
+          "href": "https://tools.pylot.dev/llms.txt",
+          "type": "text/plain",
+          "title": "llms.txt for agents and language models"
         }
       ],
       "service-desc": [

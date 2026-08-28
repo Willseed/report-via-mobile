@@ -787,6 +787,14 @@ describe('SmsForm', () => {
       expect(errors.length).toBeGreaterThan(0);
     });
   });
+
+  it('should render coverage and FAQ copy on the homepage', () => {
+    expect(queryEl(fixture, '#coverage-title').textContent).toContain('支援地區與適用情境');
+    expect(queryEl(fixture, '#faq-title').textContent).toContain('常見問題');
+    expect(hostElement(fixture).textContent).toContain('臺北市');
+    expect(hostElement(fixture).textContent).toContain('這個網站會自動幫我報案嗎');
+    expect(hostElement(fixture).textContent).toContain('這是警政署或警察局的官方網站嗎');
+  });
 });
 
 describe('SmsForm desktop behavior', () => {

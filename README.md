@@ -1,4 +1,10 @@
-# Report via Mobile｜行動簡訊報案
+# 台灣交通違規簡訊報案工具
+
+免費、開源、mobile-first 的台灣交通違規簡訊報案輔助工具。依 GPS 或手動地址對應地區與警政受理單位，整理違規內容後交給手機簡訊 App；**最後仍由使用者確認並送出**，不會自動報案。
+
+別名：簡訊報案工具、交通違規簡訊報案工具。
+
+**立即使用：[tools.pylot.dev](https://tools.pylot.dev)** · **原始碼：[GitHub](https://github.com/Willseed/report-via-mobile)**
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/df9a6a592af94cb298384bede0f5ef7f)](https://app.codacy.com/gh/Willseed/report-via-mobile/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Willseed/report-via-mobile/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Willseed/report-via-mobile)
@@ -8,16 +14,14 @@
 ![License](https://img.shields.io/github/license/Willseed/report-via-mobile)
 ![Dependabot](https://img.shields.io/badge/dependabot-enabled-blue?logo=dependabot)
 
-這是一個為行動裝置設計的交通違規簡訊報案工具。輸入事發地址（或使用 GPS
-定位）與違規情形後，工具會找出對應的警察機關、整理簡訊內容，再交給手機內建的
-簡訊 App；**最後仍由使用者確認並送出**。
+流程：GPS／地址 → 地區 → 警政受理單位 → 違規內容 → 簡訊草稿（使用者自行送出）。
 
-**立即使用：[tools.pylot.dev](https://tools.pylot.dev)**
+本工具沒有帳號系統，也不會把報案內容存到專案自有後端。定位座標僅在使用者同意後送至 OpenStreetMap Nominatim 反查地址。本工具與內政部警政署或各級警察局無官方隸屬關係。
 
 ## 可以用它做什麼？
 
 - 透過 GPS 取得目前位置並轉換成地址，也可以直接手動輸入地址。
-- 依行政區找出承辦警察機關與簡訊號碼。
+- 依行政區找出承辦警察機關與簡訊號碼；適用臺北、新北、桃園、臺中、臺南、高雄等臺灣縣市。
 - 快速選擇違規情形，並視需要加入車牌號碼。
 - 先預覽完整報案內容，再開啟手機的簡訊 App。
 - 將網站安裝成 PWA，並在基本功能上支援離線使用。
@@ -124,6 +128,7 @@ npm start
 
 專案提供以下靜態探索資源：
 
+- `/llms.txt`：給大型語言模型與代理程式的精簡產品說明與文件連結。
 - `/index.md`：供代理程式與純文字客戶端閱讀的 Markdown 首頁。
 - `/.well-known/api-catalog`：公開資源的機器可讀目錄。
 - `/.well-known/ai-catalog.json`：供 ARD／AI Catalog registry 索引的能力清單與代表查詢。
@@ -156,6 +161,7 @@ fallback。兩份 ARD manifests 使用 `Access-Control-Allow-Origin: *`，允許
 - `rel="service-desc"` → `/.well-known/agent-skills/index.json`
 - `rel="service-desc"` → `/.well-known/mcp/server-card.json`
 - `rel="alternate service-doc"` → `/index.md`
+- `rel="alternate"` → `/llms.txt`
 - `rel="manifest"` → `/manifest.webmanifest`
 - `rel="service-doc"` → `/auth.md`
 - `rel="service-doc"` → GitHub repository documentation

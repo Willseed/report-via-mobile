@@ -33,6 +33,7 @@ test('adds discovery links and Accept vary to the HTML homepage', async (t) => {
   assert.match(linkHeader, /\/\.well-known\/agent-skills\/index\.json/);
   assert.match(linkHeader, /\/\.well-known\/mcp\/server-card\.json/);
   assert.match(linkHeader, /\/index\.md/);
+  assert.match(linkHeader, /\/llms\.txt/);
   assert.match(linkHeader, /\/auth\.md/);
   assert.equal(response.headers.get('Vary'), 'Accept');
   assert.equal(await response.text(), 'home');
@@ -210,6 +211,22 @@ test('serves ARD manifests from the edge with public CORS', async (t) => {
 
   assert.equal(await headResponse.text(), '');
   assert.equal(fetchCalls, 0);
+});
+
+test('sets content type for llms.txt', async (t) => {
+  mockFetch(
+    t,
+    async () =>
+      new Response('# 台灣交通違規簡訊報案工具', {
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+      }),
+  );
+
+  const response = await worker.fetch(new Request('https://tools.pylot.dev/llms.txt'));
+
+  assert.equal(response.headers.get('Content-Type'), 'text/plain; charset=utf-8');
 });
 
 test('serves OAuth discovery metadata from the edge', async (t) => {

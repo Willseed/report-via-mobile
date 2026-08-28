@@ -151,11 +151,25 @@ button[mat-flat-button] {
   background-color: var(--mat-sys-surface-container-low);
   font-size: 0.875rem;
 
-  h3 {
+  h3,
+  h4 {
     margin: 0;
     color: var(--mat-sys-on-surface);
-    font-size: 1rem;
     line-height: 1.4;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
+
+  h4 {
+    margin-top: 0.75rem;
+    font-size: 0.9375rem;
+  }
+
+  p {
+    margin: 0.625rem 0 0;
+    line-height: 1.6;
   }
 
   ol,
