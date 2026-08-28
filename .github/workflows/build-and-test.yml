@@ -87,7 +87,7 @@ jobs:
             dist/report-via-mobile/browser/index.md
           grep -RFq \
             --include='*.js' \
-            "📅 更新日期：${REPORT_BUILD_DATE}" \
+            "${REPORT_BUILD_DATE}" \
             dist/report-via-mobile/browser
           node scripts/validate-agent-discovery.js dist/report-via-mobile/browser
 
