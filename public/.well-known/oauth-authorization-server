@@ -1,0 +1,30 @@
+{
+  "issuer": "https://tools.pylot.dev",
+  "resource": "https://tools.pylot.dev/",
+  "authorization_servers": [
+    "https://tools.pylot.dev"
+  ],
+  "scopes_supported": [
+    "public"
+  ],
+  "bearer_methods_supported": [
+    "header"
+  ],
+  "service_documentation": "https://tools.pylot.dev/auth.md",
+  "agent_auth": {
+    "skill": "https://tools.pylot.dev/auth.md",
+    "register_uri": "https://tools.pylot.dev/auth.md",
+    "claim_uri": "https://tools.pylot.dev/auth.md#step-4--claim",
+    "identity_types_supported": [
+      "anonymous"
+    ],
+    "credential_types_supported": [
+      "none"
+    ],
+    "anonymous": {
+      "credential_types_supported": [
+        "none"
+      ]
+    }
+  }
+}

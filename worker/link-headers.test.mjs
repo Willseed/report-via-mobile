@@ -25,6 +25,7 @@ test('adds discovery links and Accept vary to the HTML homepage', async (t) => {
 
   assert.match(linkHeader, /rel="api-catalog"/);
   assert.match(linkHeader, /\/\.well-known\/oauth-protected-resource/);
+  assert.match(linkHeader, /\/\.well-known\/oauth-authorization-server/);
   assert.match(linkHeader, /\/\.well-known\/agent-skills\/index\.json/);
   assert.match(linkHeader, /\/\.well-known\/mcp\/server-card\.json/);
   assert.match(linkHeader, /\/index\.md/);
@@ -187,8 +188,35 @@ test('serves OAuth Protected Resource Metadata from the edge', async (t) => {
   assert.equal(response.headers.get('Content-Type'), 'application/json; charset=utf-8');
   assert.equal(response.headers.get('X-Agent-Ready-Worker'), 'active');
   assert.equal(metadata.resource, 'https://tools.pylot.dev/');
-  assert.deepEqual(metadata.authorization_servers, []);
-  assert.deepEqual(metadata.scopes_supported, []);
+  assert.deepEqual(metadata.authorization_servers, ['https://tools.pylot.dev']);
+  assert.deepEqual(metadata.scopes_supported, ['public']);
+  assert.deepEqual(metadata.bearer_methods_supported, ['header']);
+  assert.equal(fetchCalls, 0);
+});
+
+test('serves OAuth Authorization Server Metadata with agent registration details', async (t) => {
+  let fetchCalls = 0;
+  mockFetch(t, async () => {
+    fetchCalls += 1;
+    return new Response('unexpected');
+  });
+
+  const response = await worker.fetch(
+    new Request('https://tools.pylot.dev/.well-known/oauth-authorization-server'),
+  );
+  const metadata = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Content-Type'), 'application/json; charset=utf-8');
+  assert.equal(response.headers.get('X-Agent-Ready-Worker'), 'active');
+  assert.equal(metadata.issuer, 'https://tools.pylot.dev');
+  assert.deepEqual(metadata.authorization_servers, ['https://tools.pylot.dev']);
+  assert.equal(metadata.agent_auth.skill, 'https://tools.pylot.dev/auth.md');
+  assert.equal(metadata.agent_auth.register_uri, 'https://tools.pylot.dev/auth.md');
+  assert.equal(metadata.agent_auth.claim_uri, 'https://tools.pylot.dev/auth.md#step-4--claim');
+  assert.deepEqual(metadata.agent_auth.identity_types_supported, ['anonymous']);
+  assert.deepEqual(metadata.agent_auth.credential_types_supported, ['none']);
+  assert.deepEqual(metadata.agent_auth.anonymous.credential_types_supported, ['none']);
   assert.equal(fetchCalls, 0);
 });
 

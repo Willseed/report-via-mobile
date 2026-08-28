@@ -1,7 +1,15 @@
 {
   "resource": "https://tools.pylot.dev/",
-  "authorization_servers": [],
-  "scopes_supported": [],
+  "resource_name": "簡訊報案工具",
+  "authorization_servers": [
+    "https://tools.pylot.dev"
+  ],
+  "scopes_supported": [
+    "public"
+  ],
+  "bearer_methods_supported": [
+    "header"
+  ],
   "resource_documentation": "https://tools.pylot.dev/auth.md",
-  "notes": "Public app: no protected APIs, OAuth servers, access tokens, or agent registration."
+  "notes": "Public app: anonymous use does not require a credential or protected API access."
 }

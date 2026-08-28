@@ -22,8 +22,15 @@
     {
       "id": "oauth-protected-resource-metadata",
       "name": "OAuth Protected Resource Metadata",
-      "description": "Public metadata declaring that this static site has no OAuth authorization servers or scopes.",
+      "description": "OAuth Protected Resource Metadata for this public static site and its agent registration profile.",
       "url": "https://tools.pylot.dev/.well-known/oauth-protected-resource",
+      "mediaType": "application/json"
+    },
+    {
+      "id": "oauth-authorization-server-metadata",
+      "name": "OAuth Authorization Server Metadata",
+      "description": "Authorization metadata with an anonymous/no-credential agent_auth registration profile.",
+      "url": "https://tools.pylot.dev/.well-known/oauth-authorization-server",
       "mediaType": "application/json"
     },
     {
@@ -75,7 +82,12 @@
         {
           "href": "https://tools.pylot.dev/.well-known/oauth-protected-resource",
           "type": "application/json",
-          "title": "OAuth Protected Resource Metadata declaring no OAuth requirement"
+          "title": "OAuth Protected Resource Metadata for the public resource"
+        },
+        {
+          "href": "https://tools.pylot.dev/.well-known/oauth-authorization-server",
+          "type": "application/json",
+          "title": "OAuth Authorization Server Metadata with agent_auth registration details"
         },
         {
           "href": "https://tools.pylot.dev/manifest.webmanifest",
@@ -122,8 +134,8 @@
   "notes": [
     "This static app does not expose a server-side API.",
     "SMS sending is handed off to the user's native SMS application.",
-    "There is no login flow or authorization server metadata for this service.",
-    "OAuth Protected Resource Metadata is published with empty authorization_servers and scopes_supported arrays to make the no-auth requirement machine-readable.",
+    "There is no login flow or token issuance service for this public static app.",
+    "OAuth Protected Resource Metadata points to same-origin authorization-server metadata so agents can discover the anonymous/no-credential registration profile.",
     "GitHub Pages alone cannot emit custom response headers or perform Accept-based content negotiation.",
     "Compatible browser clients may expose client-side WebMCP tools through navigator.modelContext; these are not a hosted MCP server."
   ]

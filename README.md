@@ -126,7 +126,8 @@ npm start
 
 - `/index.md`：供代理程式與純文字客戶端閱讀的 Markdown 首頁。
 - `/.well-known/api-catalog`：公開資源的機器可讀目錄。
-- `/.well-known/oauth-protected-resource`：宣告不需要 OAuth 的 metadata。
+- `/.well-known/oauth-protected-resource`：公開資源的 OAuth Protected Resource Metadata。
+- `/.well-known/oauth-authorization-server`：包含 anonymous/no-credential `agent_auth` registration profile 的 OAuth metadata。
 - `/.well-known/agent-skills/index.json`：機器可讀的使用者能力摘要。
 - `/.well-known/mcp/server-card.json`：宣告本專案沒有託管 MCP transport 的 server card。
 - `/auth.md`：授權與資料使用限制說明。
@@ -139,12 +140,13 @@ npm start
 `worker/link-headers.mjs` 由 `wrangler.toml` 設定於 `tools.pylot.dev/*`，負責附加首頁的
 RFC 8288 `Link` 回應標頭。當首頁請求明確偏好 `Accept: text/markdown` 時，它會提供
 `/index.md`；若靜態來源沒有公開 dot-directory assets，也會直接提供
-`/.well-known/oauth-protected-resource` 作為 edge fallback。
+`/.well-known/oauth-protected-resource` 與 `/.well-known/oauth-authorization-server` 作為 edge fallback。
 
 首頁的 `Link` 回應包含：
 
 - `rel="api-catalog"` → `/.well-known/api-catalog`
 - `rel="describedby"` → `/.well-known/oauth-protected-resource`
+- `rel="service-desc"` → `/.well-known/oauth-authorization-server`
 - `rel="service-desc"` → `/.well-known/agent-skills/index.json`
 - `rel="service-desc"` → `/.well-known/mcp/server-card.json`
 - `rel="alternate service-doc"` → `/index.md`
@@ -152,9 +154,9 @@ RFC 8288 `Link` 回應標頭。當首頁請求明確偏好 `Accept: text/markdow
 - `rel="service-doc"` → `/auth.md`
 - `rel="service-doc"` → GitHub repository documentation
 
-本專案沒有 server-side API、登入流程或 authorization server，因此 OAuth Protected
-Resource Metadata 使用空的 authorization server 與 scope arrays，也不發布
-authorization-server metadata。
+本專案沒有受保護的 server-side API、登入流程或 token 發行服務。PRM 宣告公開的
+`public` scope，並指向同源的 authorization-server metadata；其中 `agent_auth` 只描述
+anonymous/no-credential 的公開使用方式，不會核發 OAuth token、API key 或其他 bearer credential。
 
 Cloudflare Worker 需透過 **Deploy Cloudflare Worker** workflow 手動部署，並在
 repository secrets 中設定 `CLOUDFLARE_ACCOUNT_ID` 與 `CLOUDFLARE_API_TOKEN`。
