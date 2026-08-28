@@ -9,13 +9,40 @@ const MARKDOWN_HOMEPAGE_PATH = '/index.md';
 const MARKDOWN_MEDIA_TYPE = 'text/markdown';
 const WEB_PAGE_MEDIA_TYPE = 'text/html';
 const OAUTH_PROTECTED_RESOURCE_PATH = '/.well-known/oauth-protected-resource';
+const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
+const AUTH_MD_URL = `${PUBLIC_ORIGIN}/auth.md`;
+const OAUTH_RESOURCE_METADATA_FIELDS = Object.freeze({
+  resource: `${PUBLIC_ORIGIN}/`,
+  authorization_servers: [PUBLIC_ORIGIN],
+  scopes_supported: ['public'],
+  bearer_methods_supported: ['header'],
+});
+const AGENT_AUTH_METADATA = Object.freeze({
+  skill: AUTH_MD_URL,
+  register_uri: AUTH_MD_URL,
+  claim_uri: `${AUTH_MD_URL}#step-4--claim`,
+  identity_types_supported: ['anonymous'],
+  credential_types_supported: ['none'],
+  anonymous: {
+    credential_types_supported: ['none'],
+  },
+});
 const OAUTH_PROTECTED_RESOURCE_METADATA = `${JSON.stringify(
   {
-    resource: `${PUBLIC_ORIGIN}/`,
-    authorization_servers: [],
-    scopes_supported: [],
-    resource_documentation: `${PUBLIC_ORIGIN}/auth.md`,
-    notes: 'Public app: no protected APIs, OAuth servers, access tokens, or agent registration.',
+    ...OAUTH_RESOURCE_METADATA_FIELDS,
+    resource_name: '簡訊報案工具',
+    resource_documentation: AUTH_MD_URL,
+    notes: 'Public app: anonymous use does not require a credential or protected API access.',
+  },
+  null,
+  2,
+)}\n`;
+const OAUTH_AUTHORIZATION_SERVER_METADATA = `${JSON.stringify(
+  {
+    ...OAUTH_RESOURCE_METADATA_FIELDS,
+    issuer: PUBLIC_ORIGIN,
+    service_documentation: AUTH_MD_URL,
+    agent_auth: AGENT_AUTH_METADATA,
   },
   null,
   2,
@@ -48,6 +75,11 @@ const DISCOVERY_LINKS = [
   {
     target: '/.well-known/oauth-protected-resource',
     rel: 'describedby',
+    type: 'application/json',
+  },
+  {
+    target: '/.well-known/oauth-authorization-server',
+    rel: 'service-desc',
     type: 'application/json',
   },
   {
@@ -94,6 +126,7 @@ const MARKDOWN_DISCOVERY_LINKS = [
 const STATIC_CONTENT_TYPES = new Map([
   ['/.well-known/api-catalog', 'application/linkset+json; charset=utf-8'],
   ['/.well-known/oauth-protected-resource', 'application/json; charset=utf-8'],
+  ['/.well-known/oauth-authorization-server', 'application/json; charset=utf-8'],
   ['/.well-known/agent-skills/index.json', 'application/json; charset=utf-8'],
   ['/.well-known/mcp/server-card.json', 'application/json; charset=utf-8'],
   ['/auth.md', 'text/markdown; charset=utf-8'],
@@ -105,6 +138,13 @@ const STATIC_DOCUMENTS = new Map([
     OAUTH_PROTECTED_RESOURCE_PATH,
     {
       body: OAUTH_PROTECTED_RESOURCE_METADATA,
+      contentType: 'application/json; charset=utf-8',
+    },
+  ],
+  [
+    OAUTH_AUTHORIZATION_SERVER_PATH,
+    {
+      body: OAUTH_AUTHORIZATION_SERVER_METADATA,
       contentType: 'application/json; charset=utf-8',
     },
   ],

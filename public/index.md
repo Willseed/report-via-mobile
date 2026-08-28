@@ -16,7 +16,8 @@
 ## Agent discovery
 
 - API catalog: `/.well-known/api-catalog`
-- OAuth Protected Resource Metadata: `/.well-known/oauth-protected-resource`（宣告此公開靜態站不需要 OAuth）
+- OAuth Protected Resource Metadata: `/.well-known/oauth-protected-resource`
+- OAuth Authorization Server Metadata: `/.well-known/oauth-authorization-server`（包含 `agent_auth` registration profile）
 - Agent skills index: `/.well-known/agent-skills/index.json`
 - MCP server card: `/.well-known/mcp/server-card.json`（說明沒有託管 MCP transport）
 - Authorization and data-use service document: `/auth.md`
@@ -30,4 +31,5 @@
 - Markdown 版本固定提供於 `/index.md`
 - Cloudflare Worker 部署後，首頁請求若明確偏好 `Accept: text/markdown`，會回傳本檔案。
 - GitHub Pages 靜態託管本身無法設定自訂 Link response headers，也無法依 `Accept` 標頭做內容協商。
-- 本網站沒有伺服器端 API、登入流程或授權伺服器，因此不提供 authorization-server metadata。
+- 本網站沒有受保護的伺服器端 API、登入流程或 token 發行服務；authorization-server metadata
+  僅用於公開 anonymous/no-credential 的 agent registration discovery。
