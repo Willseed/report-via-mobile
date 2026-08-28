@@ -109,6 +109,23 @@
         }
       </ul>
     </section>
+
+    <section class="content-section" aria-labelledby="coverage-title">
+      <h3 id="coverage-title">{{ i18n.smsForm.onpageContent.coverageTitle }}</h3>
+      @for (paragraph of i18n.smsForm.onpageContent.coverage; track paragraph) {
+        <p>{{ paragraph }}</p>
+      }
+    </section>
+
+    <section class="content-section" aria-labelledby="faq-title">
+      <h3 id="faq-title">{{ i18n.smsForm.onpageContent.faqTitle }}</h3>
+      @for (item of i18n.smsForm.onpageContent.faq; track item.question) {
+        <article class="faq-item">
+          <h4>{{ item.question }}</h4>
+          <p>{{ item.answer }}</p>
+        </article>
+      }
+    </section>
   </section>
 
   @defer (on viewport) {

@@ -1,6 +1,6 @@
 {
   "resource": "https://tools.pylot.dev/",
-  "resource_name": "簡訊報案工具",
+  "resource_name": "台灣交通違規簡訊報案工具",
   "authorization_servers": [
     "https://tools.pylot.dev"
   ],

@@ -28,6 +28,13 @@ test.describe('頁面載入', () => {
     await page.goto('/');
     await expect(page.locator('.notice-banner')).toContainText('報案的受理與否');
   });
+
+  test('應顯示支援地區與常見問題', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('#coverage-title')).toHaveText('支援地區與適用情境');
+    await expect(page.locator('#faq-title')).toHaveText('常見問題');
+    await expect(page.getByRole('heading', { name: '這個網站會自動幫我報案嗎？' })).toBeVisible();
+  });
 });
 
 test.describe('桌面裝置警告', () => {

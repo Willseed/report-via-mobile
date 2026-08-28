@@ -1,14 +1,14 @@
 {
   "specVersion": "1.0",
   "host": {
-    "displayName": "簡訊報案工具",
+    "displayName": "台灣交通違規簡訊報案工具",
     "identifier": "https://tools.pylot.dev/",
     "documentationUrl": "https://tools.pylot.dev/index.md"
   },
   "entries": [
     {
       "identifier": "urn:air:tools.pylot.dev:skill:report-via-mobile",
-      "displayName": "簡訊報案工具 Agent Skill",
+      "displayName": "台灣交通違規簡訊報案工具 Agent Skill",
       "type": "text/markdown; profile=\"urn:air:agent-skills\"",
       "url": "https://tools.pylot.dev/.well-known/agent-skills/report-via-mobile/SKILL.md",
       "description": "引導代理操作台灣交通違規簡訊報案 PWA，並描述可用的瀏覽器端 WebMCP 工具與使用者確認限制。",
@@ -32,7 +32,7 @@
     },
     {
       "identifier": "urn:air:tools.pylot.dev:mcp:server-card",
-      "displayName": "簡訊報案工具 MCP Server Card",
+      "displayName": "台灣交通違規簡訊報案工具 MCP Server Card",
       "type": "application/mcp-server-card+json",
       "url": "https://tools.pylot.dev/.well-known/mcp/server-card.json",
       "description": "描述本站的 MCP 與 WebMCP 能力邊界，並明確宣告目前沒有託管的遠端 MCP transport。",

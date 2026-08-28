@@ -12,6 +12,7 @@
           "/auth.md",
           "/index.html",
           "/index.md",
+          "/llms.txt",
           "/manifest.webmanifest",
           "/*.css",
           "/*.js"

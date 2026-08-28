@@ -41,7 +41,7 @@ const AGENT_AUTH_METADATA = Object.freeze({
 const OAUTH_PROTECTED_RESOURCE_METADATA = `${JSON.stringify(
   {
     ...OAUTH_RESOURCE_METADATA_FIELDS,
-    resource_name: '簡訊報案工具',
+    resource_name: '台灣交通違規簡訊報案工具',
     resource_documentation: AUTH_MD_URL,
     notes: 'Public app: anonymous use does not require a credential or protected API access.',
   },
@@ -119,6 +119,11 @@ const DISCOVERY_LINKS = [
     type: MARKDOWN_MEDIA_TYPE,
   },
   {
+    target: '/llms.txt',
+    rel: 'alternate',
+    type: 'text/plain',
+  },
+  {
     target: '/manifest.webmanifest',
     rel: 'manifest',
     type: 'application/manifest+json',
@@ -153,6 +158,7 @@ const STATIC_CONTENT_TYPES = new Map([
   ['/.well-known/agent-skills/index.json', 'application/json; charset=utf-8'],
   ['/.well-known/mcp/server-card.json', 'application/json; charset=utf-8'],
   ['/auth.md', 'text/markdown; charset=utf-8'],
+  ['/llms.txt', 'text/plain; charset=utf-8'],
   [MARKDOWN_HOMEPAGE_PATH, 'text/markdown; charset=utf-8'],
 ]);
 

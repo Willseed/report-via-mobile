@@ -1,20 +1,23 @@
-# 簡訊報案工具
+# 台灣交通違規簡訊報案工具
 
 📅 更新日期：2026-08-28
 
-快速整理交通違規簡訊報案內容，依目前地址或 GPS 反查結果帶出對應的警政受理單位，
-協助使用者在手機上檢查資訊後開啟原生簡訊 App 送出。
+免費、開源、mobile-first 的台灣交通違規簡訊報案輔助工具。依 GPS 或手動地址對應地區與警政受理單位，整理違規內容後交給手機簡訊 App；最後仍由使用者確認並送出，不會自動報案。
+
+別名：簡訊報案工具、交通違規簡訊報案工具。
 
 ## 主要功能
 
-- 使用瀏覽器定位與 OpenStreetMap Nominatim 反查地址。
-- 依臺灣縣市、行政區對應警察局或交通違規簡訊受理窗口。
+- 使用瀏覽器定位與 OpenStreetMap Nominatim 反查地址；也可只手動輸入地址。
+- 依臺灣縣市、行政區對應警察局或交通違規簡訊受理窗口，包含臺北、新北、桃園、臺中、臺南、高雄等地區。
 - 選擇違規類型、輸入車牌與地點後產生可編輯的簡訊草稿。
 - 保留使用者確認流程；此網站不會代替使用者自動送出簡訊。
+- 本站沒有帳號系統或專案自有後端；與內政部警政署或各級警察局無官方隸屬關係。
 - PWA App Shell 可離線開啟，定位與反查地址仍需可用的瀏覽器與網路能力。
 
 ## Agent discovery
 
+- llms.txt: `/llms.txt`
 - API catalog: `/.well-known/api-catalog`
 - ARD capability manifest: `/.well-known/ai-catalog.json`
 - Current ARD manifest alias: `/.well-known/ard.json`

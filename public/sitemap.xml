@@ -3,4 +3,10 @@
   <url>
     <loc>https://tools.pylot.dev/</loc>
   </url>
+  <url>
+    <loc>https://tools.pylot.dev/index.md</loc>
+  </url>
+  <url>
+    <loc>https://tools.pylot.dev/llms.txt</loc>
+  </url>
 </urlset>

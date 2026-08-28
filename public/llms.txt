@@ -1,0 +1,16 @@
+# 台灣交通違規簡訊報案工具
+
+> 免費、開源、mobile-first 的台灣交通違規簡訊報案輔助工具。依 GPS 或手動地址對應地區與警政受理單位，整理違規內容後交給手機簡訊 App；最後仍由使用者確認並送出，不會自動報案。
+
+本站沒有帳號系統或專案自有後端。定位座標僅在使用者同意後送至 OpenStreetMap Nominatim 反查地址。本工具與內政部警政署或各級警察局無官方隸屬關係。
+
+別名：簡訊報案工具、交通違規簡訊報案工具。
+
+## 文件
+
+- [首頁](https://tools.pylot.dev/)：瀏覽器介面，適用臺北、新北、桃園、臺中、臺南、高雄等臺灣縣市。
+- [Markdown 首頁](https://tools.pylot.dev/index.md)：給代理程式與純文字客戶端的說明。
+- [Agent Skills](https://tools.pylot.dev/.well-known/agent-skills/index.json)：機器可讀的使用者能力摘要。
+- [API Catalog](https://tools.pylot.dev/.well-known/api-catalog)：公開資源目錄。
+- [MCP Server Card](https://tools.pylot.dev/.well-known/mcp/server-card.json)：宣告沒有託管 MCP transport。
+- [GitHub](https://github.com/Willseed/report-via-mobile)：原始碼與專案文件。
