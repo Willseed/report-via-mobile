@@ -1,86 +1,93 @@
 {
   "name": "台灣交通違規簡訊報案工具",
-  "description": "Free, open-source, mobile-first helper for composing Taiwan traffic-violation SMS reports.",
+  "description": "免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。",
   "url": "https://tools.pylot.dev/.well-known/api-catalog",
   "homepage": "https://tools.pylot.dev/",
   "repository": "https://github.com/Willseed/report-via-mobile",
   "interfaces": [
     {
-      "id": "static-web-homepage",
-      "name": "Static web homepage",
-      "description": "Browser UI for GPS-assisted address lookup, police station matching, SMS preview, and user-confirmed SMS handoff.",
+      "id": "html",
+      "name": "HTML 首頁",
+      "description": "台灣交通違規簡訊報案工具的使用者表單與 PWA 介面。",
       "url": "https://tools.pylot.dev/",
       "mediaType": "text/html"
     },
     {
-      "id": "markdown-homepage",
-      "name": "Markdown homepage",
-      "description": "Markdown representation for agents and text-first clients.",
+      "id": "index.md",
+      "name": "Markdown 首頁",
+      "description": "與 HTML 首頁同一套產品文案，供 Agent 與純文字客戶端閱讀。",
       "url": "https://tools.pylot.dev/index.md",
       "mediaType": "text/markdown"
     },
     {
-      "id": "llms-txt",
+      "id": "llms.txt",
       "name": "llms.txt",
-      "description": "Concise product description and documentation links for large language models and agents.",
+      "description": "給語言模型與 Agent 的精簡產品、工具與限制說明。",
       "url": "https://tools.pylot.dev/llms.txt",
       "mediaType": "text/plain"
     },
     {
-      "id": "agentic-resource-discovery",
-      "name": "Agentic Resource Discovery manifest",
-      "description": "Machine-readable capability entries with representative queries for semantic discovery.",
-      "url": "https://tools.pylot.dev/.well-known/ai-catalog.json",
-      "mediaType": "application/json"
+      "id": "skill",
+      "name": "report-via-mobile Agent Skill",
+      "description": "瀏覽器 WebMCP 五個工具的操作流程與安全限制。",
+      "url": "https://tools.pylot.dev/.well-known/agent-skills/report-via-mobile/SKILL.md",
+      "mediaType": "text/markdown"
     },
     {
-      "id": "ard-current",
-      "name": "ARD manifest",
-      "description": "Current ARD discovery alias containing the same capability entries.",
-      "url": "https://tools.pylot.dev/.well-known/ard.json",
-      "mediaType": "application/json"
-    },
-    {
-      "id": "oauth-protected-resource-metadata",
-      "name": "OAuth Protected Resource Metadata",
-      "description": "OAuth Protected Resource Metadata for this public static site and its agent registration profile.",
-      "url": "https://tools.pylot.dev/.well-known/oauth-protected-resource",
-      "mediaType": "application/json"
-    },
-    {
-      "id": "oauth-authorization-server-metadata",
-      "name": "OAuth Authorization Server Metadata",
-      "description": "Authorization metadata with an anonymous/no-credential agent_auth registration profile.",
-      "url": "https://tools.pylot.dev/.well-known/oauth-authorization-server",
-      "mediaType": "application/json"
-    },
-    {
-      "id": "agent-skills",
-      "name": "Agent skills index",
-      "description": "Machine-readable summary of supported user-facing capabilities and limitations.",
-      "url": "https://tools.pylot.dev/.well-known/agent-skills/index.json",
-      "mediaType": "application/json"
-    },
-    {
-      "id": "mcp-server-card",
-      "name": "MCP server card",
-      "description": "Discovery document that explicitly states this static app has no hosted MCP transport.",
+      "id": "mcp-card",
+      "name": "MCP server-card",
+      "description": "宣告沒有託管 MCP transport，工具只在瀏覽器 WebMCP 中提供。",
       "url": "https://tools.pylot.dev/.well-known/mcp/server-card.json",
       "mediaType": "application/json"
     },
     {
-      "id": "web-app-manifest",
-      "name": "Web app manifest",
-      "description": "PWA installation metadata.",
-      "url": "https://tools.pylot.dev/manifest.webmanifest",
-      "mediaType": "application/manifest+json"
+      "id": "ai-catalog",
+      "name": "AI catalog",
+      "description": "包含瀏覽器 WebMCP 五個工具的機器可讀發現清單。",
+      "url": "https://tools.pylot.dev/.well-known/ai-catalog.json",
+      "mediaType": "application/json"
     },
     {
-      "id": "authorization-and-data-use",
-      "name": "Authorization and data-use service document",
-      "description": "Markdown document explaining that this static app has no OAuth/OIDC authorization server or API token flow.",
+      "id": "ard",
+      "name": "ARD manifest",
+      "description": "AI catalog 的目前別名。",
+      "url": "https://tools.pylot.dev/.well-known/ard.json",
+      "mediaType": "application/json"
+    },
+    {
+      "id": "agent-skills",
+      "name": "Agent Skills index",
+      "description": "Agent Skill 與 MCP server-card 的公開索引。",
+      "url": "https://tools.pylot.dev/.well-known/agent-skills/index.json",
+      "mediaType": "application/json"
+    },
+    {
+      "id": "oauth-protected-resource",
+      "name": "OAuth Protected Resource Metadata",
+      "description": "公開資源的 anonymous/no-credential 探索資訊。",
+      "url": "https://tools.pylot.dev/.well-known/oauth-protected-resource",
+      "mediaType": "application/json"
+    },
+    {
+      "id": "oauth-authorization-server",
+      "name": "OAuth Authorization Server Metadata",
+      "description": "公開 anonymous/no-credential registration profile；不核發憑證。",
+      "url": "https://tools.pylot.dev/.well-known/oauth-authorization-server",
+      "mediaType": "application/json"
+    },
+    {
+      "id": "auth.md",
+      "name": "授權與資料使用",
+      "description": "說明公開使用、資料流與沒有遠端代寄簡訊服務。",
       "url": "https://tools.pylot.dev/auth.md",
       "mediaType": "text/markdown"
+    },
+    {
+      "id": "web-app-manifest",
+      "name": "Web app manifest",
+      "description": "PWA 安裝 metadata。",
+      "url": "https://tools.pylot.dev/manifest.webmanifest",
+      "mediaType": "application/manifest+json"
     }
   ],
   "linkset": [
@@ -96,84 +103,63 @@
         {
           "href": "https://tools.pylot.dev/index.md",
           "type": "text/markdown",
-          "title": "Markdown homepage"
+          "title": "Markdown 首頁"
         },
         {
           "href": "https://tools.pylot.dev/llms.txt",
           "type": "text/plain",
-          "title": "llms.txt for agents and language models"
+          "title": "llms.txt"
         }
       ],
       "service-desc": [
         {
           "href": "https://tools.pylot.dev/.well-known/ai-catalog.json",
           "type": "application/json",
-          "title": "Agentic Resource Discovery capability manifest"
+          "title": "AI catalog"
         },
         {
           "href": "https://tools.pylot.dev/.well-known/ard.json",
           "type": "application/json",
-          "title": "Current ARD manifest alias"
-        },
-        {
-          "href": "https://tools.pylot.dev/.well-known/oauth-protected-resource",
-          "type": "application/json",
-          "title": "OAuth Protected Resource Metadata for the public resource"
-        },
-        {
-          "href": "https://tools.pylot.dev/.well-known/oauth-authorization-server",
-          "type": "application/json",
-          "title": "OAuth Authorization Server Metadata with agent_auth registration details"
+          "title": "ARD manifest"
         },
         {
           "href": "https://tools.pylot.dev/manifest.webmanifest",
           "type": "application/manifest+json",
-          "title": "PWA manifest for the public traffic-reporting SMS app"
+          "title": "Web app manifest"
+        },
+        {
+          "href": "https://tools.pylot.dev/.well-known/agent-skills/report-via-mobile/SKILL.md",
+          "type": "text/markdown",
+          "title": "Agent Skill"
         },
         {
           "href": "https://tools.pylot.dev/.well-known/mcp/server-card.json",
           "type": "application/json",
-          "title": "MCP server card declaring no hosted MCP transport"
+          "title": "MCP server-card"
         },
         {
           "href": "https://tools.pylot.dev/.well-known/agent-skills/index.json",
           "type": "application/json",
-          "title": "Agent Skills Discovery index"
+          "title": "Agent Skills index"
         }
       ],
       "service-doc": [
         {
           "href": "https://tools.pylot.dev/auth.md",
           "type": "text/markdown",
-          "title": "Agent authentication and data-use instructions"
+          "title": "授權與資料使用"
         },
         {
           "href": "https://github.com/Willseed/report-via-mobile",
           "type": "text/html",
-          "title": "Source repository and service documentation"
-        },
-        {
-          "href": "https://tools.pylot.dev/sitemap.xml",
-          "type": "application/xml",
-          "title": "Public sitemap"
-        }
-      ],
-      "status": [
-        {
-          "href": "https://www.githubstatus.com/",
-          "type": "text/html",
-          "title": "GitHub Pages platform status"
+          "title": "原始碼"
         }
       ]
     }
   ],
   "notes": [
-    "This static app does not expose a server-side API.",
-    "SMS sending is handed off to the user's native SMS application.",
-    "There is no login flow or token issuance service for this public static app.",
-    "OAuth Protected Resource Metadata points to same-origin authorization-server metadata so agents can discover the anonymous/no-credential registration profile.",
-    "GitHub Pages alone cannot emit custom response headers or perform Accept-based content negotiation.",
-    "Compatible browser clients may expose client-side WebMCP tools through navigator.modelContext; these are not a hosted MCP server.",
-    "ARD manifests describe the Agent Skill, its WebMCP capabilities, and MCP discovery metadata with representative queries."
+    "本站是靜態 PWA，沒有自有後端、受保護 API 或遠端代寄簡訊服務。",
+    "WebMCP 工具只在使用者裝置、本站已開啟的瀏覽器頁面中提供。",
+    "遠端 Agent 不能送出簡訊；open_sms_composer 需要使用者手勢或頁內明確確認。"
   ]
 }

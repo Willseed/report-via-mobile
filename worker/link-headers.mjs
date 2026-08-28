@@ -1,10 +1,11 @@
 import aiCatalog from '../public/.well-known/ai-catalog.json' with { type: 'json' };
+import siteCopy from '../site-copy.json' with { type: 'json' };
 
 const LINK_TARGET_START = String.fromCodePoint(60);
 const LINK_TARGET_END = String.fromCodePoint(62);
 const BACKSLASH = String.fromCodePoint(92);
 
-const PUBLIC_ORIGIN = 'https://tools.pylot.dev';
+const PUBLIC_ORIGIN = siteCopy.url.replace(/\/$/, '');
 const PUBLIC_HOSTNAME = new URL(PUBLIC_ORIGIN).hostname;
 const HOMEPAGE_PATHS = new Set(['/', '/index.html']);
 const MARKDOWN_HOMEPAGE_PATH = '/index.md';
@@ -12,6 +13,7 @@ const MARKDOWN_MEDIA_TYPE = 'text/markdown';
 const WEB_PAGE_MEDIA_TYPE = 'text/html';
 const AI_CATALOG_PATH = '/.well-known/ai-catalog.json';
 const ARD_MANIFEST_PATH = '/.well-known/ard.json';
+const SKILL_PATH = '/.well-known/agent-skills/report-via-mobile/SKILL.md';
 const ARD_MANIFEST_METADATA = `${JSON.stringify(aiCatalog, null, 2)}\n`;
 const ARD_DISCOVERY_DOCUMENT = Object.freeze({
   body: ARD_MANIFEST_METADATA,
@@ -31,7 +33,7 @@ const OAUTH_RESOURCE_METADATA_FIELDS = Object.freeze({
 const AGENT_AUTH_METADATA = Object.freeze({
   skill: AUTH_MD_URL,
   register_uri: AUTH_MD_URL,
-  claim_uri: `${AUTH_MD_URL}#step-4--claim`,
+  claim_uri: `${AUTH_MD_URL}#anonymous--no-credential`,
   identity_types_supported: ['anonymous'],
   credential_types_supported: ['none'],
   anonymous: {
@@ -41,9 +43,9 @@ const AGENT_AUTH_METADATA = Object.freeze({
 const OAUTH_PROTECTED_RESOURCE_METADATA = `${JSON.stringify(
   {
     ...OAUTH_RESOURCE_METADATA_FIELDS,
-    resource_name: '台灣交通違規簡訊報案工具',
+    resource_name: siteCopy.name,
     resource_documentation: AUTH_MD_URL,
-    notes: 'Public app: anonymous use does not require a credential or protected API access.',
+    notes: `公開靜態 PWA：anonymous 使用不需要 credential，也沒有受保護 API。${siteCopy.agentBoundary}`,
   },
   null,
   2,
@@ -58,7 +60,7 @@ const OAUTH_AUTHORIZATION_SERVER_METADATA = `${JSON.stringify(
   null,
   2,
 )}\n`;
-const ALLOWED_METHODS = new Set(['GET', 'HEAD']);
+const ALLOWED_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const SAFE_FORWARD_REQUEST_HEADERS = Object.freeze([
   'accept',
   'accept-encoding',
@@ -149,6 +151,8 @@ const MARKDOWN_DISCOVERY_LINKS = [
   ...DISCOVERY_LINKS,
 ];
 
+const CORS_DOCUMENT_PATHS = new Set(['/auth.md', '/index.md', '/llms.txt']);
+
 const STATIC_CONTENT_TYPES = new Map([
   [AI_CATALOG_PATH, 'application/json; charset=utf-8'],
   [ARD_MANIFEST_PATH, 'application/json; charset=utf-8'],
@@ -156,6 +160,7 @@ const STATIC_CONTENT_TYPES = new Map([
   ['/.well-known/oauth-protected-resource', 'application/json; charset=utf-8'],
   ['/.well-known/oauth-authorization-server', 'application/json; charset=utf-8'],
   ['/.well-known/agent-skills/index.json', 'application/json; charset=utf-8'],
+  [SKILL_PATH, 'text/markdown; charset=utf-8'],
   ['/.well-known/mcp/server-card.json', 'application/json; charset=utf-8'],
   ['/auth.md', 'text/markdown; charset=utf-8'],
   ['/llms.txt', 'text/plain; charset=utf-8'],
@@ -170,6 +175,7 @@ const STATIC_DOCUMENTS = new Map([
     {
       body: OAUTH_PROTECTED_RESOURCE_METADATA,
       contentType: 'application/json; charset=utf-8',
+      allowCrossOrigin: true,
     },
   ],
   [
@@ -177,6 +183,7 @@ const STATIC_DOCUMENTS = new Map([
     {
       body: OAUTH_AUTHORIZATION_SERVER_METADATA,
       contentType: 'application/json; charset=utf-8',
+      allowCrossOrigin: true,
     },
   ],
 ]);
@@ -191,6 +198,12 @@ export default {
 
     if (!isSafeMethod(request.method)) {
       return methodNotAllowedResponse();
+    }
+
+    if (request.method.toUpperCase() === 'OPTIONS') {
+      return isCorsDocumentPath(url.pathname)
+        ? corsPreflightResponse()
+        : methodNotAllowedResponse();
     }
 
     const staticDocumentResponse = serveStaticDocument(request, url.pathname);
@@ -214,6 +227,10 @@ export default {
 
     if (contentType) {
       headers.set('Content-Type', contentType);
+    }
+
+    if (isCorsDocumentPath(url.pathname)) {
+      setCorsHeaders(headers);
     }
 
     if (HOMEPAGE_PATHS.has(url.pathname)) {
@@ -277,7 +294,15 @@ function hasUnsafePathSegment(pathname) {
 }
 
 function shouldDecorateResponse(pathname) {
-  return HOMEPAGE_PATHS.has(pathname) || STATIC_CONTENT_TYPES.has(pathname);
+  return (
+    HOMEPAGE_PATHS.has(pathname) ||
+    STATIC_CONTENT_TYPES.has(pathname) ||
+    isCorsDocumentPath(pathname)
+  );
+}
+
+function isCorsDocumentPath(pathname) {
+  return CORS_DOCUMENT_PATHS.has(pathname) || pathname.startsWith('/.well-known/');
 }
 
 function shouldServeMarkdownHomepage(request, pathname) {
@@ -312,9 +337,7 @@ function serveStaticDocument(request, pathname) {
   });
 
   if (document.allowCrossOrigin) {
-    headers.set('Access-Control-Allow-Headers', 'Content-Type');
-    headers.set('Access-Control-Allow-Methods', 'GET, HEAD');
-    headers.set('Access-Control-Allow-Origin', '*');
+    setCorsHeaders(headers);
   }
 
   return new Response(request.method.toUpperCase() === 'HEAD' ? null : document.body, {
@@ -335,6 +358,7 @@ async function fetchMarkdownHomepage(method) {
 
   headers.set('Content-Type', 'text/markdown; charset=utf-8');
   headers.set('Content-Location', MARKDOWN_HOMEPAGE_PATH);
+  setCorsHeaders(headers);
   setLinkHeader(headers, MARKDOWN_DISCOVERY_LINKS);
   appendVaryHeader(headers, 'Accept');
 
@@ -384,11 +408,29 @@ function notFoundResponse() {
   });
 }
 
+function corsPreflightResponse() {
+  const headers = new Headers({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Length': '0',
+  });
+  headers.delete('Access-Control-Allow-Credentials');
+  return new Response(null, { status: 204, headers });
+}
+
+function setCorsHeaders(headers) {
+  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  headers.delete('Access-Control-Allow-Credentials');
+}
+
 function methodNotAllowedResponse() {
   return new Response('Method not allowed', {
     status: 405,
     headers: new Headers({
-      Allow: 'GET, HEAD',
+      Allow: 'GET, HEAD, OPTIONS',
       'Content-Type': 'text/plain; charset=utf-8',
     }),
   });

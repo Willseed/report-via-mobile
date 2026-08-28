@@ -31,7 +31,7 @@ export class MessageComposerService {
     const violation = this.formService.violation();
     const station = this.formService.station();
     if (!address || !violation || !station) return '';
-    const licensePlate = this.formService.licensePlate();
-    return composeSmsMessage({ address, violation, licensePlate });
+    const licensePlates = this.formService.licensePlates();
+    return composeSmsMessage({ address, violation, licensePlates });
   });
 }

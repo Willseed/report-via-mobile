@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>台灣交通違規簡訊報案工具</title>
-  <meta name="description" content="免費、開源、mobile-first 的台灣交通違規簡訊報案輔助工具。可用 GPS 目前位置或手動輸入地址，對應地區與警政簡訊受理單位，整理違規事實後交給手機簡訊 App，由使用者自行確認並送出。">
+  <meta name="description" content="免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。">
   <base href="/">
   <link rel="canonical" href="https://tools.pylot.dev/">
   <link rel="alternate service-doc" type="text/markdown" href="/index.md">
@@ -19,7 +19,7 @@
   <meta property="og:locale" content="zh_TW">
   <meta property="og:type" content="website">
   <meta property="og:title" content="台灣交通違規簡訊報案工具">
-  <meta property="og:description" content="免費、開源、mobile-first 的台灣交通違規簡訊報案輔助工具。可用 GPS 目前位置或手動輸入地址，對應地區與警政簡訊受理單位，整理違規事實後交給手機簡訊 App，由使用者自行確認並送出。">
+  <meta property="og:description" content="免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。">
   <meta property="og:url" content="https://tools.pylot.dev/">
   <meta property="og:image" content="https://tools.pylot.dev/og-image.png">
   <meta property="og:image:type" content="image/png">
@@ -98,108 +98,117 @@
     }
   </style>
   <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
     {
-      "@context": "https://schema.org",
-      "@graph": [
+      "@type": "WebApplication",
+      "@id": "https://tools.pylot.dev/#webapp",
+      "name": "台灣交通違規簡訊報案工具",
+      "alternateName": [
+        "簡訊報案工具",
+        "交通違規簡訊報案工具"
+      ],
+      "url": "https://tools.pylot.dev/",
+      "image": "https://tools.pylot.dev/og-image.png",
+      "description": "免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。",
+      "applicationCategory": "UtilityApplication",
+      "operatingSystem": "Android, iOS, Web",
+      "browserRequirements": "需要 JavaScript 與現代行動瀏覽器。",
+      "featureList": [
+        "查受理窗口",
+        "填表",
+        "產生草稿",
+        "預覽",
+        "打開系統簡訊 App"
+      ],
+      "softwareVersion": "1.0.0",
+      "isAccessibleForFree": true,
+      "inLanguage": "zh-TW",
+      "sameAs": "https://github.com/Willseed/report-via-mobile",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "TWD"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://tools.pylot.dev/#faq",
+      "url": "https://tools.pylot.dev/",
+      "inLanguage": "zh-TW",
+      "isPartOf": {
+        "@id": "https://tools.pylot.dev/#webapp"
+      },
+      "mainEntity": [
         {
-          "@type": "WebApplication",
-          "@id": "https://tools.pylot.dev/#webapp",
-          "name": "台灣交通違規簡訊報案工具",
-          "alternateName": [
-            "簡訊報案工具",
-            "交通違規簡訊報案工具"
-          ],
-          "url": "https://tools.pylot.dev/",
-          "image": "https://tools.pylot.dev/og-image.png",
-          "description": "免費、開源、mobile-first 的台灣交通違規簡訊報案輔助工具。可用 GPS 目前位置或手動輸入地址，對應地區與警政簡訊受理單位，整理違規事實後交給手機簡訊 App，由使用者自行確認並送出。",
-          "applicationCategory": "UtilityApplication",
-          "operatingSystem": "Android, iOS, Web",
-          "browserRequirements": "需要 JavaScript 與現代行動瀏覽器。",
-          "featureList": [
-            "使用手機 GPS 目前位置或手動輸入地址",
-            "依地址對應地區與警政簡訊受理單位",
-            "整理違規事實、車牌號碼與地點",
-            "產生手機簡訊 App 可使用的報案內容，由使用者自行送出"
-          ],
-          "softwareVersion": "1.0.0",
-          "isAccessibleForFree": true,
-          "inLanguage": "zh-TW",
-          "sameAs": "https://github.com/Willseed/report-via-mobile",
-          "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "TWD"
+          "@type": "Question",
+          "name": "這個工具可以做什麼？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "台灣交通違規簡訊報案工具可以查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。"
           }
         },
         {
-          "@type": "FAQPage",
-          "@id": "https://tools.pylot.dev/#faq",
-          "url": "https://tools.pylot.dev/",
-          "inLanguage": "zh-TW",
-          "isPartOf": {
-            "@id": "https://tools.pylot.dev/#webapp"
-          },
-          "mainEntity": [
-            {
-              "@type": "Question",
-              "name": "如何用簡訊報案交通違規？",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "在台灣交通違規簡訊報案工具輸入事發地址或使用 GPS 定位，確認行政區與警政受理單位後，選擇違規事實並預覽簡訊。確認無誤再開啟手機簡訊 App，由你自行送出。"
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "可以用來檢舉違規停車嗎？",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "可以。紅線、黃線、人行道或行人穿越道違規停車、臨停，以及佔用身心障礙者專用停車位等常見交通違規，只要能提供明確地點與事實，都適合用簡訊整理報案內容。"
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "一定要用 GPS 嗎？可以只輸入地址嗎？",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "不必一定使用 GPS。你可以允許瀏覽器定位，也可以直接手動輸入地址並選擇報案行政區。不想授權定位時，建議改走手動輸入。"
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "警政受理單位是怎麼對應的？",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "工具會依地址所在縣市或你選擇的報案行政區，帶入對應警察局的簡訊受理窗口。送出前請再核對收件單位與號碼是否正確。"
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "這個網站會自動幫我報案嗎？",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "不會。本工具只產生簡訊草稿並交給手機簡訊 App，最後仍由你確認收件人與內容後才送出，不會在背景自動報案。"
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "使用時會把個資存到這個網站嗎？",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "這是靜態網站，沒有帳號系統或專案自有後端。手動輸入的內容在瀏覽器組合後交給簡訊 App。若使用 GPS，座標會在你同意後送至 OpenStreetMap Nominatim 反查地址。"
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "這是警政署或警察局的官方網站嗎？",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "不是。本工具與內政部警政署或各級警察局無官方隸屬關係。案件是否受理、舉發與裁處，仍由轄區警察機關依法判斷。"
-              }
-            }
-          ]
+          "@type": "Question",
+          "name": "可以用來處理哪些交通違規？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "本站提供現有交通違規選項，例如紅線、黃線、人行道或行人穿越道違規停車、臨停，以及佔用身心障礙者專用停車位等；也可填寫自訂的違規事實。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "一定要用 GPS 嗎？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "不必。你可以直接輸入地址並選擇行政區；只有在使用者允許時才使用定位，本站與 Agent 都不會暗開 GPS。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "受理窗口怎麼對應？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "工具依地址、行政區或使用者提供的定位座標，對應本站內建的行政區、警政受理單位與簡訊號碼；使用者仍應在簡訊 App 再次核對。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "這個網站會自動幫我報案嗎？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "不會自動報案，也不代寄簡訊。預覽內容尚未送出；只有使用者在裝置的系統簡訊 App 確認後，才可能由使用者自行決定是否送出。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "本站會儲存車牌或地址嗎？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "不會。本站沒有自有後端，不會儲存車牌或地址；定位反查時，瀏覽器只會在使用者同意後將座標送至 OpenStreetMap Nominatim。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "這是警政署或警察局的官方網站嗎？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "不是。本工具不是警政機關官方系統，與內政部警政署或各級警察局沒有官方隸屬關係。"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "遠端 Agent 可以替我送出簡訊嗎？",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "不能。只有使用者裝置上、開著本站的 Agent 能透過瀏覽器 WebMCP 操作表單；打開系統簡訊 App 前仍需要使用者手勢或頁內明確確認。"
+          }
         }
       ]
     }
+  ]
+}
   </script>
 </head>
 <body>
@@ -207,33 +216,43 @@
   <section class="seo-static-content" aria-labelledby="seo-static-title">
     <h2 id="seo-static-title">台灣交通違規簡訊報案工具</h2>
     <p>📅 更新日期：2026-08-28</p>
-    <p>
-      免費、開源、mobile-first 的台灣交通違規簡訊報案輔助工具。可用 GPS 目前位置或手動輸入地址，對應地區與警政簡訊受理單位，整理違規事實後交給手機簡訊 App，由使用者自行確認並送出。
-    </p>
+    <p>免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。</p>
+    <h3>可以做什麼</h3>
     <ul>
-      <li>填寫違規事實、車牌號碼與發生地點，整理成手機簡訊內容。</li>
-      <li>確認內容後，可在行動裝置上交由簡訊 App 傳送；本工具不會自動報案。</li>
-      <li>適用臺北、新北、桃園、臺中、臺南、高雄等臺灣縣市。</li>
-      <li>若瀏覽器不支援 JavaScript，仍可閱讀本服務用途說明。</li>
+      <li>查受理窗口</li>
+      <li>填表</li>
+      <li>產生草稿</li>
+      <li>預覽</li>
+      <li>打開系統簡訊 App</li>
     </ul>
+    <h3>不做什麼</h3>
+    <ul>
+      <li>不自動報案</li>
+      <li>不代寄簡訊</li>
+      <li>不存車牌／地址</li>
+      <li>不是官方系統</li>
+    </ul>
+    <p>遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。</p>
     <h3>常見問題</h3>
-    <h4>如何用簡訊報案交通違規？</h4>
-    <p>在台灣交通違規簡訊報案工具輸入事發地址或使用 GPS 定位，確認行政區與警政受理單位後，選擇違規事實並預覽簡訊。確認無誤再開啟手機簡訊 App，由你自行送出。</p>
-    <h4>可以用來檢舉違規停車嗎？</h4>
-    <p>可以。紅線、黃線、人行道或行人穿越道違規停車、臨停，以及佔用身心障礙者專用停車位等常見交通違規，只要能提供明確地點與事實，都適合用簡訊整理報案內容。</p>
-    <h4>一定要用 GPS 嗎？可以只輸入地址嗎？</h4>
-    <p>不必一定使用 GPS。你可以允許瀏覽器定位，也可以直接手動輸入地址並選擇報案行政區。不想授權定位時，建議改走手動輸入。</p>
-    <h4>警政受理單位是怎麼對應的？</h4>
-    <p>工具會依地址所在縣市或你選擇的報案行政區，帶入對應警察局的簡訊受理窗口。送出前請再核對收件單位與號碼是否正確。</p>
+    <h4>這個工具可以做什麼？</h4>
+    <p>台灣交通違規簡訊報案工具可以查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。</p>
+    <h4>可以用來處理哪些交通違規？</h4>
+    <p>本站提供現有交通違規選項，例如紅線、黃線、人行道或行人穿越道違規停車、臨停，以及佔用身心障礙者專用停車位等；也可填寫自訂的違規事實。</p>
+    <h4>一定要用 GPS 嗎？</h4>
+    <p>不必。你可以直接輸入地址並選擇行政區；只有在使用者允許時才使用定位，本站與 Agent 都不會暗開 GPS。</p>
+    <h4>受理窗口怎麼對應？</h4>
+    <p>工具依地址、行政區或使用者提供的定位座標，對應本站內建的行政區、警政受理單位與簡訊號碼；使用者仍應在簡訊 App 再次核對。</p>
     <h4>這個網站會自動幫我報案嗎？</h4>
-    <p>不會。本工具只產生簡訊草稿並交給手機簡訊 App，最後仍由你確認收件人與內容後才送出，不會在背景自動報案。</p>
-    <h4>使用時會把個資存到這個網站嗎？</h4>
-    <p>這是靜態網站，沒有帳號系統或專案自有後端。手動輸入的內容在瀏覽器組合後交給簡訊 App。若使用 GPS，座標會在你同意後送至 OpenStreetMap Nominatim 反查地址。</p>
+    <p>不會自動報案，也不代寄簡訊。預覽內容尚未送出；只有使用者在裝置的系統簡訊 App 確認後，才可能由使用者自行決定是否送出。</p>
+    <h4>本站會儲存車牌或地址嗎？</h4>
+    <p>不會。本站沒有自有後端，不會儲存車牌或地址；定位反查時，瀏覽器只會在使用者同意後將座標送至 OpenStreetMap Nominatim。</p>
     <h4>這是警政署或警察局的官方網站嗎？</h4>
-    <p>不是。本工具與內政部警政署或各級警察局無官方隸屬關係。案件是否受理、舉發與裁處，仍由轄區警察機關依法判斷。</p>
+    <p>不是。本工具不是警政機關官方系統，與內政部警政署或各級警察局沒有官方隸屬關係。</p>
+    <h4>遠端 Agent 可以替我送出簡訊嗎？</h4>
+    <p>不能。只有使用者裝置上、開著本站的 Agent 能透過瀏覽器 WebMCP 操作表單；打開系統簡訊 App 前仍需要使用者手勢或頁內明確確認。</p>
   </section>
   <noscript>
-    台灣交通違規簡訊報案工具是免費開源的輔助網站，可協助你在手機上整理交通違規檢舉簡訊，包含使用目前位置或輸入地址、對應警政簡訊受理單位、填寫違規事實與車牌，以及準備可傳送的簡訊內容。若停用 JavaScript，將無法使用自動定位、受理單位帶入與簡訊產生功能。
+    台灣交通違規簡訊報案工具是免費開源的輔助網站，可協助你查受理窗口、填表、產生草稿、預覽內容，並在確認後打開系統簡訊 App。本工具不會自動報案、不代寄簡訊、不存車牌／地址，也不是官方系統。 遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。
   </noscript>
 </body>
 </html>

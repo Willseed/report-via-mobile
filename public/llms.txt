@@ -1,16 +1,50 @@
 # 台灣交通違規簡訊報案工具
 
-> 免費、開源、mobile-first 的台灣交通違規簡訊報案輔助工具。依 GPS 或手動地址對應地區與警政受理單位，整理違規內容後交給手機簡訊 App；最後仍由使用者確認並送出，不會自動報案。
+> 免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。
 
-本站沒有帳號系統或專案自有後端。定位座標僅在使用者同意後送至 OpenStreetMap Nominatim 反查地址。本工具與內政部警政署或各級警察局無官方隸屬關係。
+本工具不會自動報案、不代寄簡訊、不存車牌／地址，也不是官方系統。
 
-別名：簡訊報案工具、交通違規簡訊報案工具。
+遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。
+
+## 做什麼
+
+- 查受理窗口。
+- 填表。
+- 產生草稿。
+- 預覽。
+- 打開系統簡訊 App。
+
+## 不做什麼
+
+- 不自動報案。
+- 不代寄簡訊。
+- 不存車牌／地址。
+- 不是官方系統。
+
+本站沒有自有後端，不會儲存車牌或地址。若使用者同意定位，瀏覽器會將座標送至 OpenStreetMap Nominatim 反查地址；Agent 不會暗開 GPS。
+
+## 給 Agent
+
+本站唯一的執行面是使用者裝置、本站已開啟頁面中的瀏覽器 WebMCP。可用工具只有：`list_violation_types`、`lookup_station`、`set_report_form`、`preview_sms`、`open_sms_composer`。
+
+這 5 個工具只在已開啟本站的使用者裝置瀏覽器中，透過 navigator.modelContext 提供。
+
+工具只使用本站前端狀態與內建受理窗口資料，不呼叫本站自有後端，也沒有遠端代操作介面。
+
+lookup_station 不會暗開 GPS；座標必須由使用者授權的定位流程提供，或由使用者明確傳入。
+
+set_report_form 只改表單；preview_sms 只產生草稿，草稿尚未送出。
+
+open_sms_composer 需要使用者手勢或頁內明確確認；遠端 Agent 不能送出簡訊。
+
+Agent 請依序使用 `list_violation_types`、`lookup_station`、`set_report_form`、`preview_sms`；preview 結果只是完整草稿，草稿尚未送出；需使用者確認收件人與內容。 `open_sms_composer` 只有在使用者手勢或頁內明確確認後才可能打開系統簡訊 App。遠端 Agent 不能送出簡訊。
 
 ## 文件
 
-- [首頁](https://tools.pylot.dev/)：瀏覽器介面，適用臺北、新北、桃園、臺中、臺南、高雄等臺灣縣市。
-- [Markdown 首頁](https://tools.pylot.dev/index.md)：給代理程式與純文字客戶端的說明。
-- [Agent Skills](https://tools.pylot.dev/.well-known/agent-skills/index.json)：機器可讀的使用者能力摘要。
-- [API Catalog](https://tools.pylot.dev/.well-known/api-catalog)：公開資源目錄。
-- [MCP Server Card](https://tools.pylot.dev/.well-known/mcp/server-card.json)：宣告沒有託管 MCP transport。
-- [GitHub](https://github.com/Willseed/report-via-mobile)：原始碼與專案文件。
+- HTML 首頁：https://tools.pylot.dev/
+- Markdown 首頁：https://tools.pylot.dev/index.md
+- Agent Skill：https://tools.pylot.dev/.well-known/agent-skills/report-via-mobile/SKILL.md
+- API catalog：https://tools.pylot.dev/.well-known/api-catalog
+- MCP server-card：https://tools.pylot.dev/.well-known/mcp/server-card.json
+- 授權與資料使用：https://tools.pylot.dev/auth.md
+- 原始碼：https://github.com/Willseed/report-via-mobile

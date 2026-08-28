@@ -15,6 +15,7 @@ describe('App', () => {
       });
     Object.defineProperty(globalThis, 'requestIdleCallback', {
       configurable: true,
+      writable: true,
       value: requestIdleCallbackSpy,
     });
 

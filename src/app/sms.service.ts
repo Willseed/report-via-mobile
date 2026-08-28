@@ -11,10 +11,15 @@ export class SmsService {
   private readonly platform = inject(Platform);
 
   sendSms(phone: string, body: string): void {
+    this.openSmsComposer(phone, body);
+  }
+
+  openSmsComposer(phone: string, body: string): boolean {
     const sanitizedBody = this.sanitizeBody(body);
-    if (!this.isMessageLengthRecommended(sanitizedBody)) return;
+    if (!this.isMessageLengthRecommended(sanitizedBody)) return false;
     const link = this.generateSmsLink(phone, sanitizedBody);
     this.document.location.assign(link);
+    return true;
   }
 
   generateSmsLink(phone: string, body: string): string {
