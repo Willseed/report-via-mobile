@@ -1,3 +1,5 @@
+import aiCatalog from '../public/.well-known/ai-catalog.json' with { type: 'json' };
+
 const LINK_TARGET_START = String.fromCodePoint(60);
 const LINK_TARGET_END = String.fromCodePoint(62);
 const BACKSLASH = String.fromCodePoint(92);
@@ -8,6 +10,15 @@ const HOMEPAGE_PATHS = new Set(['/', '/index.html']);
 const MARKDOWN_HOMEPAGE_PATH = '/index.md';
 const MARKDOWN_MEDIA_TYPE = 'text/markdown';
 const WEB_PAGE_MEDIA_TYPE = 'text/html';
+const AI_CATALOG_PATH = '/.well-known/ai-catalog.json';
+const ARD_MANIFEST_PATH = '/.well-known/ard.json';
+const ARD_MANIFEST_METADATA = `${JSON.stringify(aiCatalog, null, 2)}\n`;
+const ARD_DISCOVERY_DOCUMENT = Object.freeze({
+  body: ARD_MANIFEST_METADATA,
+  contentType: 'application/json; charset=utf-8',
+  cacheControl: 'public, max-age=3600',
+  allowCrossOrigin: true,
+});
 const OAUTH_PROTECTED_RESOURCE_PATH = '/.well-known/oauth-protected-resource';
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const AUTH_MD_URL = `${PUBLIC_ORIGIN}/auth.md`;
@@ -68,6 +79,16 @@ const HEADER_TOKEN_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 
 const DISCOVERY_LINKS = [
   {
+    target: AI_CATALOG_PATH,
+    rel: 'ai-catalog',
+    type: 'application/json',
+  },
+  {
+    target: ARD_MANIFEST_PATH,
+    rel: 'ard',
+    type: 'application/json',
+  },
+  {
     target: '/.well-known/api-catalog',
     rel: 'api-catalog',
     type: 'application/linkset+json',
@@ -124,6 +145,8 @@ const MARKDOWN_DISCOVERY_LINKS = [
 ];
 
 const STATIC_CONTENT_TYPES = new Map([
+  [AI_CATALOG_PATH, 'application/json; charset=utf-8'],
+  [ARD_MANIFEST_PATH, 'application/json; charset=utf-8'],
   ['/.well-known/api-catalog', 'application/linkset+json; charset=utf-8'],
   ['/.well-known/oauth-protected-resource', 'application/json; charset=utf-8'],
   ['/.well-known/oauth-authorization-server', 'application/json; charset=utf-8'],
@@ -134,6 +157,8 @@ const STATIC_CONTENT_TYPES = new Map([
 ]);
 
 const STATIC_DOCUMENTS = new Map([
+  [AI_CATALOG_PATH, ARD_DISCOVERY_DOCUMENT],
+  [ARD_MANIFEST_PATH, ARD_DISCOVERY_DOCUMENT],
   [
     OAUTH_PROTECTED_RESOURCE_PATH,
     {
@@ -274,13 +299,21 @@ function serveStaticDocument(request, pathname) {
     return null;
   }
 
+  const headers = new Headers({
+    'Cache-Control': document.cacheControl ?? 'max-age=600',
+    'Content-Type': document.contentType,
+    'X-Agent-Ready-Worker': 'active',
+  });
+
+  if (document.allowCrossOrigin) {
+    headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    headers.set('Access-Control-Allow-Methods', 'GET, HEAD');
+    headers.set('Access-Control-Allow-Origin', '*');
+  }
+
   return new Response(request.method.toUpperCase() === 'HEAD' ? null : document.body, {
     status: 200,
-    headers: new Headers({
-      'Cache-Control': 'max-age=600',
-      'Content-Type': document.contentType,
-      'X-Agent-Ready-Worker': 'active',
-    }),
+    headers,
   });
 }
 

@@ -1,0 +1,48 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "簡訊報案工具",
+    "identifier": "https://tools.pylot.dev/",
+    "documentationUrl": "https://tools.pylot.dev/index.md"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:tools.pylot.dev:skill:report-via-mobile",
+      "displayName": "簡訊報案工具 Agent Skill",
+      "type": "text/markdown; profile=\"urn:air:agent-skills\"",
+      "url": "https://tools.pylot.dev/.well-known/agent-skills/report-via-mobile/SKILL.md",
+      "description": "引導代理操作台灣交通違規簡訊報案 PWA，並描述可用的瀏覽器端 WebMCP 工具與使用者確認限制。",
+      "tags": ["agent-skill", "taiwan", "traffic-reporting", "sms", "webmcp"],
+      "capabilities": [
+        "generate_sms_report",
+        "list_supported_violation_types",
+        "lookup_police_station",
+        "GuideTrafficViolationReport",
+        "ExplainLocationFallback",
+        "ExplainSmsHandoff"
+      ],
+      "representativeQueries": [
+        "協助我產生台灣交通違規檢舉簡訊",
+        "依照事發地址查詢應受理的警察機關",
+        "列出可以檢舉的交通違規類型",
+        "送出檢舉簡訊前需要確認哪些資料",
+        "手機無法開啟簡訊 App 時有哪些替代方式"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "identifier": "urn:air:tools.pylot.dev:mcp:server-card",
+      "displayName": "簡訊報案工具 MCP Server Card",
+      "type": "application/mcp-server-card+json",
+      "url": "https://tools.pylot.dev/.well-known/mcp/server-card.json",
+      "description": "描述本站的 MCP 與 WebMCP 能力邊界，並明確宣告目前沒有託管的遠端 MCP transport。",
+      "tags": ["mcp", "server-card", "discovery", "webmcp"],
+      "representativeQueries": [
+        "這個網站是否提供可遠端連線的 MCP transport",
+        "查詢簡訊報案工具的 MCP Server Card",
+        "這個網站支援哪些 MCP、WebMCP 或代理探索方式"
+      ],
+      "version": "1.0.0"
+    }
+  ]
+}

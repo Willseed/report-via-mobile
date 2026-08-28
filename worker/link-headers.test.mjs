@@ -23,6 +23,10 @@ test('adds discovery links and Accept vary to the HTML homepage', async (t) => {
   );
   const linkHeader = response.headers.get('Link') ?? '';
 
+  assert.match(linkHeader, /rel="ai-catalog"/);
+  assert.match(linkHeader, /\/\.well-known\/ai-catalog\.json/);
+  assert.match(linkHeader, /rel="ard"/);
+  assert.match(linkHeader, /\/\.well-known\/ard\.json/);
   assert.match(linkHeader, /rel="api-catalog"/);
   assert.match(linkHeader, /\/\.well-known\/oauth-protected-resource/);
   assert.match(linkHeader, /\/\.well-known\/oauth-authorization-server/);
@@ -170,6 +174,42 @@ test('sets content type for static well-known metadata', async (t) => {
   );
 
   assert.equal(response.headers.get('Content-Type'), 'application/linkset+json; charset=utf-8');
+});
+
+test('serves ARD manifests from the edge with public CORS', async (t) => {
+  let fetchCalls = 0;
+  mockFetch(t, async () => {
+    fetchCalls += 1;
+    return new Response('unexpected');
+  });
+
+  for (const path of ['/.well-known/ai-catalog.json', '/.well-known/ard.json']) {
+    const response = await worker.fetch(new Request(`https://tools.pylot.dev${path}`));
+    const manifest = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Content-Type'), 'application/json; charset=utf-8');
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), '*');
+    assert.equal(response.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD');
+    assert.equal(response.headers.get('Cache-Control'), 'public, max-age=3600');
+    assert.equal(response.headers.get('X-Agent-Ready-Worker'), 'active');
+    assert.equal(manifest.specVersion, '1.0');
+    assert.equal(manifest.host.identifier, 'https://tools.pylot.dev/');
+    assert.ok(manifest.entries.length > 0);
+    assert.ok(
+      manifest.entries.every(
+        (entry) =>
+          entry.representativeQueries.length >= 2 && entry.representativeQueries.length <= 5,
+      ),
+    );
+  }
+
+  const headResponse = await worker.fetch(
+    new Request('https://tools.pylot.dev/.well-known/ai-catalog.json', { method: 'HEAD' }),
+  );
+
+  assert.equal(await headResponse.text(), '');
+  assert.equal(fetchCalls, 0);
 });
 
 test('serves OAuth discovery metadata from the edge', async (t) => {

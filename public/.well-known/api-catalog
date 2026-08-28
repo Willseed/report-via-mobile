@@ -20,6 +20,20 @@
       "mediaType": "text/markdown"
     },
     {
+      "id": "agentic-resource-discovery",
+      "name": "Agentic Resource Discovery manifest",
+      "description": "Machine-readable capability entries with representative queries for semantic discovery.",
+      "url": "https://tools.pylot.dev/.well-known/ai-catalog.json",
+      "mediaType": "application/json"
+    },
+    {
+      "id": "ard-current",
+      "name": "ARD manifest",
+      "description": "Current ARD discovery alias containing the same capability entries.",
+      "url": "https://tools.pylot.dev/.well-known/ard.json",
+      "mediaType": "application/json"
+    },
+    {
       "id": "oauth-protected-resource-metadata",
       "name": "OAuth Protected Resource Metadata",
       "description": "OAuth Protected Resource Metadata for this public static site and its agent registration profile.",
@@ -80,6 +94,16 @@
       ],
       "service-desc": [
         {
+          "href": "https://tools.pylot.dev/.well-known/ai-catalog.json",
+          "type": "application/json",
+          "title": "Agentic Resource Discovery capability manifest"
+        },
+        {
+          "href": "https://tools.pylot.dev/.well-known/ard.json",
+          "type": "application/json",
+          "title": "Current ARD manifest alias"
+        },
+        {
           "href": "https://tools.pylot.dev/.well-known/oauth-protected-resource",
           "type": "application/json",
           "title": "OAuth Protected Resource Metadata for the public resource"
@@ -137,6 +161,7 @@
     "There is no login flow or token issuance service for this public static app.",
     "OAuth Protected Resource Metadata points to same-origin authorization-server metadata so agents can discover the anonymous/no-credential registration profile.",
     "GitHub Pages alone cannot emit custom response headers or perform Accept-based content negotiation.",
-    "Compatible browser clients may expose client-side WebMCP tools through navigator.modelContext; these are not a hosted MCP server."
+    "Compatible browser clients may expose client-side WebMCP tools through navigator.modelContext; these are not a hosted MCP server.",
+    "ARD manifests describe the Agent Skill, its WebMCP capabilities, and MCP discovery metadata with representative queries."
   ]
 }

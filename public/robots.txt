@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Content-Signal: ai-train=yes, search=yes, ai-input=yes
+Agentmap: https://tools.pylot.dev/.well-known/ai-catalog.json
 
 Sitemap: https://tools.pylot.dev/sitemap.xml

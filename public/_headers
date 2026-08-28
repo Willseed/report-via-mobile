@@ -1,10 +1,22 @@
 /
-  Link: </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/oauth-authorization-server>; rel="service-desc"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </index.md>; rel="alternate service-doc"; type="text/markdown", </manifest.webmanifest>; rel="manifest"; type="application/manifest+json", </auth.md>; rel="service-doc"; type="text/markdown", <https://github.com/Willseed/report-via-mobile>; rel="service-doc"; type="text/html"
+  Link: </.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/json", </.well-known/ard.json>; rel="ard"; type="application/json", </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/oauth-authorization-server>; rel="service-desc"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </index.md>; rel="alternate service-doc"; type="text/markdown", </manifest.webmanifest>; rel="manifest"; type="application/manifest+json", </auth.md>; rel="service-doc"; type="text/markdown", <https://github.com/Willseed/report-via-mobile>; rel="service-doc"; type="text/html"
 /index.html
-  Link: </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/oauth-authorization-server>; rel="service-desc"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </index.md>; rel="alternate service-doc"; type="text/markdown", </manifest.webmanifest>; rel="manifest"; type="application/manifest+json", </auth.md>; rel="service-doc"; type="text/markdown", <https://github.com/Willseed/report-via-mobile>; rel="service-doc"; type="text/html"
+  Link: </.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/json", </.well-known/ard.json>; rel="ard"; type="application/json", </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/oauth-authorization-server>; rel="service-desc"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </index.md>; rel="alternate service-doc"; type="text/markdown", </manifest.webmanifest>; rel="manifest"; type="application/manifest+json", </auth.md>; rel="service-doc"; type="text/markdown", <https://github.com/Willseed/report-via-mobile>; rel="service-doc"; type="text/html"
 /index.md
   Content-Type: text/markdown; charset=utf-8
-  Link: </>; rel="canonical"; type="text/html", </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/oauth-authorization-server>; rel="service-desc"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </auth.md>; rel="service-doc"; type="text/markdown"
+  Link: </>; rel="canonical"; type="text/html", </.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/json", </.well-known/ard.json>; rel="ard"; type="application/json", </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/oauth-protected-resource>; rel="describedby"; type="application/json", </.well-known/oauth-authorization-server>; rel="service-desc"; type="application/json", </.well-known/agent-skills/index.json>; rel="service-desc"; type="application/json", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json", </auth.md>; rel="service-doc"; type="text/markdown"
+/.well-known/ai-catalog.json
+  Content-Type: application/json; charset=utf-8
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD
+  Access-Control-Allow-Headers: Content-Type
+  Cache-Control: public, max-age=3600
+/.well-known/ard.json
+  Content-Type: application/json; charset=utf-8
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD
+  Access-Control-Allow-Headers: Content-Type
+  Cache-Control: public, max-age=3600
 /.well-known/api-catalog
   Content-Type: application/linkset+json; charset=utf-8
 /.well-known/oauth-protected-resource
