@@ -234,6 +234,30 @@ test('supports preflight for any well-known document', async () => {
   assert.equal(response.headers.get('Access-Control-Allow-Credentials'), null);
 });
 
+test('removes origin CORS headers from the HTML app and non-document assets', async (t) => {
+  mockFetch(
+    t,
+    async () =>
+      new Response('asset', {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Credentials': 'true',
+        },
+      }),
+  );
+
+  for (const path of ['/', '/main.js']) {
+    const response = await worker.fetch(new Request(`https://tools.pylot.dev${path}`));
+
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), null);
+    assert.equal(response.headers.get('Access-Control-Allow-Methods'), null);
+    assert.equal(response.headers.get('Access-Control-Allow-Headers'), null);
+    assert.equal(response.headers.get('Access-Control-Allow-Credentials'), null);
+  }
+});
+
 test('sets content type for static well-known metadata', async (t) => {
   mockFetch(
     t,
@@ -401,6 +425,7 @@ test('rejects unsafe requests before origin fetch', async (t) => {
   assert.equal(unsafePath.status, 404);
   assert.equal(unsupportedMethod.status, 405);
   assert.equal(unsupportedMethod.headers.get('Allow'), 'GET, HEAD, OPTIONS');
+  assert.equal(unsupportedMethod.headers.get('Access-Control-Allow-Origin'), null);
   assert.equal(fetchCalls, 0);
 });
 

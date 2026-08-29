@@ -21,6 +21,7 @@ const aiCatalog = JSON.parse(readFileSync('.well-known/ai-catalog.json', 'utf8')
 const ardManifest = JSON.parse(readFileSync('.well-known/ard.json', 'utf8'));
 const serverCard = JSON.parse(readFileSync('.well-known/mcp/server-card.json', 'utf8'));
 const skillsIndex = JSON.parse(readFileSync('.well-known/agent-skills/index.json', 'utf8'));
+const authMarkdown = readFileSync('auth.md', 'utf8');
 const expectedWebMcpTools = [
   'list_violation_types',
   'lookup_station',
@@ -34,12 +35,15 @@ validateCatalog(ardManifest);
 assert.deepEqual(ardManifest, aiCatalog, 'ARD aliases must publish the same entries.');
 validateServerCard(serverCard);
 assert.equal(skillsIndex.skills?.[0]?.name, 'report-via-mobile');
+assert.match(authMarkdown.split(/\r?\n/, 1)[0], /^# .*auth\.md/i);
 assert.deepEqual(
-  aiCatalog.entries.find((entry) => entry.identifier.endsWith(':skill:report-via-mobile'))?.capabilities,
+  aiCatalog.entries.find((entry) => entry.identifier.endsWith(':skill:report-via-mobile'))
+    ?.capabilities,
   expectedWebMcpTools,
 );
 assert.deepEqual(
-  ardManifest.entries.find((entry) => entry.identifier.endsWith(':skill:report-via-mobile'))?.capabilities,
+  ardManifest.entries.find((entry) => entry.identifier.endsWith(':skill:report-via-mobile'))
+    ?.capabilities,
   expectedWebMcpTools,
 );
 
