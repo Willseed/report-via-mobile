@@ -61,6 +61,7 @@ const OAUTH_AUTHORIZATION_SERVER_METADATA = `${JSON.stringify(
   2,
 )}\n`;
 const ALLOWED_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const CORS_ALLOWED_METHODS = 'GET, HEAD, OPTIONS';
 const SAFE_FORWARD_REQUEST_HEADERS = Object.freeze([
   'accept',
   'accept-encoding',
@@ -411,7 +412,7 @@ function notFoundResponse() {
 function corsPreflightResponse() {
   const headers = new Headers({
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Allow-Methods': CORS_ALLOWED_METHODS,
     'Access-Control-Allow-Headers': 'Content-Type',
     'Content-Length': '0',
   });
@@ -421,7 +422,7 @@ function corsPreflightResponse() {
 
 function setCorsHeaders(headers) {
   headers.set('Access-Control-Allow-Origin', '*');
-  headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  headers.set('Access-Control-Allow-Methods', CORS_ALLOWED_METHODS);
   headers.set('Access-Control-Allow-Headers', 'Content-Type');
   headers.delete('Access-Control-Allow-Credentials');
 }

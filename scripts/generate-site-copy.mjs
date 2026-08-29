@@ -31,6 +31,40 @@ const oauthAuthorizationServerPath = '/.well-known/oauth-authorization-server';
 const apiCatalogPath = '/.well-known/api-catalog';
 const aiCatalogPath = '/.well-known/ai-catalog.json';
 const ardPath = '/.well-known/ard.json';
+const documentationSkills = [
+  {
+    name: 'read-site-overview',
+    type: 'documentation',
+    description:
+      'Read the public overview of tools.pylot.dev, including its purpose, limitations, and available agent discovery resources.',
+    url: `${publicOrigin}/`,
+    digest: 'sha256:unversioned-public-homepage',
+  },
+  {
+    name: 'read-markdown-homepage',
+    type: 'documentation',
+    description:
+      'Read the Markdown representation of the tools.pylot.dev homepage by requesting the homepage with Accept: text/markdown.',
+    url: `${publicOrigin}/`,
+    digest: 'sha256:content-negotiated-markdown-homepage',
+  },
+  {
+    name: 'read-llms-guide',
+    type: 'documentation',
+    description:
+      'Read the LLM-oriented site guide for tools.pylot.dev, including public resources, usage notes, and limitations.',
+    url: `${publicOrigin}/llms.txt`,
+    digest: 'sha256:unversioned-public-llms-guide',
+  },
+  {
+    name: 'read-api-catalog',
+    type: 'documentation',
+    description:
+      'Read the public API catalog linkset for tools.pylot.dev. This catalog documents public discovery resources and does not imply protected APIs.',
+    url: `${publicOrigin}/.well-known/api-catalog`,
+    digest: 'sha256:generated-api-catalog',
+  },
+];
 
 const skillMarkdown = renderSkill();
 const aiCatalog = renderAiCatalog();
@@ -302,6 +336,7 @@ function renderSkillsIndex(skillMarkdown) {
         url: skillUrl,
         digest,
       },
+      ...documentationSkills,
     ],
   };
 }

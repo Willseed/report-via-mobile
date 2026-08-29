@@ -79,6 +79,10 @@ interface ModelContext {
 }
 
 declare global {
+  interface Document {
+    modelContext?: ModelContext;
+  }
+
   interface Navigator {
     modelContext?: ModelContext;
   }
@@ -205,6 +209,7 @@ export class WebMcpService implements OnDestroy {
   private readonly stationLookup = inject(StationLookupService);
   private readonly registeredState = signal(false);
   private registrationAbortController: AbortController | null = null;
+  private unavailableLogged = false;
 
   readonly registered = this.registeredState.asReadonly();
 
@@ -213,7 +218,13 @@ export class WebMcpService implements OnDestroy {
     if (!isPlatformBrowser(this.platformId)) return;
 
     const modelContext = this.modelContext();
-    if (!modelContext) return;
+    if (!modelContext) {
+      if (!this.unavailableLogged) {
+        console.info('WebMCP is unavailable; continuing without browser tools.');
+        this.unavailableLogged = true;
+      }
+      return;
+    }
 
     const tools = this.createTools();
 
@@ -594,8 +605,11 @@ export class WebMcpService implements OnDestroy {
   }
 
   private modelContext(): ModelContext | null {
-    const modelContext = globalThis.navigator?.modelContext;
-    return isModelContext(modelContext) ? modelContext : null;
+    const documentModelContext = globalThis.document?.modelContext;
+    if (isModelContext(documentModelContext)) return documentModelContext;
+
+    const navigatorModelContext = globalThis.navigator?.modelContext;
+    return isModelContext(navigatorModelContext) ? navigatorModelContext : null;
   }
 
   private inputRecord(input: unknown): Record<string, unknown> {

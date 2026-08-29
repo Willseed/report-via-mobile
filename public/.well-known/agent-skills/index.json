@@ -7,6 +7,34 @@
       "description": "台灣交通違規簡訊報案工具的瀏覽器 WebMCP 操作說明。",
       "url": "https://tools.pylot.dev/.well-known/agent-skills/report-via-mobile/SKILL.md",
       "digest": "sha256:a75856023dfa0bbdb373bc97e65f6143ef7d5f583c388d162a71cf86b340f52e"
+    },
+    {
+      "name": "read-site-overview",
+      "type": "documentation",
+      "description": "Read the public overview of tools.pylot.dev, including its purpose, limitations, and available agent discovery resources.",
+      "url": "https://tools.pylot.dev/",
+      "digest": "sha256:unversioned-public-homepage"
+    },
+    {
+      "name": "read-markdown-homepage",
+      "type": "documentation",
+      "description": "Read the Markdown representation of the tools.pylot.dev homepage by requesting the homepage with Accept: text/markdown.",
+      "url": "https://tools.pylot.dev/",
+      "digest": "sha256:content-negotiated-markdown-homepage"
+    },
+    {
+      "name": "read-llms-guide",
+      "type": "documentation",
+      "description": "Read the LLM-oriented site guide for tools.pylot.dev, including public resources, usage notes, and limitations.",
+      "url": "https://tools.pylot.dev/llms.txt",
+      "digest": "sha256:unversioned-public-llms-guide"
+    },
+    {
+      "name": "read-api-catalog",
+      "type": "documentation",
+      "description": "Read the public API catalog linkset for tools.pylot.dev. This catalog documents public discovery resources and does not imply protected APIs.",
+      "url": "https://tools.pylot.dev/.well-known/api-catalog",
+      "digest": "sha256:generated-api-catalog"
     }
   ]
 }

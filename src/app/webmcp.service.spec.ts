@@ -27,8 +27,16 @@ function setModelContext(modelContext: unknown): void {
   });
 }
 
+function setDocumentModelContext(modelContext: unknown): void {
+  Object.defineProperty(document, 'modelContext', {
+    configurable: true,
+    value: modelContext,
+  });
+}
+
 function clearModelContext(): void {
   delete (navigator as Navigator & { modelContext?: ModelContextMock }).modelContext;
+  delete (document as Document & { modelContext?: ModelContextMock }).modelContext;
 }
 
 function configureService(
@@ -111,9 +119,15 @@ describe('WebMcpService', () => {
 
   it('does not throw or register when navigator.modelContext is unavailable', () => {
     const service = configureService();
+    const consoleInfo = vi.spyOn(console, 'info').mockImplementation(() => undefined);
 
     expect(() => service.init()).not.toThrow();
     expect(service.registered()).toBe(false);
+    service.init();
+    expect(consoleInfo).toHaveBeenCalledOnce();
+    expect(consoleInfo).toHaveBeenCalledWith(
+      'WebMCP is unavailable; continuing without browser tools.',
+    );
   });
 
   it('does not register when navigator.modelContext does not expose WebMCP methods', () => {
@@ -165,6 +179,17 @@ describe('WebMcpService', () => {
     expect(findTool(tools, 'set_report_form').inputSchema.properties['plates']).toMatchObject({
       type: 'array',
     });
+  });
+
+  it('prefers the current document.modelContext API', () => {
+    const modelContext = { registerTool: vi.fn() };
+    configureService();
+    setDocumentModelContext(modelContext);
+    const service = TestBed.inject(WebMcpService);
+
+    service.init();
+
+    expect(modelContext.registerTool).toHaveBeenCalledTimes(5);
   });
 
   it('falls back to provideContext when registerTool is unavailable', () => {
