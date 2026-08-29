@@ -220,7 +220,7 @@ export default {
     const response = await fetchStaticAsset(request, url);
 
     if (!shouldDecorateResponse(url.pathname)) {
-      return response;
+      return responseWithoutCors(response);
     }
 
     const headers = new Headers(response.headers);
@@ -232,6 +232,8 @@ export default {
 
     if (isCorsDocumentPath(url.pathname)) {
       setCorsHeaders(headers);
+    } else {
+      clearCorsHeaders(headers);
     }
 
     if (HOMEPAGE_PATHS.has(url.pathname)) {
@@ -378,6 +380,12 @@ function cloneResponse(response, headers) {
   });
 }
 
+function responseWithoutCors(response) {
+  const headers = new Headers(response.headers);
+  clearCorsHeaders(headers);
+  return cloneResponse(response, headers);
+}
+
 function safeForwardHeaders(requestHeaders) {
   const headers = new Headers();
 
@@ -424,6 +432,13 @@ function setCorsHeaders(headers) {
   headers.set('Access-Control-Allow-Origin', '*');
   headers.set('Access-Control-Allow-Methods', CORS_ALLOWED_METHODS);
   headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  headers.delete('Access-Control-Allow-Credentials');
+}
+
+function clearCorsHeaders(headers) {
+  headers.delete('Access-Control-Allow-Origin');
+  headers.delete('Access-Control-Allow-Methods');
+  headers.delete('Access-Control-Allow-Headers');
   headers.delete('Access-Control-Allow-Credentials');
 }
 

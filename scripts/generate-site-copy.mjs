@@ -246,7 +246,7 @@ Agent 請依序使用 \`list_violation_types\`、\`lookup_station\`、\`set_repo
 }
 
 function renderAuth() {
-  return `# 授權與資料使用
+  return `# auth.md — ${copy.name}
 
 ${copy.name}是公開的靜態 PWA。${copy.description}
 
