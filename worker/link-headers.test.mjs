@@ -184,7 +184,14 @@ test('adds public CORS headers to agent documents and supports preflight', async
     return new Response('document');
   });
 
-  for (const path of ['/llms.txt', '/index.md', '/auth.md', '/.well-known/api-catalog']) {
+  for (const path of [
+    '/llms.txt',
+    '/index.md',
+    '/auth.md',
+    '/.well-known/api-catalog',
+    '/.well-known/oauth-protected-resource',
+    '/.well-known/oauth-authorization-server',
+  ]) {
     const response = await worker.fetch(
       new Request(`https://tools.pylot.dev${path}`, {
         headers: { Origin: 'https://example.com' },
@@ -211,6 +218,20 @@ test('adds public CORS headers to agent documents and supports preflight', async
   assert.equal(optionsResponse.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD, OPTIONS');
   assert.equal(optionsResponse.headers.get('Access-Control-Allow-Credentials'), null);
   assert.equal(fetchCalls, 4);
+});
+
+test('supports preflight for any well-known document', async () => {
+  const response = await worker.fetch(
+    new Request('https://tools.pylot.dev/.well-known/oauth-protected-resource', {
+      method: 'OPTIONS',
+      headers: { Origin: 'https://example.com' },
+    }),
+  );
+
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), '*');
+  assert.equal(response.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD, OPTIONS');
+  assert.equal(response.headers.get('Access-Control-Allow-Credentials'), null);
 });
 
 test('sets content type for static well-known metadata', async (t) => {
@@ -322,6 +343,9 @@ test('serves OAuth discovery metadata from the edge', async (t) => {
 
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('Content-Type'), 'application/json; charset=utf-8');
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), '*');
+    assert.equal(response.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD, OPTIONS');
+    assert.equal(response.headers.get('Access-Control-Allow-Credentials'), null);
     assert.equal(response.headers.get('X-Agent-Ready-Worker'), 'active');
     assert.deepEqual(metadata.authorization_servers, ['https://tools.pylot.dev']);
     metadataCase.validate(metadata);
