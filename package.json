@@ -71,7 +71,7 @@
     "typescript": "~6.0.0",
     "typescript-eslint": "^8.66.0",
     "vitest": "^4.1.11",
-    "wrangler": "4.125.0"
+    "wrangler": "4.129.0"
   },
   "overrides": {
     "@hono/node-server": "2.0.12",
