@@ -62,7 +62,7 @@
     "@playwright/test": "^1.62.1",
     "@vitest/coverage-v8": "^4.1.11",
     "angular-eslint": "22.1.0",
-    "eslint": "^10.8.0",
+    "eslint": "^10.9.1",
     "fast-check": "^4.9.0",
     "jsdom": "^30.0.1",
     "playwright": "^1.62.1",
