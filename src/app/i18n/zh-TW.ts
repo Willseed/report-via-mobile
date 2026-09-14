@@ -89,6 +89,8 @@ export const ZH_TW = {
     disclaimerTitle: siteCopy.app.disclaimerTitle,
     disclaimerP1: siteCopy.app.disclaimerP1,
     disclaimerP2: siteCopy.app.disclaimerP2,
+    supportMessage: siteCopy.app.supportMessage,
+    supportLinkLabel: siteCopy.app.supportLinkLabel,
     chunkLoadError: '載入元件失敗，請檢查網路連線後再試。',
   },
 
