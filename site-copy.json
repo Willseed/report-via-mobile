@@ -113,6 +113,8 @@
     "disclaimerTitle": "免責聲明",
     "disclaimerP1": "受理與否及後續處理，悉依警察機關及相關交通法規辦理；本工具不是警政機關官方系統。",
     "disclaimerP2": "本工具僅供輔助查詢窗口、填表與產生交通違規簡訊草稿，不代表案件一定受理；使用者開啟系統簡訊 App 後，應自行核對資料並決定是否送出。",
+    "supportMessage": "如果這個工具對你有幫助，歡迎自願支持維護。",
+    "supportLinkLabel": "支持工具維護",
     "onpageContent": {
       "title": "交通違規簡訊報案使用說明",
       "howToUseTitle": "如何使用本工具",
