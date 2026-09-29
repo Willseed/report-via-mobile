@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve, sep } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -27,6 +28,23 @@ function parseManifest(manifestBytes) {
       !Array.isArray(manifest.hashTable),
     'The PWA manifest has no valid hash table.',
   );
+  return manifest;
+}
+
+function validateBuildSnapshot(expectedBuild) {
+  assert.ok(Buffer.isBuffer(expectedBuild.manifestBytes), 'The local PWA manifest is missing.');
+  assert.ok(expectedBuild.assets instanceof Map, 'The local PWA assets are missing.');
+  const manifest = parseManifest(expectedBuild.manifestBytes);
+
+  for (const [path, expectedHash] of Object.entries(manifest.hashTable)) {
+    const bytes = expectedBuild.assets.get(path);
+    assert.ok(Buffer.isBuffer(bytes), `${path} is absent from the local build.`);
+    assert.match(expectedHash, /^[a-f0-9]{40}$/, `${path} has an invalid PWA manifest hash.`);
+    // Angular ngsw.json specifies SHA-1 as an asset checksum, not as a password hash or signature.
+    const actualHash = createHash('sha1').update(bytes).digest('hex'); // NOSONAR
+    assert.equal(actualHash, expectedHash, `${path} differs from its PWA manifest hash.`);
+  }
+
   return manifest;
 }
 
@@ -90,8 +108,7 @@ export async function verifyEdgeOnce(baseUrl, expectedBuild, fetchImpl = fetch) 
   const siteUrl = new URL(baseUrl);
   assert.equal(siteUrl.protocol, 'https:', 'Edge verification requires an HTTPS origin.');
   const origin = new URL('/', siteUrl);
-  assert.ok(Buffer.isBuffer(expectedBuild.manifestBytes), 'The local PWA manifest is missing.');
-  assert.ok(expectedBuild.assets instanceof Map, 'The local PWA assets are missing.');
+  const manifest = validateBuildSnapshot(expectedBuild);
   const expectedHomepage = expectedBuild.assets.get('/index.html');
   assert.ok(Buffer.isBuffer(expectedHomepage), 'The local build has no index.html asset.');
 
@@ -132,7 +149,6 @@ export async function verifyEdgeOnce(baseUrl, expectedBuild, fetchImpl = fetch) 
 
   const { bytes: manifestBytes } = await readResponse(origin, '/ngsw.json', fetchImpl);
   assert.ok(manifestBytes.equals(expectedBuild.manifestBytes), 'Edge still serves a different build.');
-  const manifest = parseManifest(manifestBytes);
   if (manifest.dataGroups !== undefined) {
     assert.ok(Array.isArray(manifest.dataGroups), 'The PWA data groups are invalid.');
     for (const group of manifest.dataGroups) {
@@ -168,6 +184,7 @@ export async function verifyEdgeDeployment(
   fetchImpl = fetch,
   sleep = delay,
 ) {
+  validateBuildSnapshot(expectedBuild);
   let lastError;
   for (let attempt = 1; attempt <= RETRY_COUNT; attempt += 1) {
     try {

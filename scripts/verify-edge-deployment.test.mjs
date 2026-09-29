@@ -116,12 +116,31 @@ test('rejects a JavaScript asset whose bytes differ from the local build', async
   );
 });
 
+test('rejects a stale manifest hash even when Edge serves the same local asset bytes', async () => {
+  const { fetchImpl, build } = fixture({ changedScript: true });
+  build.assets.set('/main-TEST.js', Buffer.from('window.appReady=true;changed'));
+  let fetchCalls = 0;
+  const trackedFetch = (...args) => {
+    fetchCalls += 1;
+    return fetchImpl(...args);
+  };
+
+  await assert.rejects(
+    verifyEdgeOnce('https://tools.pylot.dev/', build, trackedFetch),
+    /main-TEST\.js differs from its PWA manifest hash/,
+  );
+  assert.equal(fetchCalls, 0);
+});
+
 test('rejects a previous release and a persistent location data group', async () => {
   const { fetchImpl, build } = fixture({ persistentLocationCache: true });
+  const previousManifest = Buffer.from(
+    JSON.stringify({ ...JSON.parse(build.manifestBytes.toString('utf8')), timestamp: 1 }),
+  );
   await assert.rejects(
     verifyEdgeOnce(
       'https://tools.pylot.dev/',
-      { ...build, manifestBytes: Buffer.from('previous release') },
+      { ...build, manifestBytes: previousManifest },
       fetchImpl,
     ),
     /different build/,
