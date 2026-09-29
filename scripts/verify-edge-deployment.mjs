@@ -69,7 +69,9 @@ export async function loadBuildSnapshot() {
     assets.set(path, await readFile(buildAssetPath(path)));
   }
 
-  return { manifestBytes, assets };
+  const snapshot = { manifestBytes, assets };
+  validateBuildSnapshot(snapshot);
+  return snapshot;
 }
 
 async function readResponse(baseUrl, path, fetchImpl, headers = {}) {
