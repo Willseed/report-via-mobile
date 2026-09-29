@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import worker from './link-headers.mjs';
@@ -61,6 +63,142 @@ test('uses sanitized origin requests for static assets', async (t) => {
   );
 
   assert.equal(await response.text(), 'home');
+});
+
+test('replaces unsafe inline script rules with built script hashes and preserves HTML bytes', async (t) => {
+  const inlineScript = 'window.reportAppReady = true;';
+  const hash = createHash('sha256').update(inlineScript).digest('base64');
+  const autoCsp =
+    `script-src 'strict-dynamic' 'sha256-${hash}' https: 'unsafe-inline';` +
+    "object-src 'none';base-uri 'self';";
+  const html =
+    `<html><head><meta http-equiv="Content-Security-Policy" content="${autoCsp}"></head>` +
+    `<body><script>${inlineScript}</script></body></html>`;
+  const originalPolicy = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+    "style-src 'self' 'unsafe-inline'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+  mockFetch(
+    t,
+    async () =>
+      new Response(html, {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Content-Security-Policy': originalPolicy,
+          'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
+        },
+      }),
+  );
+
+  const response = await worker.fetch(new Request('https://tools.pylot.dev/'));
+  const policy = response.headers.get('Content-Security-Policy') ?? '';
+
+  assert.equal(await response.text(), html);
+  assert.match(policy, /default-src 'self'/);
+  assert.match(policy, /frame-ancestors 'none'/);
+  assert.match(policy, /style-src 'self' 'unsafe-inline'/);
+  assert.match(policy, new RegExp(`script-src 'sha256-${hash}' 'self'`));
+  assert.match(policy, /script-src-attr 'none'/);
+  assert.match(policy, /object-src 'none'/);
+  assert.match(policy, /base-uri 'self'/);
+  assert.doesNotMatch(policy, /script-src [^;]*'unsafe-inline'/);
+  assert.equal(
+    response.headers.get('Strict-Transport-Security'),
+    'max-age=63072000; includeSubDomains',
+  );
+});
+
+for (const [path, status] of [
+  ['/404.html', 200],
+  ['/missing-page', 404],
+]) {
+  test(`hardens the HTML fallback at ${path} without changing its status or body`, async (t) => {
+    const script = 'window.reportAppReady = true;';
+    const hash = createHash('sha256').update(script).digest('base64');
+    const html =
+      `<html><head><meta http-equiv="Content-Security-Policy" ` +
+      `content="script-src 'strict-dynamic' 'sha256-${hash}' https: 'unsafe-inline';"></head>` +
+      `<body><script>${script}</script></body></html>`;
+    mockFetch(
+      t,
+      async () =>
+        new Response(html, {
+          status,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Content-Security-Policy':
+              "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'",
+            'Strict-Transport-Security': 'max-age=63072000',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }),
+    );
+
+    const response = await worker.fetch(new Request(`https://tools.pylot.dev${path}`));
+    const policy = response.headers.get('Content-Security-Policy') ?? '';
+
+    assert.equal(response.status, status);
+    assert.equal(await response.text(), html);
+    assert.match(policy, new RegExp(`script-src 'sha256-${hash}' 'self'`));
+    assert.match(policy, /script-src-attr 'none'/);
+    assert.doesNotMatch(policy, /script-src [^;]*'unsafe-inline'/);
+    assert.equal(response.headers.get('Strict-Transport-Security'), 'max-age=63072000');
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), null);
+  });
+}
+
+test('preserves the current policy until HTML with build hashes is deployed', async (t) => {
+  mockFetch(
+    t,
+    async () =>
+      new Response('<html><body>home</body></html>', {
+        headers: {
+          'Content-Type': 'text/html',
+          'Content-Security-Policy': "script-src 'self' 'unsafe-inline'",
+        },
+      }),
+  );
+
+  const response = await worker.fetch(new Request('https://tools.pylot.dev/'));
+
+  assert.equal(
+    response.headers.get('Content-Security-Policy'),
+    "script-src 'self' 'unsafe-inline'",
+  );
+  assert.equal(await response.text(), '<html><body>home</body></html>');
+});
+
+test('keeps HEAD bodyless and leaves conditional 304 responses untouched', async (t) => {
+  mockFetch(
+    t,
+    async (request) =>
+      new Response(null, {
+        status: request.method === 'HEAD' ? 200 : 304,
+        headers: {
+          'Content-Type': 'text/html',
+          'Content-Security-Policy': "default-src 'self'; script-src 'unsafe-inline'",
+        },
+      }),
+  );
+
+  const head = await worker.fetch(new Request('https://tools.pylot.dev/', { method: 'HEAD' }));
+  const notModified = await worker.fetch(
+    new Request('https://tools.pylot.dev/', { headers: { 'If-None-Match': '"test"' } }),
+  );
+
+  assert.equal(await head.text(), '');
+  assert.equal(
+    head.headers.get('Content-Security-Policy'),
+    "default-src 'self'; script-src 'unsafe-inline'",
+  );
+  assert.equal(notModified.status, 304);
+  assert.equal(await notModified.text(), '');
+  assert.equal(
+    notModified.headers.get('Content-Security-Policy'),
+    "default-src 'self'; script-src 'unsafe-inline'",
+  );
 });
 
 test('keeps origin fixed for paths that resemble network URLs', async (t) => {
@@ -217,7 +355,7 @@ test('adds public CORS headers to agent documents and supports preflight', async
   assert.equal(optionsResponse.headers.get('Access-Control-Allow-Origin'), '*');
   assert.equal(optionsResponse.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD, OPTIONS');
   assert.equal(optionsResponse.headers.get('Access-Control-Allow-Credentials'), null);
-  assert.equal(fetchCalls, 4);
+  assert.equal(fetchCalls, 6);
 });
 
 test('supports preflight for any well-known document', async () => {
@@ -328,11 +466,13 @@ test('sets content type for llms.txt', async (t) => {
   assert.equal(response.headers.get('Content-Type'), 'text/plain; charset=utf-8');
 });
 
-test('serves OAuth discovery metadata from the edge', async (t) => {
+test('serves the exact built OAuth discovery documents', async (t) => {
   let fetchCalls = 0;
-  mockFetch(t, async () => {
+  mockFetch(t, async (request) => {
     fetchCalls += 1;
-    return new Response('unexpected');
+    const path = new URL(request.url).pathname;
+    const source = readFileSync(new URL(`../public${path}`, import.meta.url));
+    return new Response(source);
   });
 
   const metadataCases = [
@@ -363,9 +503,12 @@ test('serves OAuth discovery metadata from the edge', async (t) => {
 
   for (const metadataCase of metadataCases) {
     const response = await worker.fetch(new Request(`https://tools.pylot.dev${metadataCase.path}`));
-    const metadata = await response.json();
+    const body = await response.text();
+    const source = readFileSync(new URL(`../public${metadataCase.path}`, import.meta.url), 'utf8');
+    const metadata = JSON.parse(body);
 
     assert.equal(response.status, 200);
+    assert.equal(body, source);
     assert.equal(response.headers.get('Content-Type'), 'application/json; charset=utf-8');
     assert.equal(response.headers.get('Access-Control-Allow-Origin'), '*');
     assert.equal(response.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD, OPTIONS');
@@ -375,7 +518,7 @@ test('serves OAuth discovery metadata from the edge', async (t) => {
     metadataCase.validate(metadata);
   }
 
-  assert.equal(fetchCalls, 0);
+  assert.equal(fetchCalls, metadataCases.length);
 });
 
 test('replaces unsafe origin Link headers with static discovery links', async (t) => {

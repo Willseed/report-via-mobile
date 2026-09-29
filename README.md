@@ -2,7 +2,7 @@
 
 免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。
 
-本工具不會自動報案、不代寄簡訊、不存車牌／地址，也不是官方系統。
+本工具不會自動報案、不代寄簡訊，也不會在本站後端保存車牌或地址；本工具不是官方系統。
 
 遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。
 
@@ -50,6 +50,11 @@
 如果使用 GPS 定位，瀏覽器會先徵求定位權限，並將座標傳送至
 [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org/) 以取得地址。若不希望使用
 定位服務，可以直接手動輸入地址。
+
+表單與短期反查快取只在目前頁面的記憶體中使用。新版 Service Worker 不再持久快取
+Nominatim 的請求與地址回應，並在啟動時嘗試清除舊版定位快取。瀏覽器本身與
+Nominatim 仍可能依各自政策處理網路請求資料；如需清除本站既有資料，可使用瀏覽器的
+「清除網站資料」功能。
 
 ## 給開發者
 
@@ -177,8 +182,19 @@ fallback。`/index.md`、`/llms.txt`、`/auth.md` 與所有 `/.well-known/*` 文
 anonymous/no-credential 的公開使用方式，不會核發 OAuth token、API key 或其他 bearer credential。
 MCP server-card 的 `transport` 維持 `null`；工具僅是瀏覽器 WebMCP。
 
-Cloudflare Worker 需透過 **Deploy Cloudflare Worker** workflow 手動部署，並在
-repository secrets 中設定 `CLOUDFLARE_ACCOUNT_ID` 與 `CLOUDFLARE_API_TOKEN`。
+`main` 的 **Deploy to GitHub Pages** workflow 會先執行完整建置、前端測試及 Worker
+測試，再以同一個 commit 依序部署 Cloudflare Worker 與 GitHub Pages。手動執行也僅
+接受 `main`；一次只會有一個正式部署執行，最後比對經 Edge 回傳的 PWA 資源雜湊、
+公開文件與安全標頭。Worker 先部署並直接轉送 Pages 的公開文件，使過渡期間的文件位元組仍與當時的 PWA 清單一致。
+
+維護者需確認 GitHub 的 `cloudflare-production` environment 限制部署分支為 `main`，
+設定必要的審核人員，並將 `CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_API_TOKEN` 放在該
+environment 的 secrets；移除同名 repository secrets。Cloudflare token 應只授予本
+Worker 與對應 zone 所需的部署權限。`github-pages` environment 的分支與審核設定也應
+同樣檢查。這些 GitHub／Cloudflare 帳號設定無法由此儲存庫檔案自行建立。
+
+目前 Edge 驗證在正式發布後執行，失敗時會讓 workflow 呈現失敗並要求維護者處理。
+若要在正式發布前阻擋 Edge 整合錯誤，仍需提供受控的 staging 網域與對應部署環境。
 
 </details>
 

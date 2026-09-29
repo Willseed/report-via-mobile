@@ -173,13 +173,17 @@ export class GeocodingService {
   }
 
   private handleGeocodeError(error: unknown): never {
-    console.error('Geocoding error:', error);
+    // HttpErrorResponse includes the request URL, which contains precise coordinates.
+    console.error(
+      'Geocoding error:',
+      error instanceof HttpErrorResponse ? error.status : 'request_failed',
+    );
     if (this.isCircuitOpeningHttpError(error)) {
       this.openCircuit();
-      throw new Error(this.getCircuitOpeningHttpMessage(error.status), { cause: error });
+      throw new Error(this.getCircuitOpeningHttpMessage(error.status));
     }
     this.recordFailure();
-    throw new Error(ZH_TW.geocoding.queryFailed, { cause: error });
+    throw new Error(ZH_TW.geocoding.queryFailed);
   }
 
   private isCircuitOpeningHttpError(error: unknown): error is HttpErrorResponse {

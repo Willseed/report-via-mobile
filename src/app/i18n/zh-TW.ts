@@ -103,13 +103,14 @@ export const ZH_TW = {
 
   // Confirm Dialog
   confirmDialog: {
-    title: '確認發送簡訊',
+    title: '確認開啟簡訊草稿',
     recipientLabel: '收件單位',
     phoneLabel: '簡訊號碼',
     licensePlateLabel: '車牌號碼',
     messageLabel: '簡訊內容',
+    warningsLabel: '提醒',
     cancelButton: '取消',
-    confirmButton: '確認發送',
+    confirmButton: '開啟簡訊 App',
   },
 
   // SMS Message Template
@@ -140,15 +141,19 @@ export const ZH_TW = {
     coordinateLookupFailed: '無法依提供的定位座標查詢地址，請改用地址或行政區。',
     stationNotFound: '找不到對應警政受理窗口。',
     missingStation: '請先設定可對應的行政區或受理窗口。',
+    districtMismatch: '輸入地址與報案行政區不一致，請修正後再開啟簡訊 App。',
+    invalidForm: '請先修正草稿欄位，再預覽或開啟簡訊 App。',
+    invalidAddress: '地址必須是文字。',
+    invalidViolation: '違規事實必須是文字。',
     addressTooLong: '地址不可超過 100 字。',
     violationTooLong: '違規事實不可超過 50 字。',
     licensePlateTooLong: '車牌號碼不可超過 10 字。',
     invalidPlates: '車牌號碼必須是陣列。',
     tooManyPlates: `目前表單最多保留 ${siteCopy.maxPlates} 個車牌號碼。`,
-    confirmationRequired: '尚未取得使用者手勢或頁內明確確認，未開啟簡訊 App。',
+    confirmationRequired: '尚未確認這份簡訊草稿，未開啟簡訊 App。',
+    draftChanged: '確認期間草稿已變更，請重新預覽並確認。',
     composerOpenFailed: '無法開啟系統簡訊 App。',
     previewWarnings: siteCopy.previewWarnings,
-    confirmationPrompt: siteCopy.confirmationPrompt,
     maxPlates: siteCopy.maxPlates,
   },
 
@@ -163,6 +168,7 @@ export const ZH_TW = {
     updateAvailable: '有新版本可用',
     updateAction: '更新',
     updateFailed: '更新失敗，請重新整理頁面',
+    updateInstallFailed: '新版本安裝失敗，請稍後重新整理頁面再試',
     unrecoverableError: '應用程式發生錯誤，將重新載入',
     installPrompt: '可將此應用安裝至主畫面',
     installAction: '安裝',

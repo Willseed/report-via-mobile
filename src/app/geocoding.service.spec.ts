@@ -97,10 +97,9 @@ function expectGeocodingErrorsLogged(
   count = 1,
 ): void {
   expect(consoleErrorSpy).toHaveBeenCalledTimes(count);
-  expect(consoleErrorSpy).toHaveBeenCalledWith('Geocoding error:', expect.anything());
-  for (const [message, error] of consoleErrorSpy.mock.calls) {
+  for (const [message, detail] of consoleErrorSpy.mock.calls) {
     expect(message).toBe('Geocoding error:');
-    expect(error).toBeDefined();
+    expect(typeof detail === 'number' || detail === 'request_failed').toBe(true);
   }
 }
 
@@ -222,6 +221,8 @@ describe('GeocodingService', () => {
           '地址查詢失敗，請稍後再試。',
         );
         expectGeocodingErrorsLogged(consoleErrorSpy);
+        expect(consoleErrorSpy).toHaveBeenCalledWith('Geocoding error:', 500);
+        expect(JSON.stringify(consoleErrorSpy.mock.calls)).not.toContain('25.033');
       });
     });
 

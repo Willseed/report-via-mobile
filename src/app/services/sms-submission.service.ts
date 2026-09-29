@@ -21,26 +21,47 @@ export class SmsSubmissionService {
       return;
     }
 
-    const data: ConfirmDialogData | null = this.draft.submitData();
+    const data = this.draft.submitData();
     if (!data) return;
 
-    const ConfirmDialog = await this.loadConfirmDialog();
-    if (!ConfirmDialog) return;
+    const snapshot: ConfirmDialogData = {
+      ...data,
+      warnings: [...ZH_TW.webmcp.previewWarnings],
+    };
+    if (!(await this.confirmDraft(snapshot))) return;
 
-    const confirmed = await new Promise<boolean | undefined>((resolve) => {
+    const current = this.draft.submitData();
+    if (!this.draft.isFormValid() || !current || !this.sameDraft(data, current)) return;
+    this.smsService.sendSms(snapshot.phoneNumber, snapshot.message);
+  }
+
+  async confirmDraft(data: ConfirmDialogData): Promise<boolean> {
+    const ConfirmDialog = await this.loadConfirmDialog();
+    if (!ConfirmDialog) return false;
+
+    return (await new Promise<boolean | undefined>((resolve) => {
       this.dialog
         .open(ConfirmDialog, { data, width: '92vw', maxWidth: '400px' })
         .afterClosed()
-        .subscribe({ next: resolve, complete: () => resolve(undefined) });
-    });
-
-    if (confirmed) {
-      this.smsService.sendSms(data.phoneNumber, data.message);
-    }
+        .subscribe({
+          next: resolve,
+          error: () => resolve(undefined),
+          complete: () => resolve(undefined),
+        });
+    })) === true;
   }
 
   private canSubmit(): boolean {
     return this.draft.isFormValid();
+  }
+
+  private sameDraft(a: ConfirmDialogData, b: ConfirmDialogData): boolean {
+    return (
+      a.stationName === b.stationName &&
+      a.phoneNumber === b.phoneNumber &&
+      a.message === b.message &&
+      a.licensePlate === b.licensePlate
+    );
   }
 
   private async loadConfirmDialog(): Promise<ConfirmDialogComponent | null> {

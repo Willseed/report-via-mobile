@@ -49,7 +49,7 @@ describe('ConfirmDialog', () => {
   });
 
   it('should display dialog title', () => {
-    expect(fixture.debugElement.nativeElement.textContent).toContain('確認發送簡訊');
+    expect(fixture.debugElement.nativeElement.textContent).toContain('確認開啟簡訊草稿');
   });
 
   it('should close with true when confirm is clicked', () => {
@@ -62,11 +62,11 @@ describe('ConfirmDialog', () => {
     expect(dialogRefSpy.close).toHaveBeenCalledWith(false);
   });
 
-  it('should have confirm button with send text', () => {
+  it('should have confirm button with composer action text', () => {
     const confirmBtn = fixture.debugElement.query(
       (de) => de.name === 'button' && de.attributes['mat-flat-button'] !== undefined,
     );
-    expect(confirmBtn?.nativeElement.textContent).toContain('確認發送');
+    expect(confirmBtn?.nativeElement.textContent).toContain('開啟簡訊 App');
   });
 
   it('should have cancel button', () => {
@@ -88,5 +88,17 @@ describe('ConfirmDialog', () => {
 
   it('should not display license plate section when not provided', () => {
     expect(fixture.debugElement.nativeElement.textContent).not.toContain('車牌號碼');
+  });
+
+  it('shows the warnings alongside the draft when provided', () => {
+    fixture = TestBed.createComponent(ConfirmDialog);
+    Object.defineProperty(fixture.componentInstance, 'data', {
+      value: { ...mockData, warnings: ['尚未送出', '非官方'] },
+    });
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.nativeElement.textContent).toContain('提醒');
+    expect(fixture.debugElement.nativeElement.textContent).toContain('尚未送出');
+    expect(fixture.debugElement.nativeElement.textContent).toContain('非官方');
   });
 });

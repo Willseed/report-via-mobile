@@ -15,6 +15,17 @@
 
     <dt>{{ i18n.confirmDialog.messageLabel }}</dt>
     <dd class="message">{{ data.message }}</dd>
+
+    @if (data.warnings?.length) {
+      <dt>{{ i18n.confirmDialog.warningsLabel }}</dt>
+      <dd>
+        <ul>
+          @for (warning of data.warnings; track warning) {
+            <li>{{ warning }}</li>
+          }
+        </ul>
+      </dd>
+    }
   </dl>
 </mat-dialog-content>
 

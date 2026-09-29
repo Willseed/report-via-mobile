@@ -6,9 +6,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { EMPTY } from 'rxjs';
 import { App } from './app';
 import { NOMINATIM_USER_AGENT } from './app.config';
+import { LocationCacheCleanupService } from './services/location-cache-cleanup.service';
 
 describe('App', () => {
+  const clearLegacyLocationCaches = vi.fn().mockResolvedValue(undefined);
+
   beforeEach(async () => {
+    clearLegacyLocationCaches.mockClear();
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
@@ -16,6 +20,7 @@ describe('App', () => {
         { provide: MatSnackBar, useValue: { open: vi.fn() } },
         provideHttpClient(),
         { provide: NOMINATIM_USER_AGENT, useValue: 'test' },
+        { provide: LocationCacheCleanupService, useValue: { clearLegacyLocationCaches } },
       ],
     }).compileComponents();
   });
@@ -26,5 +31,6 @@ describe('App', () => {
 
     fixture.destroy();
     expect(app).toBeTruthy();
+    expect(clearLegacyLocationCaches).toHaveBeenCalledOnce();
   });
 });

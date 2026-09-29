@@ -1,4 +1,4 @@
-import { signal, type Signal } from '@angular/core';
+import { signal, type Signal, type WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog, type MatDialogRef } from '@angular/material/dialog';
 import { of } from 'rxjs';
@@ -21,7 +21,7 @@ interface DraftStubOptions {
 
 interface DraftStub {
   readonly isFormValid: Signal<boolean>;
-  readonly submitData: Signal<ConfirmDialogData | null>;
+  readonly submitData: WritableSignal<ConfirmDialogData | null>;
   readonly touchAllFields: ReturnType<typeof vi.fn>;
 }
 
@@ -42,7 +42,7 @@ function createDraftStub({
             licensePlate: licensePlate || undefined,
           }
         : submitData,
-    ).asReadonly(),
+    ),
     touchAllFields: vi.fn(),
   };
 }
@@ -103,6 +103,7 @@ describe('SmsSubmissionService', () => {
         phoneNumber: POLICE_STATIONS[0].phoneNumber,
         message: VALID_MESSAGE,
         licensePlate: undefined,
+        warnings: ['尚未送出', '非官方', '需使用者確認'],
       },
       width: '92vw',
       maxWidth: '400px',
@@ -151,6 +152,22 @@ describe('SmsSubmissionService', () => {
 
     expect(draft.touchAllFields).not.toHaveBeenCalled();
     expect(dialogSpy.open).not.toHaveBeenCalled();
+    expect(smsServiceSpy.sendSms).not.toHaveBeenCalled();
+  });
+
+  it('does not send when the draft changes while the dialog is open', async () => {
+    const service = setup();
+    dialogSpy.open.mockImplementation(() => {
+      draft.submitData.set({
+        stationName: POLICE_STATIONS[0].stationName,
+        phoneNumber: POLICE_STATIONS[0].phoneNumber,
+        message: '變更後的內容',
+      });
+      return dialogRefWithResult(true);
+    });
+
+    await service.submit();
+
     expect(smsServiceSpy.sendSms).not.toHaveBeenCalled();
   });
 

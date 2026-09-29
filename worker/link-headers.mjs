@@ -23,43 +23,6 @@ const ARD_DISCOVERY_DOCUMENT = Object.freeze({
 });
 const OAUTH_PROTECTED_RESOURCE_PATH = '/.well-known/oauth-protected-resource';
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
-const AUTH_MD_URL = `${PUBLIC_ORIGIN}/auth.md`;
-const OAUTH_RESOURCE_METADATA_FIELDS = Object.freeze({
-  resource: `${PUBLIC_ORIGIN}/`,
-  authorization_servers: [PUBLIC_ORIGIN],
-  scopes_supported: ['public'],
-  bearer_methods_supported: ['header'],
-});
-const AGENT_AUTH_METADATA = Object.freeze({
-  skill: AUTH_MD_URL,
-  register_uri: AUTH_MD_URL,
-  claim_uri: `${AUTH_MD_URL}#anonymous--no-credential`,
-  identity_types_supported: ['anonymous'],
-  credential_types_supported: ['none'],
-  anonymous: {
-    credential_types_supported: ['none'],
-  },
-});
-const OAUTH_PROTECTED_RESOURCE_METADATA = `${JSON.stringify(
-  {
-    ...OAUTH_RESOURCE_METADATA_FIELDS,
-    resource_name: siteCopy.name,
-    resource_documentation: AUTH_MD_URL,
-    notes: `公開靜態 PWA：anonymous 使用不需要 credential，也沒有受保護 API。${siteCopy.agentBoundary}`,
-  },
-  null,
-  2,
-)}\n`;
-const OAUTH_AUTHORIZATION_SERVER_METADATA = `${JSON.stringify(
-  {
-    ...OAUTH_RESOURCE_METADATA_FIELDS,
-    issuer: PUBLIC_ORIGIN,
-    service_documentation: AUTH_MD_URL,
-    agent_auth: AGENT_AUTH_METADATA,
-  },
-  null,
-  2,
-)}\n`;
 const ALLOWED_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const CORS_ALLOWED_METHODS = 'GET, HEAD, OPTIONS';
 const SAFE_FORWARD_REQUEST_HEADERS = Object.freeze([
@@ -79,6 +42,9 @@ const MAX_VARY_HEADER_LENGTH = 512;
 const MAX_VARY_VALUES = 16;
 const MEDIA_TOKEN_PATTERN = /^[a-z0-9!#$&^_.+-]+$/i;
 const HEADER_TOKEN_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
+const SCRIPT_HASH_PATTERN = /'sha256-[A-Za-z0-9+/]+=*'/g;
+const AUTO_CSP_META_PATTERN = /<meta\b[^>]*\bhttp-equiv="Content-Security-Policy"[^>]*\bcontent="([^"]+)"/i;
+const REPLACED_CSP_DIRECTIVE_PATTERN = /^(?:script-src(?:-elem|-attr)?|object-src|base-uri)(?:\s|$)/i;
 
 const DISCOVERY_LINKS = [
   {
@@ -97,12 +63,12 @@ const DISCOVERY_LINKS = [
     type: 'application/linkset+json',
   },
   {
-    target: '/.well-known/oauth-protected-resource',
+    target: OAUTH_PROTECTED_RESOURCE_PATH,
     rel: 'describedby',
     type: 'application/json',
   },
   {
-    target: '/.well-known/oauth-authorization-server',
+    target: OAUTH_AUTHORIZATION_SERVER_PATH,
     rel: 'service-desc',
     type: 'application/json',
   },
@@ -158,8 +124,8 @@ const STATIC_CONTENT_TYPES = new Map([
   [AI_CATALOG_PATH, 'application/json; charset=utf-8'],
   [ARD_MANIFEST_PATH, 'application/json; charset=utf-8'],
   ['/.well-known/api-catalog', 'application/linkset+json; charset=utf-8'],
-  ['/.well-known/oauth-protected-resource', 'application/json; charset=utf-8'],
-  ['/.well-known/oauth-authorization-server', 'application/json; charset=utf-8'],
+  [OAUTH_PROTECTED_RESOURCE_PATH, 'application/json; charset=utf-8'],
+  [OAUTH_AUTHORIZATION_SERVER_PATH, 'application/json; charset=utf-8'],
   ['/.well-known/agent-skills/index.json', 'application/json; charset=utf-8'],
   [SKILL_PATH, 'text/markdown; charset=utf-8'],
   ['/.well-known/mcp/server-card.json', 'application/json; charset=utf-8'],
@@ -171,22 +137,6 @@ const STATIC_CONTENT_TYPES = new Map([
 const STATIC_DOCUMENTS = new Map([
   [AI_CATALOG_PATH, ARD_DISCOVERY_DOCUMENT],
   [ARD_MANIFEST_PATH, ARD_DISCOVERY_DOCUMENT],
-  [
-    OAUTH_PROTECTED_RESOURCE_PATH,
-    {
-      body: OAUTH_PROTECTED_RESOURCE_METADATA,
-      contentType: 'application/json; charset=utf-8',
-      allowCrossOrigin: true,
-    },
-  ],
-  [
-    OAUTH_AUTHORIZATION_SERVER_PATH,
-    {
-      body: OAUTH_AUTHORIZATION_SERVER_METADATA,
-      contentType: 'application/json; charset=utf-8',
-      allowCrossOrigin: true,
-    },
-  ],
 ]);
 
 export default {
@@ -220,7 +170,7 @@ export default {
     const response = await fetchStaticAsset(request, url);
 
     if (!shouldDecorateResponse(url.pathname)) {
-      return responseWithoutCors(response);
+      return responseWithoutCors(response, request.method);
     }
 
     const headers = new Headers(response.headers);
@@ -228,6 +178,13 @@ export default {
 
     if (contentType) {
       headers.set('Content-Type', contentType);
+    }
+
+    if (
+      url.pathname === OAUTH_PROTECTED_RESOURCE_PATH ||
+      url.pathname === OAUTH_AUTHORIZATION_SERVER_PATH
+    ) {
+      headers.set('X-Agent-Ready-Worker', 'active');
     }
 
     if (isCorsDocumentPath(url.pathname)) {
@@ -239,6 +196,7 @@ export default {
     if (HOMEPAGE_PATHS.has(url.pathname)) {
       setLinkHeader(headers, DISCOVERY_LINKS);
       appendVaryHeader(headers, 'Accept');
+      await setHtmlContentSecurityPolicy(response, headers, request.method);
     }
 
     return cloneResponse(response, headers);
@@ -380,9 +338,50 @@ function cloneResponse(response, headers) {
   });
 }
 
-function responseWithoutCors(response) {
+async function setHtmlContentSecurityPolicy(response, headers, method) {
+  if (
+    (response.status !== 200 && response.status !== 404) ||
+    method.toUpperCase() !== 'GET' ||
+    !headers.get('Content-Type')?.toLowerCase().startsWith(WEB_PAGE_MEDIA_TYPE)
+  ) {
+    return;
+  }
+
+  const hashes = extractAutoCspHashes(await response.clone().text());
+  if (hashes.length === 0) return;
+
+  const scriptSources = [...hashes, "'self'"];
+  const existingDirectives = (headers.get('Content-Security-Policy') ?? '')
+    .split(';')
+    .map((directive) => directive.trim())
+    .filter((directive) => directive && !REPLACED_CSP_DIRECTIVE_PATTERN.test(directive));
+
+  headers.set(
+    'Content-Security-Policy',
+    [
+      ...existingDirectives,
+      `script-src ${scriptSources.join(' ')}`,
+      "script-src-attr 'none'",
+      "object-src 'none'",
+      "base-uri 'self'",
+    ].join('; '),
+  );
+}
+
+function extractAutoCspHashes(html) {
+  const autoCsp = html.match(AUTO_CSP_META_PATTERN)?.[1];
+  const scriptDirective = autoCsp
+    ?.split(';')
+    .map((directive) => directive.trim())
+    .find((directive) => directive.startsWith('script-src '));
+
+  return [...new Set(scriptDirective?.match(SCRIPT_HASH_PATTERN) ?? [])];
+}
+
+async function responseWithoutCors(response, method) {
   const headers = new Headers(response.headers);
   clearCorsHeaders(headers);
+  await setHtmlContentSecurityPolicy(response, headers, method);
   return cloneResponse(response, headers);
 }
 

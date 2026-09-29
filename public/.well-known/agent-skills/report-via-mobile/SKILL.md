@@ -7,7 +7,7 @@ description: 台灣交通違規簡訊報案工具的瀏覽器 WebMCP 操作說�
 
 免費、開源的台灣交通違規簡訊報案工具，可查受理窗口、填表、產生草稿、預覽，並在使用者確認後打開系統簡訊 App。
 
-本工具不會自動報案、不代寄簡訊、不存車牌／地址，也不是官方系統。
+本工具不會自動報案、不代寄簡訊，也不會在本站後端保存車牌或地址；本工具不是官方系統。
 
 遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。
 
@@ -18,7 +18,7 @@ description: 台灣交通違規簡訊報案工具的瀏覽器 WebMCP 操作說�
 3. 使用 `lookup_station` 依地址、行政區或使用者已授權提供的座標查受理窗口與號碼。工具不會暗開 GPS。
 4. 使用 `set_report_form` 將使用者確認的資料寫入表單；這一步只改表單。
 5. 使用 `preview_sms` 讀取表單並檢查完整草稿、收件人、受理單位與警告。預覽內容尚未送出；warnings 必含 `尚未送出`、`非官方`、`需使用者確認`。
-6. 只有使用者手勢或頁內明確確認後，才可使用 `open_sms_composer` 打開系統簡訊 App；是否送出仍由使用者在 App 內決定。
+6. 使用 `open_sms_composer` 時，使用者須在頁面核對並確認本次受理單位、電話及完整本文，才會打開系統簡訊 App；是否送出仍由使用者在 App 內決定。
 
 ## 瀏覽器工具
 
@@ -40,7 +40,7 @@ Does not submit a police report. 讀取本站表單並產生收件人、簡訊�
 
 ### `open_sms_composer`
 
-Does not submit a police report. 只有使用者手勢或頁內明確確認後，才在使用者裝置上打開系統簡訊 App；沒有確認只回傳 opened:false。
+Does not submit a police report. 先讓使用者在頁面確認本次受理單位、電話與完整本文，確認後才在使用者裝置上打開系統簡訊 App；取消時回傳 opened:false。
 
 ## 限制
 
@@ -48,6 +48,6 @@ Does not submit a police report. 只有使用者手勢或頁內明確確認後�
 - 工具只使用本站前端狀態與內建受理窗口資料，不呼叫本站自有後端，也沒有遠端代操作介面。
 - lookup_station 不會暗開 GPS；座標必須由使用者授權的定位流程提供，或由使用者明確傳入。
 - set_report_form 只改表單；preview_sms 只產生草稿，草稿尚未送出。
-- open_sms_composer 需要使用者手勢或頁內明確確認；遠端 Agent 不能送出簡訊。
+- open_sms_composer 每次都會顯示本次草稿供使用者確認；遠端 Agent 不能送出簡訊。
 
 工具只使用本站前端狀態與內建受理窗口資料，不會呼叫本站自有後端。不得註冊或宣稱存在 `send_sms`、`submit_report`、遠端 MCP tools 或代寄簡訊 API。

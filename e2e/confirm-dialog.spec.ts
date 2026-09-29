@@ -15,7 +15,7 @@ async function openConfirmDialog(
   form: { address: string; violation: string },
 ): Promise<void> {
   await fillRequiredForm(page, form);
-  await page.getByRole('button', { name: '發送簡訊' }).click();
+  await page.getByRole('button', { name: '開啟簡訊 App' }).click();
 }
 
 test.describe('確認對話框', () => {
@@ -75,7 +75,9 @@ test.describe('確認對話框', () => {
     });
 
     await expect(page.getByRole('button', { name: '取消' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '確認發送' })).toBeVisible();
+    await expect(
+      page.getByRole('dialog').getByRole('button', { name: '開啟簡訊 App' }),
+    ).toBeVisible();
   });
 
   test('點擊取消應關閉對話框', async ({ page }) => {
@@ -96,7 +98,7 @@ test.describe('確認對話框', () => {
     });
     await page.getByRole('button', { name: '新增車牌號碼' }).click();
     await page.getByLabel('車牌號碼（選填）').fill('XYZ9999');
-    await page.getByRole('button', { name: '發送簡訊' }).click();
+    await page.getByRole('button', { name: '開啟簡訊 App' }).click();
 
     const dialogContent = page.locator('mat-dialog-content');
     await expect(dialogContent).toContainText('XYZ9999');

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { SwUpdate, UnrecoverableStateEvent, VersionReadyEvent } from '@angular/service-worker';
+import { SwUpdate, UnrecoverableStateEvent, VersionEvent } from '@angular/service-worker';
 import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { describe, it, expect, vi } from 'vitest';
 import { Subject } from 'rxjs';
@@ -7,7 +7,7 @@ import { PwaUpdateService } from './pwa-update.service';
 
 interface PwaUpdateTestContext {
   service: PwaUpdateService;
-  versionUpdates$: Subject<VersionReadyEvent>;
+  versionUpdates$: Subject<VersionEvent>;
   unrecoverable$: Subject<UnrecoverableStateEvent>;
   snackBarSpy: { open: ReturnType<typeof vi.fn> };
   snackBarAction$: Subject<void>;
@@ -18,7 +18,7 @@ function setupPwaUpdateService(
   options: { isEnabled?: boolean; activateUpdate?: ReturnType<typeof vi.fn> } = {},
 ): PwaUpdateTestContext {
   const { isEnabled = true, activateUpdate } = options;
-  const versionUpdates$ = new Subject<VersionReadyEvent>();
+  const versionUpdates$ = new Subject<VersionEvent>();
   const unrecoverable$ = new Subject<UnrecoverableStateEvent>();
   const snackBarAction$ = new Subject<void>();
   const activateUpdateSpy = activateUpdate ?? vi.fn().mockResolvedValue(undefined);
@@ -76,7 +76,7 @@ describe('PwaUpdateService', () => {
     const { service, versionUpdates$, snackBarSpy } = setupPwaUpdateService();
     service.init();
 
-    versionUpdates$.next({ type: 'VERSION_DETECTED' } as unknown as VersionReadyEvent);
+    versionUpdates$.next({ type: 'VERSION_DETECTED', version: { hash: 'def' } });
 
     expect(snackBarSpy.open).not.toHaveBeenCalled();
   });
@@ -92,6 +92,23 @@ describe('PwaUpdateService', () => {
     });
 
     expect(snackBarSpy.open).not.toHaveBeenCalled();
+  });
+
+  it('shows an error when a new version cannot be installed', () => {
+    const { service, versionUpdates$, snackBarSpy } = setupPwaUpdateService();
+    service.init();
+
+    versionUpdates$.next({
+      type: 'VERSION_INSTALLATION_FAILED',
+      version: { hash: 'def' },
+      error: 'hash mismatch',
+    });
+
+    expect(snackBarSpy.open).toHaveBeenCalledWith(
+      '新版本安裝失敗，請稍後重新整理頁面再試',
+      '',
+      { duration: 5000 },
+    );
   });
 
   it('should call activateUpdate on snackbar action', async () => {
