@@ -5,10 +5,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { ZH_TW } from '../i18n';
 
 export interface ConfirmDialogData {
-  stationName: string;
-  phoneNumber: string;
-  message: string;
-  licensePlate?: string;
+  readonly stationName: string;
+  readonly phoneNumber: string;
+  readonly message: string;
+  readonly licensePlate?: string;
+  readonly warnings?: readonly string[];
 }
 
 @Component({

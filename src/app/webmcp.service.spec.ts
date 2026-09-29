@@ -6,6 +6,7 @@ import { VIOLATION_TYPES } from './domain/violation.utils';
 import { GeocodingService } from './geocoding.service';
 import { District } from './police-stations';
 import { SmsService } from './sms.service';
+import { SmsSubmissionService } from './services/sms-submission.service';
 import { WebMcpService, type WebMcpToolDefinition } from './webmcp.service';
 
 interface ModelContextMock {
@@ -15,6 +16,10 @@ interface ModelContextMock {
 
 interface SmsServiceMock {
   openSmsComposer: ReturnType<typeof vi.fn>;
+}
+
+interface SubmissionServiceMock {
+  confirmDraft: ReturnType<typeof vi.fn>;
 }
 
 const ADDRESS = '臺北市信義區市府路1號';
@@ -63,19 +68,28 @@ function configureService(
         },
       },
       ...(smsService ? [{ provide: SmsService, useValue: smsService }] : []),
+      {
+        provide: SmsSubmissionService,
+        useValue: { confirmDraft: vi.fn().mockResolvedValue(false) },
+      },
     ],
   });
 
   return TestBed.inject(WebMcpService);
 }
 
-function configureWithSms(modelContext: unknown, smsService: SmsServiceMock): WebMcpService {
+function configureWithSms(
+  modelContext: unknown,
+  smsService: SmsServiceMock,
+  submissionService: SubmissionServiceMock,
+): WebMcpService {
   TestBed.configureTestingModule({
     providers: [
       { provide: PLATFORM_ID, useValue: 'browser' },
       { provide: Platform, useValue: { ANDROID: true, IOS: false } as Platform },
       { provide: GeocodingService, useValue: { reverseGeocode: vi.fn() } },
       { provide: SmsService, useValue: smsService },
+      { provide: SmsSubmissionService, useValue: submissionService },
     ],
   });
   setModelContext(modelContext);
@@ -283,37 +297,113 @@ describe('WebMcpService', () => {
     });
   });
 
-  it('does not open sms: when open_sms_composer has no confirmation', () => {
+  it('does not open sms: when the user cancels the concrete draft confirmation', async () => {
     const modelContext = { registerTool: vi.fn() };
     const smsService = { openSmsComposer: vi.fn().mockReturnValue(true) };
-    const service = configureWithSms(modelContext, smsService);
+    const submissionService = { confirmDraft: vi.fn().mockResolvedValue(false) };
+    const service = configureWithSms(modelContext, smsService, submissionService);
     service.init();
     const tools = registeredTools(modelContext);
     fillForm(tools);
-    vi.stubGlobal('confirm', vi.fn().mockReturnValue(false));
 
-    const result = findTool(tools, 'open_sms_composer').execute();
+    const result = await findTool(tools, 'open_sms_composer').execute();
 
     expect(result).toMatchObject({ ok: true, opened: false, reason: 'user_confirmation_required' });
+    expect(submissionService.confirmDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stationName: '臺北市政府警察局',
+        phoneNumber: '0911510914',
+        message: expect.stringContaining(ADDRESS),
+        warnings: expect.arrayContaining(['尚未送出']),
+      }),
+    );
     expect(smsService.openSmsComposer).not.toHaveBeenCalled();
   });
 
-  it('opens the system SMS composer only after page confirmation', () => {
+  it('opens the system SMS composer only after confirming the draft', async () => {
     const modelContext = { registerTool: vi.fn() };
     const smsService = { openSmsComposer: vi.fn().mockReturnValue(true) };
-    const service = configureWithSms(modelContext, smsService);
+    const submissionService = { confirmDraft: vi.fn().mockResolvedValue(true) };
+    const service = configureWithSms(modelContext, smsService, submissionService);
     service.init();
     const tools = registeredTools(modelContext);
     fillForm(tools);
-    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
 
-    const result = findTool(tools, 'open_sms_composer').execute();
+    const result = await findTool(tools, 'open_sms_composer').execute();
 
     expect(result).toMatchObject({ ok: true, opened: true, to: '0911510914' });
     expect(smsService.openSmsComposer).toHaveBeenCalledWith(
       '0911510914',
       expect.stringContaining('ABC123'),
     );
+  });
+
+  it('rejects a district mismatch in both preview and composer paths', async () => {
+    const modelContext = { registerTool: vi.fn() };
+    const smsService = { openSmsComposer: vi.fn().mockReturnValue(true) };
+    const submissionService = { confirmDraft: vi.fn().mockResolvedValue(true) };
+    const service = configureWithSms(modelContext, smsService, submissionService);
+    service.init();
+    const tools = registeredTools(modelContext);
+    findTool(tools, 'set_report_form').execute({
+      address: ADDRESS,
+      district: District.NewTaipei,
+      violation: VIOLATION,
+    });
+
+    expect(await findTool(tools, 'preview_sms').execute()).toMatchObject({
+      ok: false,
+      error: { code: 'district_mismatch' },
+    });
+    expect(await findTool(tools, 'open_sms_composer').execute()).toMatchObject({
+      ok: false,
+      opened: false,
+      error: { code: 'district_mismatch' },
+    });
+    expect(submissionService.confirmDraft).not.toHaveBeenCalled();
+    expect(smsService.openSmsComposer).not.toHaveBeenCalled();
+  });
+
+  it('does not open the composer when the draft changes during confirmation', async () => {
+    const modelContext = { registerTool: vi.fn() };
+    const smsService = { openSmsComposer: vi.fn().mockReturnValue(true) };
+    const submissionService = { confirmDraft: vi.fn() };
+    const service = configureWithSms(modelContext, smsService, submissionService);
+    service.init();
+    const tools = registeredTools(modelContext);
+    fillForm(tools);
+    submissionService.confirmDraft.mockImplementation(async () => {
+      findTool(tools, 'set_report_form').execute({ violation: '機車於紅線停車' });
+      return true;
+    });
+
+    expect(await findTool(tools, 'open_sms_composer').execute()).toMatchObject({
+      ok: true,
+      opened: false,
+      reason: 'draft_changed',
+    });
+    expect(smsService.openSmsComposer).not.toHaveBeenCalled();
+  });
+
+  it('leaves the entire form unchanged when any supplied field is invalid', () => {
+    const modelContext = { registerTool: vi.fn() };
+    const service = configureService(modelContext);
+    service.init();
+    const tools = registeredTools(modelContext);
+    const setForm = findTool(tools, 'set_report_form');
+    fillForm(tools);
+    const before = setForm.execute();
+
+    for (const input of [
+      { address: 42 },
+      { address: '新北市板橋區文化路1號', district: '不存在的行政區' },
+      { address: '新北市板橋區文化路1號', violation: 42 },
+      { address: '新北市板橋區文化路1號', plates: ['A'.repeat(11)] },
+      { address: '新北市板橋區文化路1號', plates: Array(11).fill('') },
+    ]) {
+      expect(setForm.execute(input)).toMatchObject({ ok: false });
+      expect(setForm.execute()).toEqual(before);
+    }
   });
 
   it('only reads own data properties from tool inputs', () => {

@@ -29,17 +29,5 @@
         ]
       }
     }
-  ],
-  "dataGroups": [
-    {
-      "name": "nominatim-api",
-      "urls": ["https://nominatim.openstreetmap.org/**"],
-      "cacheConfig": {
-        "strategy": "freshness",
-        "maxSize": 50,
-        "maxAge": "1d",
-        "timeout": "5s"
-      }
-    }
   ]
 }

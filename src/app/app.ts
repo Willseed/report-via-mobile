@@ -5,6 +5,7 @@ import { PwaInstallService } from './pwa-install.service';
 import { ThemeService } from './theme.service';
 import { ThemeToggle } from './theme-toggle/theme-toggle';
 import { WebMcpService } from './webmcp.service';
+import { LocationCacheCleanupService } from './services/location-cache-cleanup.service';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,7 @@ export class App {
   private readonly pwaInstall = inject(PwaInstallService);
   private readonly theme = inject(ThemeService);
   private readonly webMcp = inject(WebMcpService);
+  private readonly locationCacheCleanup = inject(LocationCacheCleanupService);
 
   constructor() {
     this.initializeApp();
@@ -26,6 +28,7 @@ export class App {
     this.pwaUpdate.init();
     this.pwaInstall.init();
     this.webMcp.init();
+    void this.locationCacheCleanup.clearLegacyLocationCaches();
     this.theme.preference();
   }
 }

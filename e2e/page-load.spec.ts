@@ -75,7 +75,7 @@ test.describe('桌面裝置警告', () => {
     // 這個狀態只驗證桌面瀏覽器；行動裝置的發送按鈕應走不同情境。
     test.skip(isMobile, '僅限桌面瀏覽器測試');
     await page.goto('/');
-    await expect(page.getByRole('button', { name: '發送簡訊' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: '開啟簡訊 App' })).toBeDisabled();
   });
 });
 

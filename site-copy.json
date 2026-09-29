@@ -18,20 +18,19 @@
   "doesNot": [
     "自動報案",
     "代寄簡訊",
-    "存車牌／地址",
+    "在本站後端保存車牌／地址",
     "官方系統"
   ],
-  "doesNotStatement": "本工具不會自動報案、不代寄簡訊、不存車牌／地址，也不是官方系統。",
+  "doesNotStatement": "本工具不會自動報案、不代寄簡訊，也不會在本站後端保存車牌或地址；本工具不是官方系統。",
   "agentBoundary": "遠端 Agent 不能送出簡訊；只有使用者裝置上、開著本站的 Agent 能操表單。",
-  "privacy": "本站沒有自有後端，不會儲存車牌或地址。若使用者同意定位，瀏覽器會將座標送至 OpenStreetMap Nominatim 反查地址；Agent 不會暗開 GPS。",
-  "userConfirmation": "草稿尚未送出；需使用者確認收件人與內容。",
+  "privacy": "本站沒有報案資料後端，不會在本站伺服器保存車牌或地址。表單及短期反查快取只在目前頁面的記憶體中使用；新版不再以 Service Worker 持久快取定位反查資料，啟動時也會嘗試清除舊版快取。若使用者同意定位，瀏覽器會將座標送至 OpenStreetMap Nominatim；瀏覽器與該第三方服務可能依各自政策處理請求資料。可在瀏覽器設定中清除本站網站資料；Agent 不會暗開 GPS。",
+  "userConfirmation": "草稿尚未送出；開啟簡訊 App 前，使用者須在頁面確認受理單位、電話及完整本文。",
   "coverage": "支援臺灣各縣市的警政簡訊受理窗口，包含臺北市、新北市、桃園市、臺中市、臺南市與高雄市等地區。",
   "previewWarnings": [
     "尚未送出",
     "非官方",
     "需使用者確認"
   ],
-  "confirmationPrompt": "即將在你的裝置上開啟系統簡訊 App。內容尚未送出，請確認收件人與簡訊內容；要繼續嗎？",
   "maxPlates": 10,
   "webmcpTools": [
     {
@@ -52,7 +51,7 @@
     },
     {
       "name": "open_sms_composer",
-      "description": "Does not submit a police report. 只有使用者手勢或頁內明確確認後，才在使用者裝置上打開系統簡訊 App；沒有確認只回傳 opened:false。"
+      "description": "Does not submit a police report. 先讓使用者在頁面確認本次受理單位、電話與完整本文，確認後才在使用者裝置上打開系統簡訊 App；取消時回傳 opened:false。"
     }
   ],
   "webmcpLimitations": [
@@ -60,7 +59,7 @@
     "工具只使用本站前端狀態與內建受理窗口資料，不呼叫本站自有後端，也沒有遠端代操作介面。",
     "lookup_station 不會暗開 GPS；座標必須由使用者授權的定位流程提供，或由使用者明確傳入。",
     "set_report_form 只改表單；preview_sms 只產生草稿，草稿尚未送出。",
-    "open_sms_composer 需要使用者手勢或頁內明確確認；遠端 Agent 不能送出簡訊。"
+    "open_sms_composer 每次都會顯示本次草稿供使用者確認；遠端 Agent 不能送出簡訊。"
   ],
   "faq": [
     {
@@ -85,7 +84,7 @@
     },
     {
       "question": "本站會儲存車牌或地址嗎？",
-      "answer": "不會。本站沒有自有後端，不會儲存車牌或地址；定位反查時，瀏覽器只會在使用者同意後將座標送至 OpenStreetMap Nominatim。"
+      "answer": "本站沒有報案資料後端，不會在本站伺服器保存車牌或地址。表單及短期反查快取只在目前頁面的記憶體中使用；新版會嘗試清除舊版定位快取。若同意定位，座標會送至 OpenStreetMap Nominatim；瀏覽器與該服務可能依各自政策處理請求資料。你也可在瀏覽器設定中清除本站網站資料。"
     },
     {
       "question": "這是警政署或警察局的官方網站嗎？",
@@ -93,7 +92,7 @@
     },
     {
       "question": "遠端 Agent 可以替我送出簡訊嗎？",
-      "answer": "不能。只有使用者裝置上、開著本站的 Agent 能透過瀏覽器 WebMCP 操作表單；打開系統簡訊 App 前仍需要使用者手勢或頁內明確確認。"
+      "answer": "不能。只有使用者裝置上、開著本站的 Agent 能透過瀏覽器 WebMCP 操作表單；打開系統簡訊 App 前，使用者每次都須在頁面核對本次受理單位、電話與完整本文並確認。"
     }
   ],
   "app": {
@@ -106,9 +105,9 @@
     "desktopQrAlt": "https://tools.pylot.dev/ 的 QR Code",
     "freeNotice": "發送此簡訊是免費的。",
     "pendingPreviewHint": "待選擇行政區後顯示簡訊預覽…",
-    "districtMismatchWarning": "輸入地址與報案行政區不一致，請確認後再開啟簡訊 App。",
+    "districtMismatchWarning": "輸入地址與報案行政區不一致，請修正後再開啟簡訊 App。",
     "legalNotice": "報案的受理與否及後續處理，最終由該轄區警察機關依法判斷。",
-    "sendButton": "發送簡訊",
+    "sendButton": "開啟簡訊 App",
     "iosLengthWarning": "iOS 裝置建議簡訊少於 1600 字，請精簡內容後再發送。",
     "disclaimerTitle": "免責聲明",
     "disclaimerP1": "受理與否及後續處理，悉依警察機關及相關交通法規辦理；本工具不是警政機關官方系統。",

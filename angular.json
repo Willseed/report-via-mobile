@@ -40,6 +40,9 @@
           "configurations": {
             "production": {
               "optimization": true,
+              "security": {
+                "autoCsp": true
+              },
               "sourceMap": false,
               "extractLicenses": true,
               "namedChunks": false,

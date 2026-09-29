@@ -6,7 +6,7 @@
       "type": "skill-md",
       "description": "台灣交通違規簡訊報案工具的瀏覽器 WebMCP 操作說明。",
       "url": "https://tools.pylot.dev/.well-known/agent-skills/report-via-mobile/SKILL.md",
-      "digest": "sha256:a75856023dfa0bbdb373bc97e65f6143ef7d5f583c388d162a71cf86b340f52e"
+      "digest": "sha256:51710fe4dd18ae962ac307e5fb303c7406051632864ecb81ba4c682142313cfa"
     },
     {
       "name": "read-site-overview",

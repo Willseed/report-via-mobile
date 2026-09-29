@@ -1,9 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, OnDestroy, PLATFORM_ID, inject, signal } from '@angular/core';
 import { ADDRESS_MAX_LENGTH, normalizeAddress } from './domain/address.utils';
-import { composeSmsMessage } from './domain/sms-message.utils';
 import {
   LICENSE_PLATE_MAX_LENGTH,
+  LICENSE_PLATE_PATTERN,
   VIOLATION_MAX_LENGTH,
   VIOLATION_TYPES,
   cleanLicensePlate,
@@ -19,7 +19,9 @@ import {
 import { SmsService } from './sms.service';
 import { LocationResolverService } from './services/location-resolver.service';
 import { MessageComposerService } from './services/message-composer.service';
+import { ReportDraftService } from './services/report-draft.service';
 import { ReportFormService } from './services/report-form.service';
+import { SmsSubmissionService } from './services/sms-submission.service';
 
 const DISTRICT_VALUES = Object.values(District);
 const MAX_PLATES = ZH_TW.webmcp.maxPlates;
@@ -30,8 +32,12 @@ type WebMcpErrorCode =
   | 'address_too_long'
   | 'coordinate_lookup_failed'
   | 'invalid_coordinates'
+  | 'invalid_address'
   | 'invalid_district'
+  | 'invalid_form'
   | 'invalid_plates'
+  | 'invalid_violation'
+  | 'district_mismatch'
   | 'license_plate_too_long'
   | 'missing_address'
   | 'missing_lookup_input'
@@ -155,7 +161,7 @@ export interface OpenSmsComposerResult {
   readonly body: string;
   readonly station: StationData;
   readonly warnings: readonly string[];
-  readonly reason?: 'composer_open_failed' | 'user_confirmation_required';
+  readonly reason?: 'composer_open_failed' | 'draft_changed' | 'user_confirmation_required';
 }
 
 export type WebMcpToolResult =
@@ -205,7 +211,9 @@ export class WebMcpService implements OnDestroy {
   private readonly form = inject(ReportFormService);
   private readonly location = inject(LocationResolverService);
   private readonly composer = inject(MessageComposerService);
+  private readonly draft = inject(ReportDraftService);
   private readonly smsService = inject(SmsService);
+  private readonly submission = inject(SmsSubmissionService);
   private readonly stationLookup = inject(StationLookupService);
   private readonly registeredState = signal(false);
   private registrationAbortController: AbortController | null = null;
@@ -431,58 +439,71 @@ export class WebMcpService implements OnDestroy {
   private setReportForm(input: unknown): SetReportFormResult | WebMcpFailure {
     const args = this.inputRecord(input);
     const changed: string[] = [];
-    this.location.clearAddressDebounce();
-    this.form.clearViolationDebounce();
+    let nextAddress: string | undefined;
+    let nextStation: PoliceStation | null | undefined;
+    let nextViolation: string | undefined;
+    let nextPlates: readonly string[] | undefined;
 
     if (this.hasDataProperty(args, 'address')) {
-      const address = this.optionalString(args, 'address');
-      if (address && address.length > ADDRESS_MAX_LENGTH) {
-        return this.failure('address_too_long', ZH_TW.webmcp.addressTooLong);
+      const address = this.ownValue(args, 'address');
+      if (typeof address !== 'string') {
+        return this.failure('invalid_address', ZH_TW.webmcp.invalidAddress);
       }
 
-      const normalizedAddress = normalizeAddress(address ?? '');
-      this.form.setAddress(normalizedAddress);
-      this.form.setSelectedStation(
-        normalizedAddress ? this.stationLookup.findStation(normalizedAddress) : null,
-      );
+      nextAddress = normalizeAddress(address.trim());
+      if (nextAddress.length > ADDRESS_MAX_LENGTH) {
+        return this.failure('address_too_long', ZH_TW.webmcp.addressTooLong);
+      }
+      nextStation = nextAddress ? this.stationLookup.findStation(nextAddress) : null;
       changed.push('address');
     }
 
     if (this.hasDataProperty(args, 'district')) {
-      const district = this.optionalString(args, 'district');
-      if (!district || !isDistrict(district)) {
+      const district = this.ownValue(args, 'district');
+      const districtValue = typeof district === 'string' ? district.trim() : '';
+      if (!isDistrict(districtValue)) {
         return this.failure('invalid_district', ZH_TW.webmcp.invalidDistrict);
       }
 
-      const station = this.findStationByDistrict(district);
+      const station = this.findStationByDistrict(districtValue);
       if (!station) return this.failure('station_not_found', ZH_TW.webmcp.stationNotFound);
-      this.form.setSelectedStation(station);
+      nextStation = station;
       changed.push('district');
     }
 
     if (this.hasDataProperty(args, 'violation')) {
-      const violation = this.optionalString(args, 'violation') ?? '';
-      if (violation.length > VIOLATION_MAX_LENGTH) {
+      const violation = this.ownValue(args, 'violation');
+      if (typeof violation !== 'string') {
+        return this.failure('invalid_violation', ZH_TW.webmcp.invalidViolation);
+      }
+      nextViolation = violation.trim();
+      if (nextViolation.length > VIOLATION_MAX_LENGTH) {
         return this.failure('violation_too_long', ZH_TW.webmcp.violationTooLong);
       }
-      this.form.setViolation(violation);
       changed.push('violation');
     }
 
     if (this.hasDataProperty(args, 'plates')) {
       const plates = this.readPlates(args);
       if (plates === 'invalid') return this.failure('invalid_plates', ZH_TW.webmcp.invalidPlates);
-      if (plates.length > MAX_PLATES) {
+      if (plates === 'too_many') {
         return this.failure('too_many_plates', ZH_TW.webmcp.tooManyPlates);
       }
-      for (const plate of plates) {
-        if (plate.length > LICENSE_PLATE_MAX_LENGTH) {
-          return this.failure('license_plate_too_long', ZH_TW.webmcp.licensePlateTooLong);
-        }
+      if (plates === 'too_long') {
+        return this.failure('license_plate_too_long', ZH_TW.webmcp.licensePlateTooLong);
       }
-      this.form.setLicensePlates(plates);
-      if (plates.length > 0) this.form.showLicensePlateField();
+      nextPlates = plates;
       changed.push('plates');
+    }
+
+    this.location.clearAddressDebounce();
+    this.form.clearViolationDebounce();
+    if (nextAddress !== undefined) this.form.setAddress(nextAddress);
+    if (nextStation !== undefined) this.form.setSelectedStation(nextStation);
+    if (nextViolation !== undefined) this.form.setViolation(nextViolation);
+    if (nextPlates !== undefined) {
+      this.form.setLicensePlates(nextPlates);
+      if (nextPlates.length > 0) this.form.showLicensePlateField();
     }
 
     return {
@@ -498,42 +519,66 @@ export class WebMcpService implements OnDestroy {
     return preview;
   }
 
-  private openSmsComposer(): OpenSmsComposerResult | WebMcpFailure {
+  private async openSmsComposer(): Promise<OpenSmsComposerResult | WebMcpFailure> {
     const preview = this.buildPreview();
     if (!preview.ok) return { ...preview, opened: false };
 
-    const warnings = [...preview.warnings];
-    if (!this.hasUserGesture() && !this.requestPageConfirmation()) {
+    const snapshot: PreviewSmsResult = {
+      ...preview,
+      station: { ...preview.station },
+      warnings: [...preview.warnings],
+    };
+    const confirmed = await this.submission.confirmDraft({
+      stationName: snapshot.station.stationName,
+      phoneNumber: snapshot.to,
+      message: snapshot.body,
+      licensePlate: this.form.licensePlate() || undefined,
+      warnings: snapshot.warnings,
+    });
+    if (!confirmed) {
       return {
         ok: true,
         opened: false,
-        to: preview.to,
-        body: preview.body,
-        station: preview.station,
-        warnings: [...warnings, ZH_TW.webmcp.confirmationRequired],
+        to: snapshot.to,
+        body: snapshot.body,
+        station: snapshot.station,
+        warnings: [...snapshot.warnings, ZH_TW.webmcp.confirmationRequired],
         reason: 'user_confirmation_required',
       };
     }
 
+    const current = this.buildPreview();
+    if (!current.ok || !this.samePreview(snapshot, current)) {
+      return {
+        ok: true,
+        opened: false,
+        to: snapshot.to,
+        body: snapshot.body,
+        station: snapshot.station,
+        warnings: [...snapshot.warnings, ZH_TW.webmcp.draftChanged],
+        reason: 'draft_changed',
+      };
+    }
+
     try {
-      const opened = this.smsService.openSmsComposer(preview.to, preview.body);
+      const opened = this.smsService.openSmsComposer(snapshot.to, snapshot.body);
       return {
         ok: true,
         opened,
-        to: preview.to,
-        body: preview.body,
-        station: preview.station,
-        warnings,
+        to: snapshot.to,
+        body: snapshot.body,
+        station: snapshot.station,
+        warnings: snapshot.warnings,
         ...(opened ? {} : { reason: 'composer_open_failed' as const }),
       };
     } catch {
       return {
         ok: true,
         opened: false,
-        to: preview.to,
-        body: preview.body,
-        station: preview.station,
-        warnings,
+        to: snapshot.to,
+        body: snapshot.body,
+        station: snapshot.station,
+        warnings: snapshot.warnings,
         reason: 'composer_open_failed',
       };
     }
@@ -542,30 +587,52 @@ export class WebMcpService implements OnDestroy {
   private buildPreview(): PreviewSmsResult | WebMcpFailure {
     const address = this.form.address().trim();
     const violation = this.form.violation().trim();
-    const station =
-      this.form.station() ?? (address ? this.stationLookup.findStation(address) : null);
+    const station = this.form.station();
+    const plates = this.form.licensePlates();
 
     if (!address) return this.failure('missing_address', ZH_TW.webmcp.missingAddress);
+    if (address.length > ADDRESS_MAX_LENGTH) {
+      return this.failure('address_too_long', ZH_TW.webmcp.addressTooLong);
+    }
     if (!violation) return this.failure('missing_violation', ZH_TW.webmcp.missingViolation);
+    if (violation.length > VIOLATION_MAX_LENGTH) {
+      return this.failure('violation_too_long', ZH_TW.webmcp.violationTooLong);
+    }
     if (!station) return this.failure('missing_station', ZH_TW.webmcp.missingStation);
-
-    const body = composeSmsMessage({
-      address,
-      violation,
-      licensePlates: this.form.licensePlates(),
-    });
-    const warnings = [...ZH_TW.webmcp.previewWarnings];
+    if (plates.length > MAX_PLATES) {
+      return this.failure('too_many_plates', ZH_TW.webmcp.tooManyPlates);
+    }
+    if (plates.some((plate) => plate.length > LICENSE_PLATE_MAX_LENGTH)) {
+      return this.failure('license_plate_too_long', ZH_TW.webmcp.licensePlateTooLong);
+    }
+    if (plates.some((plate) => !LICENSE_PLATE_PATTERN.test(plate))) {
+      return this.failure('invalid_plates', ZH_TW.webmcp.invalidPlates);
+    }
     if (this.composer.districtMismatch()) {
-      warnings.push(ZH_TW.smsForm.districtMismatchWarning);
+      return this.failure('district_mismatch', ZH_TW.webmcp.districtMismatch);
+    }
+    const draft = this.draft.submitData();
+    if (!this.draft.isFormValid() || !draft) {
+      return this.failure('invalid_form', ZH_TW.webmcp.invalidForm);
     }
 
     return {
       ok: true,
-      to: station.phoneNumber,
-      body,
+      to: draft.phoneNumber,
+      body: draft.message,
       station: this.toStationData(station),
-      warnings,
+      warnings: [...ZH_TW.webmcp.previewWarnings],
     };
+  }
+
+  private samePreview(a: PreviewSmsResult, b: PreviewSmsResult): boolean {
+    return (
+      a.to === b.to &&
+      a.body === b.body &&
+      a.station.district === b.station.district &&
+      a.station.stationName === b.station.stationName &&
+      a.station.phoneNumber === b.station.phoneNumber
+    );
   }
 
   private lookupByDistrict(
@@ -641,9 +708,12 @@ export class WebMcpService implements OnDestroy {
     return this.hasDataProperty(input, 'lat') && this.hasDataProperty(input, 'lng');
   }
 
-  private readPlates(input: Record<string, unknown>): readonly string[] | 'invalid' {
+  private readPlates(
+    input: Record<string, unknown>,
+  ): readonly string[] | 'invalid' | 'too_many' | 'too_long' {
     const value = this.ownValue(input, 'plates');
     if (!Array.isArray(value)) return 'invalid';
+    if (value.length > MAX_PLATES) return 'too_many';
 
     const plates: string[] = [];
     for (let index = 0; index < value.length; index += 1) {
@@ -651,6 +721,7 @@ export class WebMcpService implements OnDestroy {
       if (!descriptor || !('value' in descriptor) || typeof descriptor.value !== 'string') {
         return 'invalid';
       }
+      if (descriptor.value.length > LICENSE_PLATE_MAX_LENGTH) return 'too_long';
       const cleaned = cleanLicensePlate(descriptor.value);
       if (cleaned) plates.push(cleaned);
     }
@@ -676,21 +747,6 @@ export class WebMcpService implements OnDestroy {
       plates: [...this.form.licensePlates()],
       station: station ? this.toStationData(station) : null,
     };
-  }
-
-  private hasUserGesture(): boolean {
-    return globalThis.navigator?.userActivation?.isActive === true;
-  }
-
-  private requestPageConfirmation(): boolean {
-    const confirmFunction = globalThis.confirm;
-    if (typeof confirmFunction !== 'function') return false;
-
-    try {
-      return confirmFunction(ZH_TW.webmcp.confirmationPrompt);
-    } catch {
-      return false;
-    }
   }
 
   private findStationByDistrict(district: District): PoliceStation | null {

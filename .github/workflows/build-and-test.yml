@@ -48,6 +48,12 @@ jobs:
       - name: Run Tests
         run: npm run test:coverage
 
+      - name: Validate and test Worker
+        run: |
+          node --check worker/link-headers.mjs
+          npm run test:worker
+          node --test scripts/verify-edge-deployment.test.mjs
+
       - name: Upload coverage to Codacy
         uses: codacy/codacy-coverage-reporter-action@89d6c85cfafaec52c72b6c5e8b2878d33104c699 # v1.3.0
         continue-on-error: true
@@ -90,6 +96,9 @@ jobs:
             "${REPORT_BUILD_DATE}" \
             dist/report-via-mobile/browser
           node scripts/validate-agent-discovery.js dist/report-via-mobile/browser
+
+      - name: Verify PWA manifest asset checksums
+        run: node --input-type=module -e 'const { loadBuildSnapshot } = await import("./scripts/verify-edge-deployment.mjs"); await loadBuildSnapshot();'
 
       - name: Save Angular CLI artifacts
         if: ${{ !cancelled() }}

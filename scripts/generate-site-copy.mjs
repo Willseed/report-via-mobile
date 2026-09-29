@@ -231,7 +231,7 @@ ${copy.privacy}
 
 ${copy.webmcpLimitations.join('\n\n')}
 
-Agent 請依序使用 \`list_violation_types\`、\`lookup_station\`、\`set_report_form\`、\`preview_sms\`；preview 結果只是完整草稿，${copy.userConfirmation} \`open_sms_composer\` 只有在使用者手勢或頁內明確確認後才可能打開系統簡訊 App。遠端 Agent 不能送出簡訊。
+Agent 請依序使用 \`list_violation_types\`、\`lookup_station\`、\`set_report_form\`、\`preview_sms\`；preview 結果只是完整草稿，${copy.userConfirmation} \`open_sms_composer\` 只有在使用者確認本次草稿後才可能打開系統簡訊 App。遠端 Agent 不能送出簡訊。
 
 ## 文件
 
@@ -310,7 +310,7 @@ ${copy.agentBoundary}
 3. 使用 \`lookup_station\` 依地址、行政區或使用者已授權提供的座標查受理窗口與號碼。工具不會暗開 GPS。
 4. 使用 \`set_report_form\` 將使用者確認的資料寫入表單；這一步只改表單。
 5. 使用 \`preview_sms\` 讀取表單並檢查完整草稿、收件人、受理單位與警告。預覽內容尚未送出；warnings 必含 ${previewWarningLabels}。
-6. 只有使用者手勢或頁內明確確認後，才可使用 \`open_sms_composer\` 打開系統簡訊 App；是否送出仍由使用者在 App 內決定。
+6. 使用 \`open_sms_composer\` 時，使用者須在頁面核對並確認本次受理單位、電話及完整本文，才會打開系統簡訊 App；是否送出仍由使用者在 App 內決定。
 
 ## 瀏覽器工具
 
@@ -515,7 +515,7 @@ function renderApiCatalog() {
     notes: [
       '本站是靜態 PWA，沒有自有後端、受保護 API 或遠端代寄簡訊服務。',
       'WebMCP 工具只在使用者裝置、本站已開啟的瀏覽器頁面中提供。',
-      '遠端 Agent 不能送出簡訊；open_sms_composer 需要使用者手勢或頁內明確確認。',
+      '遠端 Agent 不能送出簡訊；open_sms_composer 每次都需要使用者在頁面確認具體草稿。',
     ],
   };
 }

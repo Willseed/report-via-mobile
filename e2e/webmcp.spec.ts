@@ -24,17 +24,16 @@ test.describe('瀏覽器 WebMCP', () => {
       });
       Object.defineProperty(navigator, 'userActivation', {
         configurable: true,
-        value: { isActive: false, hasBeenActive: false },
+        value: { isActive: true, hasBeenActive: true },
       });
     });
-    page.on('dialog', (dialog) => dialog.dismiss());
 
     await page.goto('/');
     await expect
       .poll(() => page.evaluate(() => (window.__webMcpTools as unknown[] | undefined)?.length ?? 0))
       .toBe(5);
 
-    const result = await page.evaluate(async () => {
+    const resultPromise = page.evaluate(async () => {
       const tools = window.__webMcpTools as Array<{
         name: string;
         execute(input?: unknown): unknown | Promise<unknown>;
@@ -56,6 +55,14 @@ test.describe('瀏覽器 WebMCP', () => {
 
       return { list, preview, open };
     });
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('臺北市政府警察局');
+    await expect(dialog).toContainText('0911510914');
+    await expect(dialog).toContainText('臺北市信義區市府路1號');
+    await page.getByRole('button', { name: '取消' }).click();
+    const result = await resultPromise;
 
     expect(result.list.violationTypes.length).toBeGreaterThan(0);
     expect(result.preview).toMatchObject({

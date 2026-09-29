@@ -28,6 +28,15 @@ export class PwaUpdateService {
         });
       });
 
+    this.swUpdate.versionUpdates
+      .pipe(
+        filter((event) => event.type === 'VERSION_INSTALLATION_FAILED'),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.snackBar.open(ZH_TW.pwa.updateInstallFailed, '', { duration: 5000 });
+      });
+
     this.swUpdate.unrecoverable
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
