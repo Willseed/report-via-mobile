@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title>Fallback CSP test fixture</title>
-    <meta http-equiv="Content-Security-Policy" content="script-src 'strict-dynamic' 'sha256-Ya9i9RfwZ2/EmeCCAWbFoTCiTTPSoLav11gvaQBTiWw=' https: 'unsafe-inline';">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'strict-dynamic' 'sha256-Ya9i9RfwZ2/EmeCCAWbFoTCiTTPSoLav11gvaQBTiWw=' https: 'unsafe-inline';"> <!-- //NOSONAR: Test input mirrors Angular output; Worker tests assert unsafe-inline is removed. -->
   </head>
   <body><script>window.reportAppReady = true;</script></body>
 </html>
