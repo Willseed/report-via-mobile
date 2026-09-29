@@ -5,11 +5,16 @@ import test from 'node:test';
 
 import worker from './link-headers.mjs';
 
-async function assertHtmlBodyUnchanged(response, expectedHtml) {
-  // These controlled HTML fixtures test CSP handling; compare bytes without rendering them.
-  const actualBytes = Buffer.from(await response.arrayBuffer());
-  const expectedBytes = Buffer.from(expectedHtml, 'utf8');
-  assert.deepEqual(actualBytes, expectedBytes);
+// npm runs this test from the repository root; these are static, trusted response bodies.
+const cspFixtureBytes = readFileSync('worker/fixtures/auto-csp.html');
+const fallbackFixtureBytes = readFileSync('worker/fixtures/fallback-csp.html');
+const legacyFixtureBytes = readFileSync('worker/fixtures/legacy.html');
+
+async function assertHtmlBodyUnchanged(response, originResponse) {
+  // Compare the two HTTP bodies as bytes without passing HTML text to an assertion.
+  const actualBytes = new Uint8Array(await response.arrayBuffer());
+  const originBytes = new Uint8Array(await originResponse.arrayBuffer());
+  assert.deepEqual(actualBytes, originBytes);
 }
 
 test('adds discovery links and Accept vary to the HTML homepage', async (t) => {
@@ -75,34 +80,25 @@ test('uses sanitized origin requests for static assets', async (t) => {
 test('replaces unsafe inline script rules with built script hashes and preserves HTML bytes', async (t) => {
   const inlineScript = 'window.reportAppReady = true;';
   const hash = createHash('sha256').update(inlineScript).digest('base64');
-  const autoCsp =
-    `script-src 'strict-dynamic' 'sha256-${hash}' https: 'unsafe-inline';` +
-    "object-src 'none';base-uri 'self';";
-  const html =
-    `<html><head><meta http-equiv="Content-Security-Policy" content="${autoCsp}"></head>` +
-    `<body><script>${inlineScript}</script></body></html>`;
   const originalPolicy = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
     "style-src 'self' 'unsafe-inline'",
     "frame-ancestors 'none'",
   ].join('; ');
-  mockFetch(
-    t,
-    async () =>
-      new Response(html, {
-        headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Content-Security-Policy': originalPolicy,
-          'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
-        },
-      }),
-  );
+  const originResponse = new Response(cspFixtureBytes, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Security-Policy': originalPolicy,
+      'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
+    },
+  });
+  mockFetch(t, async () => originResponse.clone());
 
   const response = await worker.fetch(new Request('https://tools.pylot.dev/'));
   const policy = response.headers.get('Content-Security-Policy') ?? '';
 
-  await assertHtmlBodyUnchanged(response, html);
+  await assertHtmlBodyUnchanged(response, originResponse);
   assert.match(policy, /default-src 'self'/);
   assert.match(policy, /frame-ancestors 'none'/);
   assert.match(policy, /style-src 'self' 'unsafe-inline'/);
@@ -124,30 +120,23 @@ for (const [path, status] of [
   test(`hardens the HTML fallback at ${path} without changing its status or body`, async (t) => {
     const script = 'window.reportAppReady = true;';
     const hash = createHash('sha256').update(script).digest('base64');
-    const html =
-      `<html><head><meta http-equiv="Content-Security-Policy" ` +
-      `content="script-src 'strict-dynamic' 'sha256-${hash}' https: 'unsafe-inline';"></head>` +
-      `<body><script>${script}</script></body></html>`;
-    mockFetch(
-      t,
-      async () =>
-        new Response(html, {
-          status,
-          headers: {
-            'Content-Type': 'text/html; charset=utf-8',
-            'Content-Security-Policy':
-              "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'",
-            'Strict-Transport-Security': 'max-age=63072000',
-            'Access-Control-Allow-Origin': '*',
-          },
-        }),
-    );
+    const originResponse = new Response(fallbackFixtureBytes, {
+      status,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Security-Policy':
+          "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'",
+        'Strict-Transport-Security': 'max-age=63072000',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+    mockFetch(t, async () => originResponse.clone());
 
     const response = await worker.fetch(new Request(`https://tools.pylot.dev${path}`));
     const policy = response.headers.get('Content-Security-Policy') ?? '';
 
     assert.equal(response.status, status);
-    await assertHtmlBodyUnchanged(response, html);
+    await assertHtmlBodyUnchanged(response, originResponse);
     assert.ok(policy.includes(`script-src 'sha256-${hash}' 'self'`));
     assert.match(policy, /script-src-attr 'none'/);
     assert.doesNotMatch(policy, /script-src [^;]*'unsafe-inline'/);
@@ -157,17 +146,13 @@ for (const [path, status] of [
 }
 
 test('preserves the current policy until HTML with build hashes is deployed', async (t) => {
-  const html = '<html><body>home</body></html>';
-  mockFetch(
-    t,
-    async () =>
-      new Response(html, {
-        headers: {
-          'Content-Type': 'text/html',
-          'Content-Security-Policy': "script-src 'self' 'unsafe-inline'",
-        },
-      }),
-  );
+  const originResponse = new Response(legacyFixtureBytes, {
+    headers: {
+      'Content-Type': 'text/html',
+      'Content-Security-Policy': "script-src 'self' 'unsafe-inline'",
+    },
+  });
+  mockFetch(t, async () => originResponse.clone());
 
   const response = await worker.fetch(new Request('https://tools.pylot.dev/'));
 
@@ -175,7 +160,7 @@ test('preserves the current policy until HTML with build hashes is deployed', as
     response.headers.get('Content-Security-Policy'),
     "script-src 'self' 'unsafe-inline'",
   );
-  await assertHtmlBodyUnchanged(response, html);
+  await assertHtmlBodyUnchanged(response, originResponse);
 });
 
 test('keeps HEAD bodyless and leaves conditional 304 responses untouched', async (t) => {

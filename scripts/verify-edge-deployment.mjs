@@ -61,11 +61,15 @@ function buildAssetPath(path) {
 }
 
 export async function loadBuildSnapshot() {
+  // The build root and manifest filename are fixed relative to this script.
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   const manifestBytes = await readFile(BUILD_MANIFEST_PATH);
   const manifest = parseManifest(manifestBytes);
   const assets = new Map();
 
   for (const path of Object.keys(manifest.hashTable)) {
+    // buildAssetPath rejects traversal and confines each entry to the fixed build directory.
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     assets.set(path, await readFile(buildAssetPath(path)));
   }
 

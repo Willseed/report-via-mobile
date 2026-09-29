@@ -10,14 +10,15 @@ function fixture({
   weakFallbackCsp = false,
   strictDynamic = false,
 } = {}) {
-  const html = '<html><body>test</body></html>';
+  // These tests compare response bytes and headers; HTML markup is not part of the fixture behavior.
+  const homepageBytes = Buffer.from('fixture page');
   const protectedResource = '{"resource":"https://tools.pylot.dev/"}\n';
   const authorizationServer = '{"issuer":"https://tools.pylot.dev/"}\n';
   const script = 'window.appReady=true;';
   const manifest = Buffer.from(
     JSON.stringify({
       hashTable: {
-        '/index.html': 'da30e5f93435a832a253c4e6de13784b2c3ffd44',
+        '/index.html': '7128efb056b985603356506cddbef5bc75678785',
         '/.well-known/oauth-protected-resource': '74afa088bf9135d944a154d4556f6f10a2199e57',
         '/.well-known/oauth-authorization-server': '701dbb20c82ee441f3bebec0ebf325ab03c4cb30',
         '/main-TEST.js': 'f22d31b39c9752ce80133f7b8a91213aeb6b985e',
@@ -50,47 +51,53 @@ function fixture({
   const build = {
     manifestBytes: manifest,
     assets: new Map([
-      ['/index.html', Buffer.from(html)],
+      ['/index.html', homepageBytes],
       ['/.well-known/oauth-protected-resource', Buffer.from(protectedResource)],
       ['/.well-known/oauth-authorization-server', Buffer.from(authorizationServer)],
       ['/main-TEST.js', Buffer.from(script)],
     ]),
   };
+  const responses = new Map([
+    ['/', new Response(homepageBytes, { headers: securityHeaders })],
+    ['/index.html', new Response(homepageBytes, { headers: securityHeaders })],
+    [
+      '/404.html',
+      new Response(homepageBytes, {
+        headers: {
+          ...securityHeaders,
+          ...(weakFallbackCsp
+            ? {
+                'Content-Security-Policy':
+                  "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'",
+              }
+            : {}),
+        },
+      }),
+    ],
+    ['/auth.md', new Response('# Auth\n', { headers: { 'Content-Type': 'text/markdown' } })],
+    ['/ngsw.json', new Response(manifest)],
+    [
+      '/.well-known/oauth-protected-resource',
+      new Response(changedDocument ? `${protectedResource}changed` : protectedResource, {
+        headers: documentHeaders,
+      }),
+    ],
+    [
+      '/.well-known/oauth-authorization-server',
+      new Response(authorizationServer, { headers: documentHeaders }),
+    ],
+    ['/main-TEST.js', new Response(changedScript ? `${script}changed` : script)],
+  ]);
+  const markdownResponse = new Response('# Site\n', {
+    headers: { 'Content-Type': 'text/markdown' },
+  });
   const fetchImpl = async (url, options) => {
-    switch (url.pathname) {
-      case '/':
-        return options.headers.Accept === 'text/markdown'
-          ? new Response('# Site\n', { headers: { 'Content-Type': 'text/markdown' } })
-          : new Response(html, { headers: securityHeaders });
-      case '/auth.md':
-        return new Response('# Auth\n', { headers: { 'Content-Type': 'text/markdown' } });
-      case '/ngsw.json':
-        return new Response(manifest);
-      case '/index.html':
-        return new Response(html, { headers: securityHeaders });
-      case '/404.html':
-        return new Response(html, {
-          headers: {
-            ...securityHeaders,
-            ...(weakFallbackCsp
-              ? {
-                  'Content-Security-Policy':
-                    "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'",
-                }
-              : {}),
-          },
-        });
-      case '/.well-known/oauth-protected-resource':
-        return new Response(changedDocument ? `${protectedResource}changed` : protectedResource, {
-          headers: documentHeaders,
-        });
-      case '/.well-known/oauth-authorization-server':
-        return new Response(authorizationServer, { headers: documentHeaders });
-      case '/main-TEST.js':
-        return new Response(changedScript ? `${script}changed` : script);
-      default:
-        throw new Error(`Unexpected path: ${url.pathname}`);
+    if (url.pathname === '/' && options.headers.Accept === 'text/markdown') {
+      return markdownResponse.clone();
     }
+    const response = responses.get(url.pathname);
+    if (!response) throw new Error(`Unexpected path: ${url.pathname}`);
+    return response.clone();
   };
   return { fetchImpl, build };
 }
