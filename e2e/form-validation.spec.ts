@@ -10,7 +10,7 @@ test.describe('表單驗證', () => {
     // 發送按鈕只在行動裝置上啟用，因此桌面瀏覽器不適用此提交情境。
     test.skip(!isMobile, '桌面裝置發送按鈕停用');
 
-    await page.getByRole('button', { name: '發送簡訊' }).click();
+    await page.getByRole('button', { name: '開啟簡訊 App' }).click();
     await expect(page.getByText('請輸入事發地址')).toBeVisible();
     await expect(page.getByText('請選擇報案行政區')).toBeVisible();
     await expect(page.getByText('請選擇違規事實')).toBeVisible();
@@ -66,7 +66,7 @@ test.describe('行政區不一致警告', () => {
     await violationInput.click();
     await page.getByRole('option', { name: '汽車於紅線停車' }).click();
 
-    await expect(page.getByRole('button', { name: '發送簡訊' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: '開啟簡訊 App' })).toBeDisabled();
   });
 
   test('修正行政區後警告應消失', async ({ page }) => {

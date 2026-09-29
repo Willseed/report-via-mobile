@@ -1,14 +1,10 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { verifyEdgeOnce } from './verify-edge-deployment.mjs';
 
-function sha1(value) {
-  return createHash('sha1').update(value).digest('hex');
-}
-
 function fixture({
   changedDocument = false,
+  changedScript = false,
   persistentLocationCache = false,
   weakCsp = false,
   weakFallbackCsp = false,
@@ -17,12 +13,14 @@ function fixture({
   const html = '<html><body>test</body></html>';
   const protectedResource = '{"resource":"https://tools.pylot.dev/"}\n';
   const authorizationServer = '{"issuer":"https://tools.pylot.dev/"}\n';
+  const script = 'window.appReady=true;';
   const manifest = Buffer.from(
     JSON.stringify({
       hashTable: {
-        '/index.html': sha1(html),
-        '/.well-known/oauth-protected-resource': sha1(protectedResource),
-        '/.well-known/oauth-authorization-server': sha1(authorizationServer),
+        '/index.html': 'da30e5f93435a832a253c4e6de13784b2c3ffd44',
+        '/.well-known/oauth-protected-resource': '74afa088bf9135d944a154d4556f6f10a2199e57',
+        '/.well-known/oauth-authorization-server': '701dbb20c82ee441f3bebec0ebf325ab03c4cb30',
+        '/main-TEST.js': 'f22d31b39c9752ce80133f7b8a91213aeb6b985e',
       },
       dataGroups: persistentLocationCache ? [{ name: 'nominatim-api' }] : [],
     }),
@@ -48,6 +46,15 @@ function fixture({
   const documentHeaders = {
     'Content-Type': 'application/json; charset=utf-8',
     'X-Agent-Ready-Worker': 'active',
+  };
+  const build = {
+    manifestBytes: manifest,
+    assets: new Map([
+      ['/index.html', Buffer.from(html)],
+      ['/.well-known/oauth-protected-resource', Buffer.from(protectedResource)],
+      ['/.well-known/oauth-authorization-server', Buffer.from(authorizationServer)],
+      ['/main-TEST.js', Buffer.from(script)],
+    ]),
   };
   const fetchImpl = async (url, options) => {
     switch (url.pathname) {
@@ -79,58 +86,72 @@ function fixture({
         });
       case '/.well-known/oauth-authorization-server':
         return new Response(authorizationServer, { headers: documentHeaders });
+      case '/main-TEST.js':
+        return new Response(changedScript ? `${script}changed` : script);
       default:
         throw new Error(`Unexpected path: ${url.pathname}`);
     }
   };
-  return { fetchImpl, manifest };
+  return { fetchImpl, build };
 }
 
 test('checks Edge bytes against the same release manifest', async () => {
-  const { fetchImpl, manifest } = fixture();
-  assert.equal(await verifyEdgeOnce('https://tools.pylot.dev/', fetchImpl, manifest), 3);
+  const { fetchImpl, build } = fixture();
+  assert.equal(await verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl), 4);
 });
 
-test('rejects a Worker document whose bytes differ from the PWA hash', async () => {
-  const { fetchImpl, manifest } = fixture({ changedDocument: true });
+test('rejects a Worker document whose bytes differ from the local build', async () => {
+  const { fetchImpl, build } = fixture({ changedDocument: true });
   await assert.rejects(
-    verifyEdgeOnce('https://tools.pylot.dev/', fetchImpl, manifest),
+    verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl),
     /oauth-protected-resource differs/,
   );
 });
 
-test('rejects a previous release and a persistent location data group', async () => {
-  const { fetchImpl, manifest } = fixture({ persistentLocationCache: true });
+test('rejects a JavaScript asset whose bytes differ from the local build', async () => {
+  const { fetchImpl, build } = fixture({ changedScript: true });
   await assert.rejects(
-    verifyEdgeOnce('https://tools.pylot.dev/', fetchImpl, Buffer.from('previous release')),
+    verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl),
+    /main-TEST.js differs/,
+  );
+});
+
+test('rejects a previous release and a persistent location data group', async () => {
+  const { fetchImpl, build } = fixture({ persistentLocationCache: true });
+  await assert.rejects(
+    verifyEdgeOnce(
+      'https://tools.pylot.dev/',
+      { ...build, manifestBytes: Buffer.from('previous release') },
+      fetchImpl,
+    ),
     /different build/,
   );
   await assert.rejects(
-    verifyEdgeOnce('https://tools.pylot.dev/', fetchImpl, manifest),
+    verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl),
     /persistently caches Nominatim/,
   );
 });
 
 test('rejects a homepage with inline scripts allowed by its CSP header', async () => {
-  const { fetchImpl, manifest } = fixture({ weakCsp: true });
+  const { fetchImpl, build } = fixture({ weakCsp: true });
   await assert.rejects(
-    verifyEdgeOnce('https://tools.pylot.dev/', fetchImpl, manifest),
+    verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl),
     /script-src/,
   );
 });
 
 test('rejects a 404 page with inline scripts allowed by its CSP header', async () => {
-  const { fetchImpl, manifest } = fixture({ weakFallbackCsp: true });
+  const { fetchImpl, build } = fixture({ weakFallbackCsp: true });
   await assert.rejects(
-    verifyEdgeOnce('https://tools.pylot.dev/', fetchImpl, manifest),
+    verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl),
     /unsafe-inline/,
   );
 });
 
 test('rejects a script policy that trusts arbitrary descendants', async () => {
-  const { fetchImpl, manifest } = fixture({ strictDynamic: true });
+  const { fetchImpl, build } = fixture({ strictDynamic: true });
   await assert.rejects(
-    verifyEdgeOnce('https://tools.pylot.dev/', fetchImpl, manifest),
+    verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl),
     /strict-dynamic/,
   );
 });

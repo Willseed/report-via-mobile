@@ -111,4 +111,4 @@ jobs:
           path: dist/report-via-mobile/browser
 
       - name: Verify public Edge responses
-        run: node scripts/verify-edge-deployment.mjs https://tools.pylot.dev/ dist/report-via-mobile/browser/ngsw.json
+        run: node scripts/verify-edge-deployment.mjs https://tools.pylot.dev/

@@ -184,8 +184,9 @@ MCP server-card 的 `transport` 維持 `null`；工具僅是瀏覽器 WebMCP。
 
 `main` 的 **Deploy to GitHub Pages** workflow 會先執行完整建置、前端測試及 Worker
 測試，再以同一個 commit 依序部署 Cloudflare Worker 與 GitHub Pages。手動執行也僅
-接受 `main`；一次只會有一個正式部署執行，最後比對經 Edge 回傳的 PWA 資源雜湊、
-公開文件與安全標頭。Worker 先部署並直接轉送 Pages 的公開文件，使過渡期間的文件位元組仍與當時的 PWA 清單一致。
+接受 `main`；一次只會有一個正式部署執行。發布後逐位元組比對 Edge 回傳的 PWA 資源
+與同次建置檔案，並檢查公開文件與安全標頭。Worker 先部署並直接轉送 Pages 的公開文件，
+使過渡期間的文件位元組仍與當時的 PWA 清單一致。
 
 維護者需確認 GitHub 的 `cloudflare-production` environment 限制部署分支為 `main`，
 設定必要的審核人員，並將 `CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_API_TOKEN` 放在該

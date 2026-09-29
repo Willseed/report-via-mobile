@@ -5,6 +5,13 @@ import test from 'node:test';
 
 import worker from './link-headers.mjs';
 
+async function assertHtmlBodyUnchanged(response, expectedHtml) {
+  // These controlled HTML fixtures test CSP handling; compare bytes without rendering them.
+  const actualBytes = Buffer.from(await response.arrayBuffer());
+  const expectedBytes = Buffer.from(expectedHtml, 'utf8');
+  assert.deepEqual(actualBytes, expectedBytes);
+}
+
 test('adds discovery links and Accept vary to the HTML homepage', async (t) => {
   mockFetch(
     t,
@@ -95,11 +102,11 @@ test('replaces unsafe inline script rules with built script hashes and preserves
   const response = await worker.fetch(new Request('https://tools.pylot.dev/'));
   const policy = response.headers.get('Content-Security-Policy') ?? '';
 
-  assert.equal(await response.text(), html);
+  await assertHtmlBodyUnchanged(response, html);
   assert.match(policy, /default-src 'self'/);
   assert.match(policy, /frame-ancestors 'none'/);
   assert.match(policy, /style-src 'self' 'unsafe-inline'/);
-  assert.match(policy, new RegExp(`script-src 'sha256-${hash}' 'self'`));
+  assert.ok(policy.includes(`script-src 'sha256-${hash}' 'self'`));
   assert.match(policy, /script-src-attr 'none'/);
   assert.match(policy, /object-src 'none'/);
   assert.match(policy, /base-uri 'self'/);
@@ -140,8 +147,8 @@ for (const [path, status] of [
     const policy = response.headers.get('Content-Security-Policy') ?? '';
 
     assert.equal(response.status, status);
-    assert.equal(await response.text(), html);
-    assert.match(policy, new RegExp(`script-src 'sha256-${hash}' 'self'`));
+    await assertHtmlBodyUnchanged(response, html);
+    assert.ok(policy.includes(`script-src 'sha256-${hash}' 'self'`));
     assert.match(policy, /script-src-attr 'none'/);
     assert.doesNotMatch(policy, /script-src [^;]*'unsafe-inline'/);
     assert.equal(response.headers.get('Strict-Transport-Security'), 'max-age=63072000');
@@ -150,10 +157,11 @@ for (const [path, status] of [
 }
 
 test('preserves the current policy until HTML with build hashes is deployed', async (t) => {
+  const html = '<html><body>home</body></html>';
   mockFetch(
     t,
     async () =>
-      new Response('<html><body>home</body></html>', {
+      new Response(html, {
         headers: {
           'Content-Type': 'text/html',
           'Content-Security-Policy': "script-src 'self' 'unsafe-inline'",
@@ -167,7 +175,7 @@ test('preserves the current policy until HTML with build hashes is deployed', as
     response.headers.get('Content-Security-Policy'),
     "script-src 'self' 'unsafe-inline'",
   );
-  assert.equal(await response.text(), '<html><body>home</body></html>');
+  await assertHtmlBodyUnchanged(response, html);
 });
 
 test('keeps HEAD bodyless and leaves conditional 304 responses untouched', async (t) => {
@@ -467,11 +475,22 @@ test('sets content type for llms.txt', async (t) => {
 });
 
 test('serves the exact built OAuth discovery documents', async (t) => {
+  const sources = new Map([
+    [
+      '/.well-known/oauth-protected-resource',
+      readFileSync('public/.well-known/oauth-protected-resource'),
+    ],
+    [
+      '/.well-known/oauth-authorization-server',
+      readFileSync('public/.well-known/oauth-authorization-server'),
+    ],
+  ]);
   let fetchCalls = 0;
   mockFetch(t, async (request) => {
     fetchCalls += 1;
     const path = new URL(request.url).pathname;
-    const source = readFileSync(new URL(`../public${path}`, import.meta.url));
+    const source = sources.get(path);
+    assert.ok(source, `Unexpected OAuth document path: ${path}`);
     return new Response(source);
   });
 
@@ -504,11 +523,12 @@ test('serves the exact built OAuth discovery documents', async (t) => {
   for (const metadataCase of metadataCases) {
     const response = await worker.fetch(new Request(`https://tools.pylot.dev${metadataCase.path}`));
     const body = await response.text();
-    const source = readFileSync(new URL(`../public${metadataCase.path}`, import.meta.url), 'utf8');
+    const source = sources.get(metadataCase.path);
+    assert.ok(source);
     const metadata = JSON.parse(body);
 
     assert.equal(response.status, 200);
-    assert.equal(body, source);
+    assert.equal(body, source.toString('utf8'));
     assert.equal(response.headers.get('Content-Type'), 'application/json; charset=utf-8');
     assert.equal(response.headers.get('Access-Control-Allow-Origin'), '*');
     assert.equal(response.headers.get('Access-Control-Allow-Methods'), 'GET, HEAD, OPTIONS');

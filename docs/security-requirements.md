@@ -33,7 +33,7 @@ This document describes the security properties the project is trying to preserv
   workflows when workflow names or review policy change.
 - Update documentation when trust boundaries or security assumptions change.
 - Keep the `cloudflare-production` and `github-pages` deployment environments restricted to `main` and reviewed by maintainers. Store Cloudflare credentials as environment secrets and scope the token to the required Worker and zone permissions.
-- Investigate any failed post-deployment Edge hash or security-header check before accepting a release. A controlled staging deployment is needed to make these Edge checks a pre-production gate.
+- Investigate any failed post-deployment Edge asset-byte or security-header check before accepting a release. A controlled staging deployment is needed to make these Edge checks a pre-production gate.
 
 ## Non-goals
 

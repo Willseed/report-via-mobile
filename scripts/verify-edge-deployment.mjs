@@ -1,18 +1,58 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { resolve, sep } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 const RETRY_COUNT = 6;
 const RETRY_DELAY_MS = 10_000;
 const REQUEST_TIMEOUT_MS = 15_000;
-const REQUIRED_HASHED_DOCUMENTS = [
+const BUILD_DIRECTORY = resolve(
+  fileURLToPath(new URL('../dist/report-via-mobile/browser/', import.meta.url)),
+);
+const BUILD_MANIFEST_PATH = resolve(BUILD_DIRECTORY, 'ngsw.json');
+const SAFE_ASSET_PATH = /^\/[A-Za-z0-9._/-]+$/;
+const REQUIRED_HASHED_DOCUMENTS = new Set([
   '/.well-known/oauth-protected-resource',
   '/.well-known/oauth-authorization-server',
-];
+]);
+
+function parseManifest(manifestBytes) {
+  const manifest = JSON.parse(manifestBytes.toString('utf8'));
+  assert.ok(
+    manifest.hashTable &&
+      typeof manifest.hashTable === 'object' &&
+      !Array.isArray(manifest.hashTable),
+    'The PWA manifest has no valid hash table.',
+  );
+  return manifest;
+}
+
+function buildAssetPath(path) {
+  assert.match(path, SAFE_ASSET_PATH, `Invalid PWA asset path: ${path}`);
+  const segments = path.slice(1).split('/');
+  assert.ok(
+    segments.every((segment) => segment && segment !== '.' && segment !== '..'),
+    `Invalid PWA asset path: ${path}`,
+  );
+  const filePath = resolve(BUILD_DIRECTORY, ...segments);
+  assert.ok(filePath.startsWith(`${BUILD_DIRECTORY}${sep}`), `Asset escapes build directory: ${path}`);
+  return filePath;
+}
+
+export async function loadBuildSnapshot() {
+  const manifestBytes = await readFile(BUILD_MANIFEST_PATH);
+  const manifest = parseManifest(manifestBytes);
+  const assets = new Map();
+
+  for (const path of Object.keys(manifest.hashTable)) {
+    assets.set(path, await readFile(buildAssetPath(path)));
+  }
+
+  return { manifestBytes, assets };
+}
 
 async function readResponse(baseUrl, path, fetchImpl, headers = {}) {
   const url = new URL(path, baseUrl);
@@ -46,15 +86,18 @@ function assertHardenedCsp(response, label) {
   );
 }
 
-export async function verifyEdgeOnce(baseUrl, fetchImpl = fetch, expectedManifestBytes) {
+export async function verifyEdgeOnce(baseUrl, expectedBuild, fetchImpl = fetch) {
   const siteUrl = new URL(baseUrl);
   assert.equal(siteUrl.protocol, 'https:', 'Edge verification requires an HTTPS origin.');
   const origin = new URL('/', siteUrl);
+  assert.ok(Buffer.isBuffer(expectedBuild.manifestBytes), 'The local PWA manifest is missing.');
+  assert.ok(expectedBuild.assets instanceof Map, 'The local PWA assets are missing.');
+  const expectedHomepage = expectedBuild.assets.get('/index.html');
+  assert.ok(Buffer.isBuffer(expectedHomepage), 'The local build has no index.html asset.');
 
   const { response: page, bytes: pageBytes } = await readResponse(origin, '/', fetchImpl);
-  const html = pageBytes.toString('utf8');
   assert.match(page.headers.get('content-type') ?? '', /text\/html/i);
-  assert.match(html, /<html\b/i);
+  assert.ok(pageBytes.equals(expectedHomepage), 'Homepage HTML differs from the local build.');
 
   for (const header of [
     'content-security-policy',
@@ -88,30 +131,29 @@ export async function verifyEdgeOnce(baseUrl, fetchImpl = fetch, expectedManifes
   assert.match(auth.headers.get('content-type') ?? '', /text\/markdown/i);
 
   const { bytes: manifestBytes } = await readResponse(origin, '/ngsw.json', fetchImpl);
-  if (expectedManifestBytes) {
-    assert.deepEqual(manifestBytes, expectedManifestBytes, 'Edge still serves a different build.');
+  assert.ok(manifestBytes.equals(expectedBuild.manifestBytes), 'Edge still serves a different build.');
+  const manifest = parseManifest(manifestBytes);
+  if (manifest.dataGroups !== undefined) {
+    assert.ok(Array.isArray(manifest.dataGroups), 'The PWA data groups are invalid.');
+    for (const group of manifest.dataGroups) {
+      assert.notEqual(
+        group?.name,
+        'nominatim-api',
+        'The Service Worker still persistently caches Nominatim requests.',
+      );
+    }
   }
-  const manifest = JSON.parse(manifestBytes.toString('utf8'));
-  assert.ok(manifest.hashTable && typeof manifest.hashTable === 'object');
-  assert.equal(
-    createHash('sha1').update(pageBytes).digest('hex'),
-    manifest.hashTable['/index.html'],
-    'Homepage HTML differs from the PWA manifest hash.',
-  );
-  assert.ok(
-    !manifest.dataGroups?.some((group) => group.name === 'nominatim-api'),
-    'The Service Worker still persistently caches Nominatim requests.',
-  );
 
   for (const path of REQUIRED_HASHED_DOCUMENTS) {
-    assert.ok(manifest.hashTable[path], `${path} is absent from the PWA hash table.`);
+    assert.ok(Object.hasOwn(manifest.hashTable, path), `${path} is absent from the PWA hash table.`);
   }
 
-  for (const [path, expectedHash] of Object.entries(manifest.hashTable)) {
+  for (const path of Object.keys(manifest.hashTable)) {
+    const expectedBytes = expectedBuild.assets.get(path);
+    assert.ok(Buffer.isBuffer(expectedBytes), `${path} is absent from the local build.`);
     const { response, bytes } = await readResponse(origin, path, fetchImpl);
-    const actualHash = createHash('sha1').update(bytes).digest('hex');
-    assert.equal(actualHash, expectedHash, `${path} differs from its PWA manifest hash.`);
-    if (REQUIRED_HASHED_DOCUMENTS.includes(path)) {
+    assert.ok(bytes.equals(expectedBytes), `${path} differs from the local PWA asset.`);
+    if (REQUIRED_HASHED_DOCUMENTS.has(path)) {
       assert.equal(response.headers.get('x-agent-ready-worker'), 'active');
       assert.match(response.headers.get('content-type') ?? '', /application\/json/i);
     }
@@ -122,14 +164,14 @@ export async function verifyEdgeOnce(baseUrl, fetchImpl = fetch, expectedManifes
 
 export async function verifyEdgeDeployment(
   baseUrl,
+  expectedBuild,
   fetchImpl = fetch,
   sleep = delay,
-  expectedManifestBytes,
 ) {
   let lastError;
   for (let attempt = 1; attempt <= RETRY_COUNT; attempt += 1) {
     try {
-      return await verifyEdgeOnce(baseUrl, fetchImpl, expectedManifestBytes);
+      return await verifyEdgeOnce(baseUrl, expectedBuild, fetchImpl);
     } catch (error) {
       lastError = error;
       if (attempt < RETRY_COUNT) await sleep(RETRY_DELAY_MS);
@@ -138,10 +180,21 @@ export async function verifyEdgeDeployment(
   throw lastError;
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+async function runCli() {
   const baseUrl = process.argv[2];
-  if (!baseUrl) throw new Error('Pass the deployed HTTPS site URL.');
-  const expectedManifestBytes = process.argv[3] ? await readFile(process.argv[3]) : undefined;
-  const verifiedCount = await verifyEdgeDeployment(baseUrl, fetch, delay, expectedManifestBytes);
-  console.info(`Verified Edge headers, documents, and ${verifiedCount} PWA resource hashes.`);
+  if (!baseUrl || process.argv.length !== 3) {
+    throw new Error('Pass only the deployed HTTPS site URL.');
+  }
+  const expectedBuild = await loadBuildSnapshot();
+  const verifiedCount = await verifyEdgeDeployment(baseUrl, expectedBuild);
+  console.info(`Verified Edge headers, documents, and ${verifiedCount} PWA assets.`);
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  try {
+    await runCli();
+  } catch (error) {
+    console.error(error);
+    process.exitCode = 1;
+  }
 }
