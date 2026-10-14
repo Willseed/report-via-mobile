@@ -365,7 +365,12 @@ async function setHtmlContentSecurityPolicy(response, headers, method) {
 
 // The local DAST server uses the same policy builder as the deployed Worker.
 export function createHtmlContentSecurityPolicy(html, existingPolicy = '') {
-  const hashes = extractScriptHashesFromHtml(html);
+  const autoCsp = html.match(AUTO_CSP_META_PATTERN)?.[1];
+  const scriptDirective = autoCsp
+    ?.split(';')
+    .map((directive) => directive.trim())
+    .find((directive) => directive.startsWith('script-src '));
+  const hashes = [...new Set(scriptDirective?.match(SCRIPT_HASH_PATTERN) ?? [])];
   if (hashes.length === 0) return null;
 
   const scriptSources = [...hashes, "'self'"];
@@ -388,17 +393,6 @@ export function createHtmlContentSecurityPolicy(html, existingPolicy = '') {
     "object-src 'none'",
     "base-uri 'self'",
   ].join('; ');
-}
-
-// Parse built HTML and return only validated hashes from Angular's autoCsp metadata.
-function extractScriptHashesFromHtml(html) {
-  const autoCsp = html.match(AUTO_CSP_META_PATTERN)?.[1];
-  const scriptDirective = autoCsp
-    ?.split(';')
-    .map((directive) => directive.trim())
-    .find((directive) => directive.startsWith('script-src '));
-
-  return [...new Set(scriptDirective?.match(SCRIPT_HASH_PATTERN) ?? [])];
 }
 
 async function responseWithoutCors(response, method) {
