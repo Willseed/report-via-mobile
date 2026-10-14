@@ -23,6 +23,11 @@ function bootstrap(root, options) { throw new Error('App bootstrap must never ex
 bootstrap(Root, {}).catch(console.error);
 `;
 
+function compareCodeUnits(left, right) {
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
+}
+
 async function fixture(t, files = { 'main-test.js': MAIN }) {
   const directory = await mkdtemp(join(tmpdir(), 'report-style-test-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
@@ -37,6 +42,7 @@ test('collects every definition, including lazy and unrendered component styles'
     'main-test.js': MAIN,
     'chunk-lazy.js': `
       import {define} from './main-test.js';
+      await Promise.resolve();
       class Lazy {
         static ['ɵcmp'] = define({id: 'c102', encapsulation: 0,
           styles: ['.lazy-%COMP%{color:green}']});
@@ -54,7 +60,9 @@ test('collects every definition, including lazy and unrendered component styles'
     hashStyleText('.unused{color:blue}'),
     hashStyleText('.lazy-ng-c102{color:green}'),
     hashStyleText('.c103{--color:black}'),
-  ].sort());
+  ].toSorted(compareCodeUnits));
+  const locations = result.components.map(({ location }) => location);
+  assert.deepEqual(locations, locations.toSorted(compareCodeUnits));
   assert.equal(await readFile(join(directory, 'main-test.js'), 'utf8'), MAIN);
   assert.equal(globalThis.__reportCollectCompiledStyle, undefined);
 });

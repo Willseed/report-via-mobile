@@ -32,9 +32,17 @@ async function observeCsp(context: BrowserContext): Promise<CspViolation[]> {
 function expectStrictStylePolicy(response: Response | null): void {
   expect(response?.ok()).toBe(true);
   const policy = response?.headers()['content-security-policy'] ?? '';
-  expect(policy).toMatch(/(?:^|;)\s*style-src\s+[^;]*'sha256-/);
-  expect(policy).not.toMatch(/(?:^|;)\s*style-src(?:-elem|-attr)?\s+[^;]*'unsafe-inline'/);
-  expect(policy).toMatch(/(?:^|;)\s*style-src-attr\s+'none'(?:;|$)/);
+  const directives = policy.split(';').map((directive) => directive.trim().split(/\s+/));
+  const styleSources = directives.filter(([name]) => name === 'style-src');
+  expect(styleSources).toHaveLength(1);
+  expect(styleSources[0].some((source) => source.startsWith("'sha256-"))).toBe(true);
+  const allStyleSources = directives
+    .filter(([name]) => ['style-src', 'style-src-elem', 'style-src-attr'].includes(name))
+    .flat();
+  expect(allStyleSources).not.toContain("'unsafe-inline'");
+  expect(directives.filter(([name]) => name === 'style-src-attr')).toEqual([
+    ['style-src-attr', "'none'"],
+  ]);
 }
 
 async function openProductionPage(page: Page): Promise<void> {
@@ -151,16 +159,20 @@ test('real Service Worker preserves build integrity and renders the app after of
   ).urls;
   const failures = await page.evaluate(
     async ({ paths, hashes }: { paths: string[]; hashes: Record<string, string> }) => {
-      const failed: string[] = [];
-      for (const path of paths) {
-        const response = await fetch(path);
-        const digest = await crypto.subtle.digest('SHA-1', await response.arrayBuffer());
-        const actual = Array.from(new Uint8Array(digest), (byte) =>
-          byte.toString(16).padStart(2, '0'),
-        ).join('');
-        if (!response.ok || actual !== hashes[path]) failed.push(path);
-      }
-      return failed;
+      const results = await Promise.all(
+        paths.map(async (path) => {
+          const response = await fetch(path);
+          const bytes = await response.arrayBuffer();
+          // Match Angular ngsw's asset checksum format; this does not authenticate content.
+          // nosemgrep: rules_lgpl_javascript_crypto_rule-node-sha1
+          const digest = await crypto.subtle.digest('SHA-1', bytes); // NOSONAR: ngsw checksum only.
+          const actual = Array.from(new Uint8Array(digest), (byte) =>
+            byte.toString(16).padStart(2, '0'),
+          ).join('');
+          return !response.ok || actual !== hashes[path] ? path : null;
+        }),
+      );
+      return results.filter((path) => path !== null);
     },
     { paths: precachedPaths, hashes: manifest.hashTable },
   );

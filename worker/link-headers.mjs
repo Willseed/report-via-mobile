@@ -378,11 +378,13 @@ export function createHtmlContentSecurityPolicy(html, existingPolicy = '') {
   // This compatibility branch keeps the previous release working while the Worker
   // deploys before Pages. Every new production build and DAST run requires hashes.
   // A present but invalid manifest must never enable the legacy allowance.
+  const styleSources = ["'self'"];
+  if (styleHashList && STYLE_HASH_LIST_PATTERN.test(styleHashList)) styleSources.push(styleHashList);
   const styleDirectives =
     styleHashList === undefined
       ? ["style-src 'self' 'unsafe-inline'"]
       : [
-          `style-src 'self'${STYLE_HASH_LIST_PATTERN.test(styleHashList) ? ` ${styleHashList}` : ''}`,
+          `style-src ${styleSources.join(' ')}`,
           "style-src-attr 'none'",
         ];
 

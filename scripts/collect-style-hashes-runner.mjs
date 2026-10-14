@@ -5,6 +5,11 @@ import { text } from 'node:stream/consumers';
 import { pathToFileURL } from 'node:url';
 import { JSDOM } from 'jsdom';
 
+function compareCodeUnits(left, right) {
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
+}
+
 const { files, locations } = JSON.parse(await text(process.stdin));
 assert.ok(Array.isArray(files) && Array.isArray(locations), 'Invalid style inventory request.');
 assert.ok(files.every((name) => /^[A-Za-z0-9._-]+\.js$/.test(name)));
@@ -22,7 +27,7 @@ Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, co
 globalThis.__reportCollectCompiledStyle = (location, definition) => {
   assert.ok(expected.has(location), `Unexpected component definition: ${location}`);
   assert.ok(!components.has(location), `Component initialized more than once: ${location}`);
-  assert.match(definition.id, /^c[0-9]+$/, `Invalid component ID at ${location}`);
+  assert.match(definition.id, /^c\d+$/, `Invalid component ID at ${location}`);
   assert.ok(Array.isArray(definition.styles), `Missing component styles at ${location}`);
   assert.ok([0, 2, 3].includes(definition.encapsulation), `Unknown encapsulation at ${location}`);
   assert.ok(
@@ -47,18 +52,20 @@ globalThis.__reportCollectCompiledStyle = (location, definition) => {
 };
 
 // Imports execute only the emitted module declarations. The collector removes app bootstrap.
-for (const filename of files) await import(pathToFileURL(join(process.cwd(), filename)).href);
+// The module loader preserves dependency ordering and initializes shared modules only once.
+await Promise.all(files.map((filename) => import(pathToFileURL(join(process.cwd(), filename)).href)));
 assert.deepEqual(
-  [...components.keys()].sort(),
-  [...expected].sort(),
+  [...components.keys()].toSorted(compareCodeUnits),
+  [...expected].toSorted(compareCodeUnits),
   'Not every compiled component was initialized; runtime-only definitions are unsupported.',
 );
 const hashes = [...styles]
   .map((style) => `'sha256-${createHash('sha256').update(style).digest('base64')}'`)
-  .sort();
+  .toSorted(compareCodeUnits);
 process.stdout.write(JSON.stringify({
   hashes,
   componentCount: components.size,
-  components: [...components.values()],
+  components: [...components.values()]
+    .toSorted((left, right) => compareCodeUnits(left.location, right.location)),
 }));
 dom.window.close();

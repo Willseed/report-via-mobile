@@ -14,6 +14,11 @@ function styleHash(css) {
   return `'sha256-${createHash('sha256').update(css).digest('base64')}'`;
 }
 
+function compareHashes(left, right) {
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
+}
+
 // Process trusted build HTML before publishing it or finalizing its PWA checksum.
 // Keep the existing bytes/formatting everywhere except the two CSP metadata values.
 export function hardenHtmlStyles(html, componentHashes) {
@@ -28,7 +33,7 @@ export function hardenHtmlStyles(html, componentHashes) {
       'Move HTML style attributes to stylesheets before generating strict CSP.');
     const inlineHashes = [...dom.window.document.querySelectorAll('style')]
       .map((element) => styleHash(element.textContent));
-    const hashes = [...new Set([...componentHashes, ...inlineHashes])].sort();
+    const hashes = [...new Set([...componentHashes, ...inlineHashes])].sort(compareHashes);
     const stylePolicy = `style-src 'self' ${hashes.join(' ')}; style-src-attr 'none'`;
     // The meta policy travels with the HTML in the offline cache and protects
     // direct static hosting too; the Worker mirrors it in the response header.

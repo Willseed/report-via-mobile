@@ -20,26 +20,29 @@ HARNESS_PATH = ROOT / ".github/scripts/serve-static-no-server-header.py"
 SPEC = importlib.util.spec_from_file_location("production_scan_server", HARNESS_PATH)
 HARNESS = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(HARNESS)
+MANIFEST_PATH = "/ngsw.json"
+UPDATE_RESOURCE_PATH = "/llms.txt"
 
 
 class ReleaseState:
     def __init__(self, directory):
-        original_manifest = (directory / "ngsw.json").read_bytes()
-        original_resource = (directory / "llms.txt").read_bytes()
+        original_manifest = (directory / MANIFEST_PATH.lstrip("/")).read_bytes()
+        original_resource = (directory / UPDATE_RESOURCE_PATH.lstrip("/")).read_bytes()
         updated_resource = original_resource + b"\nCSP browser test release B.\n"
         updated_manifest = json.loads(original_manifest)
-        if "/llms.txt" not in updated_manifest["hashTable"]:
+        if UPDATE_RESOURCE_PATH not in updated_manifest["hashTable"]:
             raise ValueError("The update probe must be a hashed PWA resource.")
         # Angular manifests use SHA-1 for asset consistency, not authentication.
-        updated_manifest["hashTable"]["/llms.txt"] = hashlib.sha1(
+        # nosemgrep: python.lang.security.insecure-hash-algorithms.insecure-hash-algorithm-sha1
+        updated_manifest["hashTable"][UPDATE_RESOURCE_PATH] = hashlib.sha1(
             updated_resource, usedforsecurity=False
         ).hexdigest()
         updated_manifest["timestamp"] += 1
         self.releases = {
-            "a": {"/ngsw.json": original_manifest, "/llms.txt": original_resource},
+            "a": {MANIFEST_PATH: original_manifest, UPDATE_RESOURCE_PATH: original_resource},
             "b": {
-                "/ngsw.json": json.dumps(updated_manifest).encode("utf8"),
-                "/llms.txt": updated_resource,
+                MANIFEST_PATH: json.dumps(updated_manifest).encode("utf8"),
+                UPDATE_RESOURCE_PATH: updated_resource,
             },
         }
         self.active = "a"
@@ -56,7 +59,7 @@ class ReleaseHandler(HARNESS._NoServerHeaderHandler):
         if pathname in release:
             self.send_bytes(
                 release[pathname],
-                "application/json" if pathname == "/ngsw.json" else "text/plain; charset=utf-8",
+                "application/json" if pathname == MANIFEST_PATH else "text/plain; charset=utf-8",
             )
             return
         super().do_GET()

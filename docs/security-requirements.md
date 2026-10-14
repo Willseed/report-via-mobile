@@ -80,6 +80,9 @@ rewrites HTML at request time. Cached pages therefore keep their matching CSP
 and continue working offline. Chromium and WebKit production tests cover real
 controls, lazy dialogs, and offline reload; Chromium also tests a real hash-valid
 Service Worker update that waits for the user's update action.
+SHA-1 in these tests matches Angular's existing asset-checksum format; it is not
+used for signatures, credentials, or the CSP allowlist (which uses SHA-256).
+Scanner exceptions are limited to those checksum calls and their specific rules.
 
 For the Worker-before-Pages rollout only, the Worker retains its previous style
 policy when old HTML has no style inventory metadata. Present but malformed
