@@ -44,11 +44,12 @@ const MEDIA_TOKEN_PATTERN = /^[a-z0-9!#$&^_.+-]+$/i;
 const HEADER_TOKEN_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 const SCRIPT_HASH_PATTERN = /'sha256-[A-Za-z0-9+/]+=*'/g;
 const AUTO_CSP_META_PATTERN = /<meta\b[^>]*\bhttp-equiv="Content-Security-Policy"[^>]*\bcontent="([^"]+)"/i;
+const STYLE_CSP_META_PATTERN = /<meta\b[^>]*\bname="csp-style-hashes"[^>]*\bcontent="([^"]*)"/i;
+const STYLE_HASH_LIST_PATTERN = /^'sha256-[A-Za-z0-9+/]{43}='(?: 'sha256-[A-Za-z0-9+/]{43}=')*$/;
 const REPLACED_CSP_DIRECTIVE_PATTERN = /^(?:script-src(?:-elem|-attr)?|object-src|base-uri)(?:\s|$)/i;
+const STYLE_CSP_DIRECTIVE_PATTERN = /^style-src(?:-elem|-attr)?(?:\s|$)/i;
 const DEFAULT_CSP_DIRECTIVES = [
   "default-src 'self'",
-  // Angular and Material insert component styles at runtime; scripts remain hash restricted.
-  "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "connect-src 'self' https://nominatim.openstreetmap.org",
   "form-action 'self'",
@@ -373,11 +374,30 @@ export function createHtmlContentSecurityPolicy(html, existingPolicy = '') {
   const hashes = [...new Set(scriptDirective?.match(SCRIPT_HASH_PATTERN) ?? [])];
   if (hashes.length === 0) return null;
 
+  const styleHashList = html.match(STYLE_CSP_META_PATTERN)?.[1];
+  // This compatibility branch keeps the previous release working while the Worker
+  // deploys before Pages. Every new production build and DAST run requires hashes.
+  // A present but invalid manifest must never enable the legacy allowance.
+  const styleSources = ["'self'"];
+  if (styleHashList && STYLE_HASH_LIST_PATTERN.test(styleHashList)) styleSources.push(styleHashList);
+  const styleDirectives =
+    styleHashList === undefined
+      ? ["style-src 'self' 'unsafe-inline'"]
+      : [
+          `style-src ${styleSources.join(' ')}`,
+          "style-src-attr 'none'",
+        ];
+
   const scriptSources = [...hashes, "'self'"];
   const existingDirectives = existingPolicy
     .split(';')
     .map((directive) => directive.trim())
-    .filter((directive) => directive && !REPLACED_CSP_DIRECTIVE_PATTERN.test(directive));
+    .filter(
+      (directive) =>
+        directive &&
+        !REPLACED_CSP_DIRECTIVE_PATTERN.test(directive) &&
+        !STYLE_CSP_DIRECTIVE_PATTERN.test(directive),
+    );
   const existingNames = new Set(
     existingDirectives.map((directive) => directive.split(/\s/, 1)[0].toLowerCase()),
   );
@@ -388,6 +408,7 @@ export function createHtmlContentSecurityPolicy(html, existingPolicy = '') {
   return [
     ...existingDirectives,
     ...missingDefaults,
+    ...styleDirectives,
     `script-src ${scriptSources.join(' ')}`,
     "script-src-attr 'none'",
     "object-src 'none'",

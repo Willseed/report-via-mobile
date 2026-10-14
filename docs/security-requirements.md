@@ -42,7 +42,8 @@ This document describes the security properties the project is trying to preserv
 ## Code scanning interpretation
 
 The local ZAP server uses the production Worker's CSP builder and the built
-HTML's script hashes. It must preserve the HTML bytes used by the PWA manifest.
+HTML's script and style hashes. It rejects builds without the strict style
+policy and must preserve the HTML bytes used by the PWA manifest.
 The SARIF converter keeps each ZAP `alertRef` separate so a missing directive,
 an unrestricted source, and inline styles do not share an incorrect description.
 Both baseline and full scans retain their original reports.
@@ -59,20 +60,45 @@ local HTTP scan server; production HTTPS is checked by `verify-edge-deployment.m
 See the [ZAP SPA guidance](https://www.zaproxy.org/docs/alerts/10109/) and
 [storage guidance](https://www.zaproxy.org/docs/alerts/120000-1/).
 
-The following findings remain open as of 2026-10-14:
+### Strict style CSP
 
-- **Inline styles (`10055-6`)**: Angular and Material insert runtime styles, so
-  `style-src` currently permits inline styles. Script sources remain restricted
-  to the built hashes and same origin, and inline event handlers are blocked.
-  Removing this allowance needs a separate style/nonce design compatible with
-  PWA asset integrity; do not ignore all CSP findings to hide it.
+Production builds must use `npm run build -- --configuration production`.
+After Angular finishes, the build inventories every compiled component in all
+emitted JavaScript chunks, including lazy components and Material/CDK style
+loaders. It evaluates instrumented temporary copies without bootstrapping the
+application, then hashes the exact scoped CSS plus critical inline CSS and the
+empty style element used by CDK MediaMatcher. The emitted JavaScript is unchanged.
+Unexpected compilation layouts, unevaluated definitions, custom application
+style scopes, or HTML style attributes fail the build rather than producing an
+incomplete allowlist. Angular upgrades must pass the inventory and browser tests.
+
+The style hash list travels with its own HTML version. Both the HTML meta policy
+and the Worker response header allow only same-origin stylesheets and these
+hashes, with `style-src-attr 'none'`. The build recalculates the existing
+`/index.html` entry in `ngsw.json`; it never removes that integrity check or
+rewrites HTML at request time. Cached pages therefore keep their matching CSP
+and continue working offline. Chromium and WebKit production tests cover real
+controls, lazy dialogs, and offline reload; Chromium also tests a real hash-valid
+Service Worker update that waits for the user's update action.
+SHA-1 in these tests matches Angular's existing asset-checksum format; it is not
+used for signatures, credentials, or the CSP allowlist (which uses SHA-256).
+Scanner exceptions are limited to those checksum calls and their specific rules.
+
+For the Worker-before-Pages rollout only, the Worker retains its previous style
+policy when old HTML has no style inventory metadata. Present but malformed
+metadata fails closed. Newly built pages always carry the strict policy, and
+both the scan harness and post-deployment checks reject `unsafe-inline`. Keep
+ZAP rule `10055-6` enabled so a regression remains visible.
+
+The following dependency finding remains open as of 2026-10-14:
+
 - **braces (`GHSA-vfj7-8cjw-p6xm`)**: the advisory has no patched release.
   `braces@3.0.3` is a development dependency reached through Stylelint, whose
   input glob is the repository-controlled `src/**/*.scss`. It is absent from
   production dependencies, but the dependency alert stays visible until a
   supported fix is available. See the
   [upstream advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
-- **Scorecard review count**: branch protection enforces the review safeguards
+**Scorecard review count**: branch protection enforces the review safeguards
   above, but Scorecard still recommends two approving reviewers. Raising the
   count requires another eligible maintainer; do not bypass required reviews or
   claim a maximal score while only one independent reviewer is available.

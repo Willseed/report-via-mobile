@@ -107,6 +107,15 @@ function assertHardenedCsp(response, label) {
   for (const directive of scriptDirectives) {
     assert.doesNotMatch(directive, /'unsafe-inline'/);
   }
+  const styleDirectives = directives.filter((entry) => /^style-src(?:-elem|-attr)?\s+/i.test(entry));
+  const styleSource = styleDirectives.find((entry) => /^style-src\s+/i.test(entry));
+  assert.ok(styleSource, `${label} lacks a style-src policy.`);
+  assert.match(styleSource, /'sha256-[A-Za-z0-9+/=]+'/);
+  for (const directive of styleDirectives) assert.doesNotMatch(directive, /'unsafe-inline'/);
+  assert.ok(
+    directives.some((entry) => /^style-src-attr\s+'none'$/i.test(entry)),
+    `${label} must block inline style attributes.`,
+  );
   assert.ok(
     directives.some((directive) => /^script-src-attr\s+'none'$/i.test(directive)),
     `${label} must block inline script attributes.`,

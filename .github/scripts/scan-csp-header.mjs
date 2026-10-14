@@ -11,4 +11,7 @@ if (process.argv.length !== 2) {
 const html = await text(process.stdin);
 const policy = createHtmlContentSecurityPolicy(html);
 if (!policy) throw new Error('The production HTML has no Angular autoCsp script hashes.');
+if (!/style-src 'self' 'sha256-/.test(policy) || policy.includes("'unsafe-inline'")) {
+  throw new Error('The production HTML has no strict style hash policy. Run npm run build.');
+}
 process.stdout.write(policy);

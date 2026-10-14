@@ -7,6 +7,7 @@ const path = require('node:path');
 const workspaceRoot = path.resolve(__dirname, '..');
 const angularCliPath = path.resolve(workspaceRoot, 'node_modules/@angular/cli/bin/ng.js');
 const normalizeScriptPath = path.resolve(__dirname, 'normalize-ngsw.js');
+const styleCspScriptPath = path.resolve(__dirname, 'write-style-csp.mjs');
 const buildArgs = process.argv.slice(2);
 
 process.chdir(workspaceRoot);
@@ -18,8 +19,15 @@ try {
     stdio: 'inherit',
   });
 
+  const buildDirectory = resolveManifestDirectory(buildArgs);
+  execFileSync(process.execPath, [styleCspScriptPath], {
+    cwd: buildDirectory,
+    env: process.env,
+    stdio: 'inherit',
+  });
+
   execFileSync(process.execPath, [normalizeScriptPath], {
-    cwd: resolveManifestDirectory(buildArgs),
+    cwd: buildDirectory,
     env: process.env,
     stdio: 'inherit',
   });

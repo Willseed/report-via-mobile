@@ -38,7 +38,9 @@ yarn-error.log
 e2e/*.js
 e2e/*.map
 /playwright-report/
+/playwright-report-csp/
 /test-results/
+/test-results-csp/
 
 # Miscellaneous
 /.angular/cache

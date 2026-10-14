@@ -9,6 +9,7 @@ import worker from './link-headers.mjs';
 const cspFixtureBytes = readFileSync('worker/fixtures/auto-csp.html');
 const fallbackFixtureBytes = readFileSync('worker/fixtures/fallback-csp.html');
 const legacyFixtureBytes = readFileSync('worker/fixtures/legacy.html');
+const scriptOnlyFixtureBytes = readFileSync('worker/fixtures/script-only-csp.html');
 
 async function assertHtmlBodyUnchanged(response, originResponse) {
   // Compare the two HTTP bodies as bytes without passing HTML text to an assertion.
@@ -84,6 +85,8 @@ test('replaces unsafe inline script rules with built script hashes and preserves
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
     "style-src 'self' 'unsafe-inline'",
+    "style-src-elem * 'unsafe-inline'",
+    "style-src-attr 'unsafe-inline'",
     "frame-ancestors 'none'",
   ].join('; ');
   const originResponse = new Response(cspFixtureBytes, {
@@ -101,7 +104,10 @@ test('replaces unsafe inline script rules with built script hashes and preserves
   await assertHtmlBodyUnchanged(response, originResponse);
   assert.match(policy, /default-src 'self'/);
   assert.match(policy, /frame-ancestors 'none'/);
-  assert.match(policy, /style-src 'self' 'unsafe-inline'/);
+  assert.match(policy, /style-src 'self' 'sha256-/);
+  assert.match(policy, /style-src-attr 'none'/);
+  assert.doesNotMatch(policy, /style-src-elem/);
+  assert.doesNotMatch(policy, /'unsafe-inline'/);
   assert.ok(policy.includes(`script-src 'sha256-${hash}' 'self'`));
   assert.match(policy, /script-src-attr 'none'/);
   assert.match(policy, /object-src 'none'/);
@@ -125,7 +131,8 @@ test('supplies a complete HTML policy when the origin has no security headers', 
 
   await assertHtmlBodyUnchanged(response, originResponse);
   assert.match(policy, /default-src 'self'/);
-  assert.match(policy, /style-src 'self' 'unsafe-inline'/);
+  assert.match(policy, /style-src 'self' 'sha256-/);
+  assert.match(policy, /style-src-attr 'none'/);
   assert.match(policy, /img-src 'self' data:/);
   assert.match(policy, /connect-src 'self' https:\/\/nominatim\.openstreetmap\.org/);
   assert.match(policy, /form-action 'self'/);
@@ -183,6 +190,32 @@ test('preserves the current policy until HTML with build hashes is deployed', as
   );
   await assertHtmlBodyUnchanged(response, originResponse);
 });
+
+test('keeps a previous release usable during the Worker-before-Pages rollout', async (t) => {
+  const originResponse = new Response(scriptOnlyFixtureBytes, {
+    headers: { 'Content-Type': 'text/html' },
+  });
+  mockFetch(t, async () => originResponse.clone());
+  const response = await worker.fetch(new Request('https://tools.pylot.dev/'));
+  const policy = response.headers.get('Content-Security-Policy');
+  assert.match(policy, /script-src 'sha256-/);
+  assert.match(policy, /style-src 'self' 'unsafe-inline'/);
+  await assertHtmlBodyUnchanged(response, originResponse);
+});
+
+for (const invalidHashList of ['', 'invalid', "'unsafe-inline'", "'sha256-invalid'"]) {
+  test(`rejects an invalid style manifest without enabling a legacy allowance: ${invalidHashList}`, async (t) => {
+    const html = cspFixtureBytes.toString('utf8')
+      .replace("'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='", invalidHashList);
+    const originResponse = new Response(html, { headers: { 'Content-Type': 'text/html' } });
+    mockFetch(t, async () => originResponse.clone());
+    const response = await worker.fetch(new Request('https://tools.pylot.dev/'));
+    const policy = response.headers.get('Content-Security-Policy');
+    assert.match(policy, /style-src 'self';/);
+    assert.match(policy, /style-src-attr 'none'/);
+    assert.doesNotMatch(policy, /'unsafe-inline'/);
+  });
+}
 
 test('keeps HEAD bodyless and leaves conditional 304 responses untouched', async (t) => {
   mockFetch(

@@ -35,6 +35,9 @@ class ScanServerTest(unittest.TestCase):
             )
             self.assertEqual(run.call_args.kwargs["input"], homepage.read_bytes())
             self.assertIn("script-src 'sha256-", policy)
+            self.assertIn("style-src 'self' 'sha256-", policy)
+            self.assertIn("style-src-attr 'none'", policy)
+            self.assertNotIn("'unsafe-inline'", policy)
 
     def test_serves_worker_csp_without_changing_html(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -71,6 +74,12 @@ class ScanServerTest(unittest.TestCase):
     def test_rejects_build_without_script_hashes(self):
         with tempfile.TemporaryDirectory() as directory:
             shutil.copyfile(ROOT / "worker/fixtures/legacy.html", Path(directory) / "index.html")
+            with self.assertRaises(subprocess.CalledProcessError):
+                scan_server.build_content_security_policy(directory)
+
+    def test_rejects_build_without_style_hashes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            shutil.copyfile(ROOT / "worker/fixtures/script-only-csp.html", Path(directory) / "index.html")
             with self.assertRaises(subprocess.CalledProcessError):
                 scan_server.build_content_security_policy(directory)
 
