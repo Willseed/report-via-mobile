@@ -81,6 +81,8 @@ npm start
 
 開啟 <http://localhost:4200/>。正式版建置輸出位於
 `dist/report-via-mobile/browser/`。
+正式發布請使用 `npm run build -- --configuration production`，讓建置流程產生
+嚴格的樣式 CSP 並同步 PWA 校驗值；直接執行 `ng build` 不包含這個步驟。
 
 ### 品質檢查
 
@@ -91,6 +93,7 @@ npm start
 | `npm run lint` | 檢查 TypeScript |
 | `npm run lint:styles` | 檢查 SCSS |
 | `npm run e2e` | 執行 Playwright 端對端測試 |
+| `npm run e2e:csp` | 對已建置的正式版驗證嚴格 CSP、離線快取與 PWA 更新 |
 | `npm run build` | 建置正式版網站 |
 | `npm run build:analyze` | 在本機分析 bundle，不改變部署設定 |
 | `npm run quality` | 依序執行 lint、樣式檢查、覆蓋率與建置 |

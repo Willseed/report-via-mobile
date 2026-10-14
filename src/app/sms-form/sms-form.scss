@@ -34,9 +34,12 @@ h1 {
   line-height: 1.4;
 }
 
-.desktop-warning {
+.desktop-warning,
+.district-mismatch-warning {
   @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
+}
 
+.desktop-warning {
   margin-bottom: 1.5rem;
 
   a {
@@ -106,14 +109,22 @@ form {
   gap: 0.5rem;
 }
 
-.district-mismatch-warning {
-  @include banner(var(--mat-sys-error-container), var(--mat-sys-on-error-container));
+.form-skeleton {
+  min-height: 20rem;
 }
 
-.pending-preview-hint {
+.disclaimer-placeholder {
+  min-height: 2.5rem;
+}
+
+.pending-preview-hint,
+.notice-banner {
   @include banner(var(--mat-sys-surface-container), var(--mat-sys-on-surface-variant));
 
   font-size: 0.8125rem;
+}
+
+.pending-preview-hint {
   font-style: italic;
 }
 
@@ -124,10 +135,7 @@ button[mat-flat-button] {
 }
 
 .notice-banner {
-  @include banner(var(--mat-sys-surface-container), var(--mat-sys-on-surface-variant));
-
   margin-top: 0.5rem;
-  font-size: 0.8125rem;
 }
 
 .onpage-content {

@@ -10,6 +10,7 @@ function fixture({
   weakFallbackCsp = false,
   strictDynamic = false,
   missingFormAction = false,
+  weakStyleCsp = false,
 } = {}) {
   // These tests compare response bytes and headers; HTML markup is not part of the fixture behavior.
   const homepageBytes = Buffer.from('fixture page');
@@ -32,6 +33,8 @@ function fixture({
     "default-src 'self'",
     `script-src ${scriptSource}`,
     "script-src-attr 'none'",
+    weakStyleCsp ? "style-src 'self' 'unsafe-inline'" : "style-src 'self' 'sha256-YWJj'",
+    "style-src-attr 'none'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     ...(missingFormAction ? [] : ["form-action 'self'"]),
@@ -111,6 +114,11 @@ function fixture({
 test('checks Edge bytes against the same release manifest', async () => {
   const { fetchImpl, build } = fixture();
   assert.equal(await verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl), 4);
+});
+
+test('rejects inline style allowances even when scripts and PWA bytes are safe', async () => {
+  const { fetchImpl, build } = fixture({ weakStyleCsp: true });
+  await assert.rejects(verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl));
 });
 
 test('rejects a Worker document whose bytes differ from the local build', async () => {

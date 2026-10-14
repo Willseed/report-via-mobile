@@ -56,6 +56,7 @@ jobs:
 
       - name: Validate security scan tooling
         run: |
+          node --test scripts/collect-style-hashes.test.mjs scripts/write-style-csp.test.mjs
           node --test .github/scripts/zap-to-sarif.test.mjs
           python3 -B .github/scripts/serve-static-no-server-header.test.py
 
