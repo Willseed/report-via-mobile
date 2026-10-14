@@ -4,6 +4,7 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { Platform } from '@angular/cdk/platform';
 import fc from 'fast-check';
 import { ZH_TW } from './i18n';
+import { composeSmsMessage } from './domain/sms-message.utils';
 import { SmsService } from './sms.service';
 
 const SMS_PROPERTY_CONFIG = {
@@ -133,6 +134,28 @@ describe('SmsService', () => {
     ])('should $description', ({ platform, phone, body, expected }) => {
       expectSmsLink(platform, phone, body, expected);
     });
+
+    it.each([
+      { name: 'Android', platform: { ANDROID: true }, separator: '?' },
+      { name: 'iOS', platform: { IOS: true }, separator: '&' },
+    ])(
+      'should encode literal composed text on $name using existing URI rules',
+      ({ platform, separator }) => {
+        const service = createService(platform);
+        const message = composeSmsMessage({
+          address: '臺北市{violation}$&\n信義區',
+          violation: "違停{address}$$$`$'",
+          licensePlate: '{plateSegment}$&',
+        });
+        const expectedBody =
+          "臺北市{violation}$& 信義區，有違停{address}$$$`$'，車牌號碼：{plateSegment}$&，請派員處理";
+
+        const link = service.generateSmsLink('0912345678', message);
+
+        expect(link).toBe(`sms:0912345678${separator}body=${encodeURIComponent(expectedBody)}`);
+        expect(decodeURIComponent(link.split(`${separator}body=`)[1])).toBe(expectedBody);
+      },
+    );
 
     it('should preserve phone sanitization invariants for Android links', () => {
       const service = createService({ ANDROID: true });
