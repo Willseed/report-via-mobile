@@ -7,6 +7,7 @@ Usage:
 Serves dist/report-via-mobile/browser relative to the repository root, without
 leaking Python/version information in the Server header.
 HTML responses use the same CSP builder as the production Cloudflare Worker.
+All responses mirror its cross-origin isolation headers, including worker scripts.
 """
 
 import argparse
@@ -38,6 +39,11 @@ class _NoServerHeaderHandler(http.server.SimpleHTTPRequestHandler):
         super().send_header(keyword, value)
         if keyword.lower() == "content-type" and value.lower().startswith("text/html"):
             super().send_header("Content-Security-Policy", self.content_security_policy)
+
+    def end_headers(self):
+        super().send_header("Cross-Origin-Opener-Policy", "same-origin")
+        super().send_header("Cross-Origin-Embedder-Policy", "require-corp")
+        super().end_headers()
 
 
 def build_content_security_policy(directory):

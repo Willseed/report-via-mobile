@@ -23,10 +23,17 @@ test('authorizes exact critical CSS and component styles in both HTTP and offlin
     const metaPolicy = hardened.window.document.querySelector('meta[http-equiv]').content;
     const headerPolicy = createHtmlContentSecurityPolicy(hardenedHtml);
     for (const policy of [metaPolicy, headerPolicy]) {
+      assert.ok(policy.includes("default-src 'none'"));
+      for (const directive of ['font-src', 'manifest-src', 'worker-src']) {
+        assert.ok(policy.includes(`${directive} 'self'`));
+      }
+      assert.ok(policy.includes("connect-src 'self' https://nominatim.openstreetmap.org"));
+      assert.ok(policy.includes("img-src 'self' data:"));
       assert.ok(policy.includes(`style-src 'self' ${metadata.content}`));
       assert.ok(policy.includes("style-src-attr 'none'"));
       assert.doesNotMatch(policy, /'unsafe-inline'/);
     }
+    assert.doesNotMatch(metaPolicy, /frame-ancestors/);
     assert.equal(hardened.window.document.querySelector('style').textContent, originalCss);
     assert.equal(hardened.window.document.body.textContent, original.window.document.body.textContent);
     assert.throws(() => hardenHtmlStyles(hardenedHtml, [emptyHash]), /already generated/);
