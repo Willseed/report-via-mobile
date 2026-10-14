@@ -365,7 +365,7 @@ async function setHtmlContentSecurityPolicy(response, headers, method) {
 
 // The local DAST server uses the same policy builder as the deployed Worker.
 export function createHtmlContentSecurityPolicy(html, existingPolicy = '') {
-  const hashes = extractAutoCspHashes(html);
+  const hashes = extractScriptHashesFromHtml(html);
   if (hashes.length === 0) return null;
 
   const scriptSources = [...hashes, "'self'"];
@@ -390,7 +390,8 @@ export function createHtmlContentSecurityPolicy(html, existingPolicy = '') {
   ].join('; ');
 }
 
-function extractAutoCspHashes(html) {
+// Parse built HTML and return only validated hashes from Angular's autoCsp metadata.
+function extractScriptHashesFromHtml(html) {
   const autoCsp = html.match(AUTO_CSP_META_PATTERN)?.[1];
   const scriptDirective = autoCsp
     ?.split(';')

@@ -47,11 +47,15 @@ The SARIF converter keeps each ZAP `alertRef` separate so a missing directive,
 an unrestricted source, and inline styles do not share an incorrect description.
 Both baseline and full scans retain their original reports.
 
-Two reviewed informational observations are excluded from SARIF: Modern Web
+Reviewed informational observations are excluded from SARIF: Modern Web
 Application (`10109`, informational severity only), because both scans already
 enable the Ajax spider, and localStorage (`120000-1`) only when the instance
 contains exactly the `theme-preference` key and an allowed `auto`, `light`, or
-`dark` value. Unknown keys, values, evidence, or increased severity remain visible.
+`dark` value. Angular's random `ngsw-cache-bust` parameter (`10024`) is also
+excluded only for `/ngsw.json`, with a matching fractional-number value and no
+other query parameters. Unknown keys, values, evidence, or increased severity
+remain visible. The HTTP-only finding (`10106`) is excluded only for the exact
+local HTTP scan server; production HTTPS is checked by `verify-edge-deployment.mjs`.
 See the [ZAP SPA guidance](https://www.zaproxy.org/docs/alerts/10109/) and
 [storage guidance](https://www.zaproxy.org/docs/alerts/120000-1/).
 

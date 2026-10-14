@@ -49,6 +49,34 @@ function storageAlert(overrides = {}) {
   });
 }
 
+function cacheBusterAlert(overrides = {}) {
+  return alert({
+    pluginid: '10024',
+    alertRef: '10024',
+    name: 'Information Disclosure - Sensitive Information in URL',
+    riskcode: '0',
+    instances: [
+      instance({
+        uri: 'http://localhost:4200/ngsw.json?ngsw-cache-bust=0.4190372100005838',
+        param: 'ngsw-cache-bust',
+        evidence: '0.4190372100005838',
+      }),
+    ],
+    ...overrides,
+  });
+}
+
+function httpOnlyAlert(overrides = {}) {
+  return alert({
+    pluginid: '10106',
+    alertRef: '10106',
+    name: 'HTTP Only Site',
+    riskcode: '2',
+    instances: [instance({ uri: 'http://localhost:4200/' })],
+    ...overrides,
+  });
+}
+
 function convert(t, alerts, rules) {
   const directory = mkdtempSync(join(tmpdir(), 'zap-sarif-test-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
@@ -203,4 +231,71 @@ test('missing alert references retain legacy IDs and configured exclusions stay 
       { ruleId: 'ZAP-10098', level: 'error' },
     ],
   );
+});
+
+test('only the exact informational Angular decimal cache-buster observation is omitted', (t) => {
+  const run = convert(t, [cacheBusterAlert(), cacheBusterAlert({ riskcode: 0 })]);
+  assert.deepEqual(run.results, []);
+  assert.deepEqual(run.tool.driver.rules, []);
+});
+
+test('URL disclosure findings retain unknown values, queries, paths, and severities', (t) => {
+  const knownInstance = cacheBusterAlert().instances[0];
+  const modifiedInstances = [
+    { param: 'credit-card' },
+    { evidence: undefined },
+    { evidence: '0.25' },
+    { uri: 'http://localhost:4200/report?ngsw-cache-bust=0.4190372100005838' },
+    { uri: `${knownInstance.uri}&account=example-account` },
+    { uri: `${knownInstance.uri}&ngsw-cache-bust=0.4190372100005838` },
+    { uri: `${knownInstance.uri}#example-fragment` },
+    { uri: 'invalid URL' },
+    ...['0', '0.0', '1', '1.0', '0.99999999999999999', '-0.5', 'Infinity', 'NaN'].map(
+      (evidence) => ({
+        evidence,
+        uri: `http://localhost:4200/ngsw.json?ngsw-cache-bust=${evidence}`,
+      }),
+    ),
+  ];
+  const findings = [
+    cacheBusterAlert({ riskcode: '1' }),
+    cacheBusterAlert({ riskcode: '' }),
+    cacheBusterAlert({ pluginid: '10025' }),
+    cacheBusterAlert({ alertRef: '10024-1' }),
+    cacheBusterAlert({ alertRef: undefined }),
+    ...modifiedInstances.map((overrides) =>
+      cacheBusterAlert({ instances: [{ ...knownInstance, ...overrides }] }),
+    ),
+  ];
+  const run = convert(t, findings);
+  assert.equal(run.results.length, findings.length);
+});
+
+test('the exact HTTP-only loopback harness finding is omitted', (t) => {
+  const run = convert(t, [httpOnlyAlert(), httpOnlyAlert({ riskcode: 2 })]);
+  assert.deepEqual(run.results, []);
+  assert.deepEqual(run.tool.driver.rules, []);
+});
+
+test('HTTP-only findings remain visible for production, other targets, and severities', (t) => {
+  const findings = [
+    httpOnlyAlert({ riskcode: '1' }),
+    httpOnlyAlert({ riskcode: 3 }),
+    httpOnlyAlert({ alertRef: undefined }),
+    httpOnlyAlert({ alertRef: '10106-1' }),
+    httpOnlyAlert({ pluginid: '10107' }),
+    ...[
+      'http://tools.pylot.dev/',
+      'https://tools.pylot.dev/',
+      'http://localhost:4200/report',
+      'http://localhost:4200/?target=example',
+      'http://localhost:4200/#/',
+      'http://localhost:4201/',
+      'http://127.0.0.1:4200/',
+      'http://localhost:4200.example.com/',
+      'https://localhost:4200/',
+    ].map((uri) => httpOnlyAlert({ instances: [instance({ uri })] })),
+  ];
+  const run = convert(t, findings);
+  assert.equal(run.results.length, findings.length);
 });

@@ -189,6 +189,59 @@ function isReviewedInformationalInstance(alert: ZapAlert, instance: ZapInstance)
   );
 }
 
+function matchesExactAlert(alert: ZapAlert, alertId: string, risk: number): boolean {
+  return (
+    alert.pluginid === alertId &&
+    alert.alertRef === alertId &&
+    (alert.riskcode === risk || alert.riskcode === String(risk))
+  );
+}
+
+/** Angular 以隨機小數重新取得 ngsw.json，這個精確參數並非信用卡資料。 */
+function isReviewedCacheBuster(alert: ZapAlert, instance: ZapInstance): boolean {
+  const evidence = instance.evidence ?? '';
+  if (
+    !matchesExactAlert(alert, '10024', 0) ||
+    instance.param !== 'ngsw-cache-bust' ||
+    !/^0\.\d+$/.test(evidence)
+  ) {
+    return false;
+  }
+
+  const value = Number(evidence);
+  if (!Number.isFinite(value) || value <= 0 || value >= 1) return false;
+
+  try {
+    const url = new URL(instance.uri);
+    return (
+      ['http:', 'https:'].includes(url.protocol) &&
+      url.pathname === '/ngsw.json' &&
+      url.search === `?ngsw-cache-bust=${evidence}` &&
+      !url.hash &&
+      !url.username &&
+      !url.password
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 只接受本機掃描伺服器的已知 HTTP 限制。正式站的 HTTPS 另由
+ * scripts/verify-edge-deployment.mjs 驗證；其他 origin／路徑的警示必須保留。
+ */
+function isReviewedHttpHarness(alert: ZapAlert, instance: ZapInstance): boolean {
+  return matchesExactAlert(alert, '10106', 2) && instance.uri === 'http://localhost:4200/';
+}
+
+function isReviewedInstance(alert: ZapAlert, instance: ZapInstance): boolean {
+  return (
+    isReviewedInformationalInstance(alert, instance) ||
+    isReviewedCacheBuster(alert, instance) ||
+    isReviewedHttpHarness(alert, instance)
+  );
+}
+
 /** 將單一 ZAP alert 轉為 SARIF rule */
 function toSarifRule(alert: ZapAlert, ruleId: string): SarifRule {
   const description = stripHtml(alert.desc) || alert.name || ruleId;
@@ -243,7 +296,7 @@ function convertZapToSarif(
     const alertId = alertReference(alert);
     if (ignoredPluginIds.has(alert.pluginid) || ignoredPluginIds.has(alertId)) continue;
     const instances = (alert.instances ?? []).filter(
-      (instance) => !isReviewedInformationalInstance(alert, instance),
+      (instance) => !isReviewedInstance(alert, instance),
     );
     if (instances.length === 0) continue;
 
