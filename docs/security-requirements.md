@@ -31,9 +31,51 @@ This document describes the security properties the project is trying to preserv
 - Review deployment, branch-protection, and repository-access settings in GitHub periodically.
 - Keep `main` branch protection aligned with the required CI, E2E, and security
   workflows when workflow names or review policy change.
+- Keep classic branch protection and repository rulesets consistent: require a
+  CODEOWNERS approval, dismiss stale approvals, and require approval after the
+  latest reviewable push. With two maintainers, one independent approval is
+  feasible; requiring two would prevent maintainer-authored PRs from merging.
 - Update documentation when trust boundaries or security assumptions change.
 - Restrict Worker deployment to `main` in the workflow and keep the `github-pages` environment restricted to `main`. Worker deployment runs without a separate environment or manual deployment approval; the dependent Pages job must wait for Worker deployment to succeed. Store Cloudflare credentials as repository secrets and scope the token to the required Worker and zone permissions.
 - Investigate any failed post-deployment Edge asset-byte or security-header check before accepting a release. A controlled staging deployment is needed to make these Edge checks a pre-production gate.
+
+## Code scanning interpretation
+
+The local ZAP server uses the production Worker's CSP builder and the built
+HTML's script hashes. It must preserve the HTML bytes used by the PWA manifest.
+The SARIF converter keeps each ZAP `alertRef` separate so a missing directive,
+an unrestricted source, and inline styles do not share an incorrect description.
+Both baseline and full scans retain their original reports.
+
+Reviewed informational observations are excluded from SARIF: Modern Web
+Application (`10109`, informational severity only), because both scans already
+enable the Ajax spider, and localStorage (`120000-1`) only when the instance
+contains exactly the `theme-preference` key and an allowed `auto`, `light`, or
+`dark` value. Angular's random `ngsw-cache-bust` parameter (`10024`) is also
+excluded only for `/ngsw.json`, with a matching fractional-number value and no
+other query parameters. Unknown keys, values, evidence, or increased severity
+remain visible. The HTTP-only finding (`10106`) is excluded only for the exact
+local HTTP scan server; production HTTPS is checked by `verify-edge-deployment.mjs`.
+See the [ZAP SPA guidance](https://www.zaproxy.org/docs/alerts/10109/) and
+[storage guidance](https://www.zaproxy.org/docs/alerts/120000-1/).
+
+The following findings remain open as of 2026-10-14:
+
+- **Inline styles (`10055-6`)**: Angular and Material insert runtime styles, so
+  `style-src` currently permits inline styles. Script sources remain restricted
+  to the built hashes and same origin, and inline event handlers are blocked.
+  Removing this allowance needs a separate style/nonce design compatible with
+  PWA asset integrity; do not ignore all CSP findings to hide it.
+- **braces (`GHSA-vfj7-8cjw-p6xm`)**: the advisory has no patched release.
+  `braces@3.0.3` is a development dependency reached through Stylelint, whose
+  input glob is the repository-controlled `src/**/*.scss`. It is absent from
+  production dependencies, but the dependency alert stays visible until a
+  supported fix is available. See the
+  [upstream advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+- **Scorecard review count**: branch protection enforces the review safeguards
+  above, but Scorecard still recommends two approving reviewers. Raising the
+  count requires another eligible maintainer; do not bypass required reviews or
+  claim a maximal score while only one independent reviewer is available.
 
 ## Non-goals
 

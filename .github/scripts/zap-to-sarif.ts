@@ -17,15 +17,17 @@ interface ZapInstance {
   readonly method?: string;
   readonly param?: string;
   readonly evidence?: string;
+  readonly otherinfo?: string;
 }
 
 interface ZapAlert {
   readonly pluginid: string;
+  readonly alertRef?: string;
   readonly name: string;
   readonly desc: string;
   readonly solution: string;
   readonly reference: string;
-  readonly riskcode: number;
+  readonly riskcode: number | string;
   readonly instances: readonly ZapInstance[];
 }
 
@@ -116,7 +118,7 @@ function stripHtml(str: string): string {
   return result.trim();
 }
 
-/** 解析 rules.tsv，回傳所有 IGNORE 的 plugin ID */
+/** 解析 rules.tsv，回傳所有 IGNORE 的 plugin ID 或精確 alert reference */
 function parseIgnoredRules(filePath: string): Set<string> {
   const ignored = new Set<string>();
   if (!existsSync(filePath)) return ignored;
@@ -140,9 +142,104 @@ function urlToRelativePath(uri: string): string {
 }
 
 /** 從 reference 文字中擷取第一個 HTTP(S) 連結 */
-function extractHelpUri(reference: string): string {
+function extractHelpUri(reference: string, alertId: string): string {
   const cleaned = stripHtml(reference);
-  return cleaned.split(/\s+/).find((s) => s.startsWith('http')) ?? 'https://www.zaproxy.org/';
+  return (
+    cleaned.split(/\s+/).find((s) => s.startsWith('http')) ??
+    `https://www.zaproxy.org/docs/alerts/${encodeURIComponent(alertId)}/`
+  );
+}
+
+function alertReference(alert: ZapAlert): string {
+  return alert.alertRef?.trim() || alert.pluginid;
+}
+
+function alertLevel(alert: ZapAlert): string {
+  if (!/^[0-3]$/.test(String(alert.riskcode))) return 'warning';
+  return RISK_TO_LEVEL[Number(alert.riskcode)] ?? 'warning';
+}
+
+/**
+ * 只略過已核對的資訊性觀察；原始 JSON／HTML 報告仍完整保留。
+ * 10109 只辨識 SPA，兩個掃描 workflow 均已使用 -j 啟用瀏覽器爬蟲。
+ * localStorage 僅接受 ThemeService 的三種非敏感偏好值；其他 key、值、
+ * subrule、風險等級或不完整證據一律保留，避免隱藏後續敏感資料儲存問題。
+ */
+function isReviewedInformationalInstance(alert: ZapAlert, instance: ZapInstance): boolean {
+  if (alert.riskcode !== 0 && alert.riskcode !== '0') return false;
+
+  if (alert.pluginid === '10109' && alertReference(alert) === '10109') return true;
+
+  if (
+    alert.pluginid !== '120000' ||
+    alert.alertRef !== '120000-1' ||
+    instance.param !== 'theme-preference'
+  ) {
+    return false;
+  }
+
+  const evidence = instance.otherinfo?.split(/\r?\n/);
+  if (!evidence || evidence.length > 2) return false;
+  return (
+    /^The following data \(key=value\) was set: theme-preference=(?:auto|light|dark)$/.test(
+      evidence[0],
+    ) &&
+    (evidence.length === 1 ||
+      evidence[1] === 'Note that this alert will only be raised once for each URL + key.')
+  );
+}
+
+function matchesExactAlert(alert: ZapAlert, alertId: string, risk: number): boolean {
+  return (
+    alert.pluginid === alertId &&
+    alert.alertRef === alertId &&
+    (alert.riskcode === risk || alert.riskcode === String(risk))
+  );
+}
+
+/** Angular 以隨機小數重新取得 ngsw.json，這個精確參數並非信用卡資料。 */
+function isReviewedCacheBuster(alert: ZapAlert, instance: ZapInstance): boolean {
+  const evidence = instance.evidence ?? '';
+  if (
+    !matchesExactAlert(alert, '10024', 0) ||
+    instance.param !== 'ngsw-cache-bust' ||
+    !/^0\.\d+$/.test(evidence)
+  ) {
+    return false;
+  }
+
+  const value = Number(evidence);
+  if (!Number.isFinite(value) || value <= 0 || value >= 1) return false;
+
+  try {
+    const url = new URL(instance.uri);
+    return (
+      ['http:', 'https:'].includes(url.protocol) &&
+      url.pathname === '/ngsw.json' &&
+      url.search === `?ngsw-cache-bust=${evidence}` &&
+      !url.hash &&
+      !url.username &&
+      !url.password
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 只接受本機掃描伺服器的已知 HTTP 限制。正式站的 HTTPS 另由
+ * scripts/verify-edge-deployment.mjs 驗證；其他 origin／路徑的警示必須保留。
+ */
+function isReviewedHttpHarness(alert: ZapAlert, instance: ZapInstance): boolean {
+  return matchesExactAlert(alert, '10106', 2) && instance.uri === 'http://localhost:4200/';
+}
+
+function isReviewedInstance(alert: ZapAlert, instance: ZapInstance): boolean {
+  return (
+    isReviewedInformationalInstance(alert, instance) ||
+    isReviewedCacheBuster(alert, instance) ||
+    isReviewedHttpHarness(alert, instance)
+  );
 }
 
 /** 將單一 ZAP alert 轉為 SARIF rule */
@@ -153,18 +250,29 @@ function toSarifRule(alert: ZapAlert, ruleId: string): SarifRule {
     name: alert.name || ruleId,
     shortDescription: { text: alert.name || ruleId },
     fullDescription: { text: description },
-    defaultConfiguration: { level: RISK_TO_LEVEL[alert.riskcode] ?? 'warning' },
-    helpUri: extractHelpUri(alert.reference),
+    defaultConfiguration: { level: alertLevel(alert) },
+    helpUri: extractHelpUri(alert.reference, alertReference(alert)),
     properties: { tags: ['security'] },
   };
 }
 
 /** 將單一 ZAP instance 轉為 SARIF result */
 function toSarifResult(alert: ZapAlert, instance: ZapInstance, ruleId: string): SarifResult {
+  const context = [stripHtml(alert.name) || ruleId];
+  if (instance.method && /^[A-Z]{3,10}$/.test(instance.method)) {
+    context.push(`Method: ${instance.method}`);
+  }
+  // 報告只帶入參數名稱，不匯出 evidence／otherinfo 中可能含有的敏感值。
+  if (instance.param && /^[A-Za-z0-9_.:-]{1,128}$/.test(instance.param)) {
+    context.push(`Parameter: ${instance.param}`);
+  }
+  const solution = stripHtml(alert.solution);
+  if (solution) context.push(solution);
+
   return {
     ruleId,
-    level: RISK_TO_LEVEL[alert.riskcode] ?? 'warning',
-    message: { text: stripHtml(alert.solution) || alert.name },
+    level: alertLevel(alert),
+    message: { text: context.join('\n') },
     locations: [
       {
         physicalLocation: {
@@ -176,22 +284,28 @@ function toSarifResult(alert: ZapAlert, instance: ZapInstance, ruleId: string): 
 }
 
 /** 轉換 ZAP JSON 報告為 SARIF document */
-function convertZapToSarif(report: ZapReport, ignoredPluginIds: ReadonlySet<string> = new Set()): SarifDocument {
+function convertZapToSarif(
+  report: ZapReport,
+  ignoredPluginIds: ReadonlySet<string> = new Set(),
+): SarifDocument {
   const ruleMap = new Map<string, SarifRule>();
   const results: SarifResult[] = [];
+  const alerts = (report.site ?? []).flatMap((site) => site.alerts ?? []);
 
-  for (const site of report.site ?? []) {
-    for (const alert of site.alerts ?? []) {
-      if (ignoredPluginIds.has(alert.pluginid)) continue;
-      const ruleId = `ZAP-${alert.pluginid}`;
+  for (const alert of alerts) {
+    const alertId = alertReference(alert);
+    if (ignoredPluginIds.has(alert.pluginid) || ignoredPluginIds.has(alertId)) continue;
+    const instances = (alert.instances ?? []).filter(
+      (instance) => !isReviewedInstance(alert, instance),
+    );
+    if (instances.length === 0) continue;
 
-      if (!ruleMap.has(ruleId)) {
-        ruleMap.set(ruleId, toSarifRule(alert, ruleId));
-      }
-
-      for (const instance of alert.instances ?? []) {
-        results.push(toSarifResult(alert, instance, ruleId));
-      }
+    const ruleId = `ZAP-${alertId}`;
+    if (!ruleMap.has(ruleId)) {
+      ruleMap.set(ruleId, toSarifRule(alert, ruleId));
+    }
+    for (const instance of instances) {
+      results.push(toSarifResult(alert, instance, ruleId));
     }
   }
 

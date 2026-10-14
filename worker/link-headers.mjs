@@ -45,6 +45,15 @@ const HEADER_TOKEN_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 const SCRIPT_HASH_PATTERN = /'sha256-[A-Za-z0-9+/]+=*'/g;
 const AUTO_CSP_META_PATTERN = /<meta\b[^>]*\bhttp-equiv="Content-Security-Policy"[^>]*\bcontent="([^"]+)"/i;
 const REPLACED_CSP_DIRECTIVE_PATTERN = /^(?:script-src(?:-elem|-attr)?|object-src|base-uri)(?:\s|$)/i;
+const DEFAULT_CSP_DIRECTIVES = [
+  "default-src 'self'",
+  // Angular and Material insert component styles at runtime; scripts remain hash restricted.
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "connect-src 'self' https://nominatim.openstreetmap.org",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+];
 
 const DISCOVERY_LINKS = [
   {
@@ -347,35 +356,43 @@ async function setHtmlContentSecurityPolicy(response, headers, method) {
     return;
   }
 
-  const hashes = extractAutoCspHashes(await response.clone().text());
-  if (hashes.length === 0) return;
-
-  const scriptSources = [...hashes, "'self'"];
-  const existingDirectives = (headers.get('Content-Security-Policy') ?? '')
-    .split(';')
-    .map((directive) => directive.trim())
-    .filter((directive) => directive && !REPLACED_CSP_DIRECTIVE_PATTERN.test(directive));
-
-  headers.set(
-    'Content-Security-Policy',
-    [
-      ...existingDirectives,
-      `script-src ${scriptSources.join(' ')}`,
-      "script-src-attr 'none'",
-      "object-src 'none'",
-      "base-uri 'self'",
-    ].join('; '),
+  const policy = createHtmlContentSecurityPolicy(
+    await response.clone().text(),
+    headers.get('Content-Security-Policy') ?? '',
   );
+  if (policy) headers.set('Content-Security-Policy', policy);
 }
 
-function extractAutoCspHashes(html) {
+// The local DAST server uses the same policy builder as the deployed Worker.
+export function createHtmlContentSecurityPolicy(html, existingPolicy = '') {
   const autoCsp = html.match(AUTO_CSP_META_PATTERN)?.[1];
   const scriptDirective = autoCsp
     ?.split(';')
     .map((directive) => directive.trim())
     .find((directive) => directive.startsWith('script-src '));
+  const hashes = [...new Set(scriptDirective?.match(SCRIPT_HASH_PATTERN) ?? [])];
+  if (hashes.length === 0) return null;
 
-  return [...new Set(scriptDirective?.match(SCRIPT_HASH_PATTERN) ?? [])];
+  const scriptSources = [...hashes, "'self'"];
+  const existingDirectives = existingPolicy
+    .split(';')
+    .map((directive) => directive.trim())
+    .filter((directive) => directive && !REPLACED_CSP_DIRECTIVE_PATTERN.test(directive));
+  const existingNames = new Set(
+    existingDirectives.map((directive) => directive.split(/\s/, 1)[0].toLowerCase()),
+  );
+  const missingDefaults = DEFAULT_CSP_DIRECTIVES.filter(
+    (directive) => !existingNames.has(directive.split(/\s/, 1)[0]),
+  );
+
+  return [
+    ...existingDirectives,
+    ...missingDefaults,
+    `script-src ${scriptSources.join(' ')}`,
+    "script-src-attr 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+  ].join('; ');
 }
 
 async function responseWithoutCors(response, method) {

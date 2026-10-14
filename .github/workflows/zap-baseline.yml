@@ -49,12 +49,12 @@ jobs:
 
       - name: Start static file server
         run: |
-          python3 .github/scripts/serve-static-no-server-header.py --port 4200 --directory dist/report-via-mobile/browser > /tmp/serve.log 2>&1 &
+          python3 .github/scripts/serve-static-no-server-header.py --port 4200 > /tmp/serve.log 2>&1 &
           echo $! > /tmp/serve.pid
 
       - name: Wait for server ready
         run: |
-          for i in {1..30}; do
+          for _ in {1..30}; do
             if curl -fsS http://localhost:4200/ > /dev/null; then
               echo "Server is ready"
               exit 0
