@@ -9,6 +9,7 @@ function fixture({
   weakCsp = false,
   weakFallbackCsp = false,
   strictDynamic = false,
+  missingFormAction = false,
 } = {}) {
   // These tests compare response bytes and headers; HTML markup is not part of the fixture behavior.
   const homepageBytes = Buffer.from('fixture page');
@@ -32,11 +33,17 @@ function fixture({
     `script-src ${scriptSource}`,
     "script-src-attr 'none'",
     "frame-ancestors 'none'",
+    "base-uri 'self'",
+    ...(missingFormAction ? [] : ["form-action 'self'"]),
   ].join('; ');
+  const unsafeCsp = safeCsp.replace(
+    `script-src ${scriptSource}`,
+    "script-src 'self' 'unsafe-inline'",
+  );
   const securityHeaders = {
     'Content-Type': 'text/html; charset=utf-8',
     'Content-Security-Policy': weakCsp
-      ? "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+      ? unsafeCsp
       : safeCsp,
     'Strict-Transport-Security': 'max-age=31536000',
     'X-Frame-Options': 'DENY',
@@ -67,8 +74,7 @@ function fixture({
           ...securityHeaders,
           ...(weakFallbackCsp
             ? {
-                'Content-Security-Policy':
-                  "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'",
+                'Content-Security-Policy': unsafeCsp,
               }
             : {}),
         },
@@ -179,5 +185,13 @@ test('rejects a script policy that trusts arbitrary descendants', async () => {
   await assert.rejects(
     verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl),
     /strict-dynamic/,
+  );
+});
+
+test('rejects a page whose form destinations are unrestricted', async () => {
+  const { fetchImpl, build } = fixture({ missingFormAction: true });
+  await assert.rejects(
+    verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl),
+    /form-action/,
   );
 });

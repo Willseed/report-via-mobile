@@ -94,6 +94,9 @@ function assertHardenedCsp(response, label) {
   const csp = response.headers.get('content-security-policy') ?? '';
   assert.ok(csp, `${label} lacks a Content-Security-Policy header.`);
   assert.match(csp, /frame-ancestors\s+'none'/i);
+  assert.match(csp, /(?:^|;)\s*default-src\s+'self'\s*(?:;|$)/i);
+  assert.match(csp, /(?:^|;)\s*form-action\s+'self'\s*(?:;|$)/i);
+  assert.match(csp, /(?:^|;)\s*base-uri\s+'self'\s*(?:;|$)/i);
   const directives = csp.split(';').map((directive) => directive.trim());
   const scriptSource = directives.find((directive) => /^script-src\s+/i.test(directive));
   assert.ok(scriptSource, `${label} lacks a script-src policy.`);

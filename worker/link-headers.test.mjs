@@ -106,11 +106,32 @@ test('replaces unsafe inline script rules with built script hashes and preserves
   assert.match(policy, /script-src-attr 'none'/);
   assert.match(policy, /object-src 'none'/);
   assert.match(policy, /base-uri 'self'/);
+  assert.match(policy, /form-action 'self'/);
   assert.doesNotMatch(policy, /script-src [^;]*'unsafe-inline'/);
   assert.equal(
     response.headers.get('Strict-Transport-Security'),
     'max-age=63072000; includeSubDomains',
   );
+});
+
+test('supplies a complete HTML policy when the origin has no security headers', async (t) => {
+  const originResponse = new Response(cspFixtureBytes, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
+  mockFetch(t, async () => originResponse.clone());
+
+  const response = await worker.fetch(new Request('https://tools.pylot.dev/'));
+  const policy = response.headers.get('Content-Security-Policy') ?? '';
+
+  await assertHtmlBodyUnchanged(response, originResponse);
+  assert.match(policy, /default-src 'self'/);
+  assert.match(policy, /style-src 'self' 'unsafe-inline'/);
+  assert.match(policy, /img-src 'self' data:/);
+  assert.match(policy, /connect-src 'self' https:\/\/nominatim\.openstreetmap\.org/);
+  assert.match(policy, /form-action 'self'/);
+  assert.match(policy, /frame-ancestors 'none'/);
+  assert.match(policy, /script-src 'sha256-/);
+  assert.doesNotMatch(policy, /script-src [^;]*'unsafe-inline'/);
 });
 
 for (const [path, status] of [
