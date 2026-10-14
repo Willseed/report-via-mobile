@@ -32,7 +32,7 @@ This document describes the security properties the project is trying to preserv
 - Keep `main` branch protection aligned with the required CI, E2E, and security
   workflows when workflow names or review policy change.
 - Update documentation when trust boundaries or security assumptions change.
-- Keep both deployment environments restricted to `main`, and require maintainer review for `cloudflare-production` before the dependent Pages job can run. Store Cloudflare credentials as environment secrets and scope the token to the required Worker and zone permissions.
+- Restrict Worker deployment to `main` in the workflow and keep the `github-pages` environment restricted to `main`. Worker deployment runs without a separate environment or manual deployment approval; the dependent Pages job must wait for Worker deployment to succeed. Store Cloudflare credentials as repository secrets and scope the token to the required Worker and zone permissions.
 - Investigate any failed post-deployment Edge asset-byte or security-header check before accepting a release. A controlled staging deployment is needed to make these Edge checks a pre-production gate.
 
 ## Non-goals

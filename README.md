@@ -188,12 +188,11 @@ MCP server-card 的 `transport` 維持 `null`；工具僅是瀏覽器 WebMCP。
 再逐位元組比對 Edge 回傳的 PWA 資源，並檢查公開文件與安全標頭。Worker 先部署並直接
 轉送 Pages 的公開文件，使過渡期間的文件位元組仍與當時的 PWA 清單一致。
 
-維護者需確認 GitHub 的 `cloudflare-production` environment 限制部署分支為 `main`，
-設定必要的審核人員，並將 `CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_API_TOKEN` 放在該
-environment 的 secrets；移除同名 repository secrets。Cloudflare token 應只授予本
-Worker 與對應 zone 所需的部署權限。`github-pages` environment 也限制為 `main`；
-Pages job 必須等待已核准的 Worker job 完成。這些 GitHub／Cloudflare 帳號設定無法由此
-儲存庫檔案自行建立。
+維護者需將 `CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_API_TOKEN` 設定為 GitHub repository
+secrets。Worker job 由 workflow 限制只在 `main` 執行，不使用獨立 environment 或人工
+部署審核。Cloudflare token 應只授予本 Worker 與對應 zone 所需的部署權限。
+`github-pages` environment 限制為 `main`；Pages job 必須等待 Worker job 成功完成。
+這些 GitHub／Cloudflare 帳號設定無法由此儲存庫檔案自行建立。
 
 目前 Edge 驗證在正式發布後執行，失敗時會讓 workflow 呈現失敗並要求維護者處理。
 若要在正式發布前阻擋 Edge 整合錯誤，仍需提供受控的 staging 網域與對應部署環境。
