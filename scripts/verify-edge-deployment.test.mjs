@@ -30,11 +30,16 @@ function fixture({
   );
   const scriptSource = `${strictDynamic ? "'strict-dynamic' " : ''}'sha256-YWJj' 'self'`;
   const safeCsp = [
-    "default-src 'self'",
+    "default-src 'none'",
     `script-src ${scriptSource}`,
     "script-src-attr 'none'",
     weakStyleCsp ? "style-src 'self' 'unsafe-inline'" : "style-src 'self' 'sha256-YWJj'",
     "style-src-attr 'none'",
+    "font-src 'self'",
+    "manifest-src 'self'",
+    "worker-src 'self'",
+    "img-src 'self' data:",
+    "connect-src 'self' https://nominatim.openstreetmap.org",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     ...(missingFormAction ? [] : ["form-action 'self'"]),
@@ -53,6 +58,8 @@ function fixture({
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'geolocation=(self)',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Embedder-Policy': 'require-corp',
   };
   const documentHeaders = {
     'Content-Type': 'application/json; charset=utf-8',
@@ -86,6 +93,12 @@ function fixture({
     ['/auth.md', new Response('# Auth\n', { headers: { 'Content-Type': 'text/markdown' } })],
     ['/ngsw.json', new Response(manifest)],
     [
+      '/ngsw-worker.js',
+      new Response('self.serviceWorkerReady=true;', {
+        headers: { 'Cross-Origin-Embedder-Policy': 'require-corp' },
+      }),
+    ],
+    [
       '/.well-known/oauth-protected-resource',
       new Response(changedDocument ? `${protectedResource}changed` : protectedResource, {
         headers: documentHeaders,
@@ -108,7 +121,7 @@ function fixture({
     if (!response) throw new Error(`Unexpected path: ${url.pathname}`);
     return response.clone();
   };
-  return { fetchImpl, build };
+  return { fetchImpl, build, responses };
 }
 
 test('checks Edge bytes against the same release manifest', async () => {
@@ -203,3 +216,74 @@ test('rejects a page whose form destinations are unrestricted', async () => {
     /form-action/,
   );
 });
+
+for (const path of ['/', '/404.html']) {
+  for (const [header, wrongValue] of [
+    ['Cross-Origin-Opener-Policy', 'same-origin-allow-popups'],
+    ['Cross-Origin-Embedder-Policy', 'unsafe-none'],
+  ]) {
+    for (const value of [null, wrongValue]) {
+      test(`rejects ${path} with ${value === null ? 'missing' : 'wrong'} ${header}`, async () => {
+        const { fetchImpl, build, responses } = fixture();
+        const response = responses.get(path);
+        if (value === null) response.headers.delete(header);
+        else response.headers.set(header, value);
+
+        const expectedMessage = `${path === '/' ? 'Homepage' : '404.html'} must use ${header}: ${
+          header === 'Cross-Origin-Opener-Policy' ? 'same-origin' : 'require-corp'
+        }.`;
+        await assert.rejects(verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl), (error) => {
+          assert.ok(error.message.startsWith(expectedMessage), error.message);
+          return true;
+        });
+      });
+    }
+  }
+
+  test(`rejects ${path} with a permissive default CSP fallback`, async () => {
+    const { fetchImpl, build, responses } = fixture();
+    const response = responses.get(path);
+    response.headers.set(
+      'Content-Security-Policy',
+      response.headers
+        .get('Content-Security-Policy')
+        .replace("default-src 'none'", "default-src 'self'"),
+    );
+
+    await assert.rejects(verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl), /default-src/);
+  });
+
+  for (const directive of ['font-src', 'manifest-src', 'worker-src', 'img-src', 'connect-src']) {
+    for (const replacement of [null, `${directive} *`]) {
+      test(`rejects ${path} with ${replacement === null ? 'missing' : 'broad'} ${directive}`, async () => {
+        const { fetchImpl, build, responses } = fixture();
+        const response = responses.get(path);
+        const policy = response.headers
+          .get('Content-Security-Policy')
+          .split('; ')
+          .filter((entry) => !entry.startsWith(`${directive} `));
+        if (replacement !== null) policy.push(replacement);
+        response.headers.set('Content-Security-Policy', policy.join('; '));
+
+        await assert.rejects(verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl), (error) => {
+          assert.ok(error.message.includes(directive), error.message);
+          return true;
+        });
+      });
+    }
+  }
+}
+
+for (const value of [null, 'unsafe-none']) {
+  test(`rejects a Service Worker with ${value === null ? 'missing' : 'wrong'} COEP`, async () => {
+    const { fetchImpl, build, responses } = fixture();
+    const response = responses.get('/ngsw-worker.js');
+    if (value === null) response.headers.delete('Cross-Origin-Embedder-Policy');
+    else response.headers.set('Cross-Origin-Embedder-Policy', value);
+
+    await assert.rejects(
+      verifyEdgeOnce('https://tools.pylot.dev/', build, fetchImpl),
+      /ngsw-worker\.js must use Cross-Origin-Embedder-Policy: require-corp/,
+    );
+  });
+}

@@ -94,7 +94,15 @@ function assertHardenedCsp(response, label) {
   const csp = response.headers.get('content-security-policy') ?? '';
   assert.ok(csp, `${label} lacks a Content-Security-Policy header.`);
   assert.match(csp, /frame-ancestors\s+'none'/i);
-  assert.match(csp, /(?:^|;)\s*default-src\s+'self'\s*(?:;|$)/i);
+  assert.match(csp, /(?:^|;)\s*default-src\s+'none'\s*(?:;|$)/i);
+  assert.match(csp, /(?:^|;)\s*font-src\s+'self'\s*(?:;|$)/i);
+  assert.match(csp, /(?:^|;)\s*manifest-src\s+'self'\s*(?:;|$)/i);
+  assert.match(csp, /(?:^|;)\s*worker-src\s+'self'\s*(?:;|$)/i);
+  assert.match(csp, /(?:^|;)\s*img-src\s+'self'\s+data:\s*(?:;|$)/i);
+  assert.match(
+    csp,
+    /(?:^|;)\s*connect-src\s+'self'\s+https:\/\/nominatim\.openstreetmap\.org\s*(?:;|$)/i,
+  );
   assert.match(csp, /(?:^|;)\s*form-action\s+'self'\s*(?:;|$)/i);
   assert.match(csp, /(?:^|;)\s*base-uri\s+'self'\s*(?:;|$)/i);
   const directives = csp.split(';').map((directive) => directive.trim());
@@ -122,6 +130,19 @@ function assertHardenedCsp(response, label) {
   );
 }
 
+function assertCrossOriginIsolation(response, label) {
+  assert.equal(
+    response.headers.get('cross-origin-opener-policy'),
+    'same-origin',
+    `${label} must use Cross-Origin-Opener-Policy: same-origin.`,
+  );
+  assert.equal(
+    response.headers.get('cross-origin-embedder-policy'),
+    'require-corp',
+    `${label} must use Cross-Origin-Embedder-Policy: require-corp.`,
+  );
+}
+
 export async function verifyEdgeOnce(baseUrl, expectedBuild, fetchImpl = fetch) {
   const siteUrl = new URL(baseUrl);
   assert.equal(siteUrl.protocol, 'https:', 'Edge verification requires an HTTPS origin.');
@@ -144,6 +165,7 @@ export async function verifyEdgeOnce(baseUrl, expectedBuild, fetchImpl = fetch) 
     assert.ok(page.headers.get(header), `Homepage lacks ${header}.`);
   }
   assertHardenedCsp(page, 'Homepage');
+  assertCrossOriginIsolation(page, 'Homepage');
   assert.equal(page.headers.get('x-frame-options')?.toUpperCase(), 'DENY');
   assert.equal(page.headers.get('x-content-type-options')?.toLowerCase(), 'nosniff');
 
@@ -155,6 +177,7 @@ export async function verifyEdgeOnce(baseUrl, expectedBuild, fetchImpl = fetch) 
   assert.match(fallback.headers.get('content-type') ?? '', /text\/html/i);
   assert.deepEqual(fallbackBytes, pageBytes, '404.html differs from the deployed homepage.');
   assertHardenedCsp(fallback, '404.html');
+  assertCrossOriginIsolation(fallback, '404.html');
 
   const { response: markdown, bytes: markdownBytes } = await readResponse(origin, '/', fetchImpl, {
     Accept: 'text/markdown',
@@ -181,6 +204,14 @@ export async function verifyEdgeOnce(baseUrl, expectedBuild, fetchImpl = fetch) 
   for (const path of REQUIRED_HASHED_DOCUMENTS) {
     assert.ok(Object.hasOwn(manifest.hashTable, path), `${path} is absent from the PWA hash table.`);
   }
+
+  // Angular excludes the Service Worker itself from ngsw.json's asset hash table.
+  const { response: serviceWorker } = await readResponse(origin, '/ngsw-worker.js', fetchImpl);
+  assert.equal(
+    serviceWorker.headers.get('cross-origin-embedder-policy'),
+    'require-corp',
+    'ngsw-worker.js must use Cross-Origin-Embedder-Policy: require-corp.',
+  );
 
   for (const path of Object.keys(manifest.hashTable)) {
     const expectedBytes = expectedBuild.assets.get(path);

@@ -6,9 +6,17 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { collectBuiltStyleHashes } from './collect-style-hashes.mjs';
+import { DEFAULT_CSP_DIRECTIVES } from '../worker/link-headers.mjs';
 
 const AUTO_CSP_META_PATTERN = /(<meta\b[^>]*\bhttp-equiv="Content-Security-Policy"[^>]*\bcontent=")([^"]+)(")/i;
 const HASH_PATTERN = /^'sha256-[A-Za-z0-9+/]{43}='$/;
+// frame-ancestors is only enforced in HTTP response headers.
+const META_CSP_DEFAULTS = DEFAULT_CSP_DIRECTIVES.filter(
+  (directive) => !directive.startsWith('frame-ancestors '),
+);
+const META_CSP_DEFAULT_NAMES = new Set(
+  META_CSP_DEFAULTS.map((directive) => directive.split(' ', 1)[0]),
+);
 
 function styleHash(css) {
   return `'sha256-${createHash('sha256').update(css).digest('base64')}'`;
@@ -37,10 +45,13 @@ export function hardenHtmlStyles(html, componentHashes) {
     const stylePolicy = `style-src 'self' ${hashes.join(' ')}; style-src-attr 'none'`;
     // The meta policy travels with the HTML in the offline cache and protects
     // direct static hosting too; the Worker mirrors it in the response header.
+    // Updating these bytes also changes the PWA hash, so installed clients fetch
+    // a fresh HTML response with the new isolation headers during their update.
     return html.replace(AUTO_CSP_META_PATTERN, (_, prefix, policy, suffix) => {
       const directives = policy.split(';').map((value) => value.trim())
-        .filter((value) => value && !/^style-src(?:-elem|-attr)?(?:\s|$)/i.test(value));
-      return `${prefix}${directives.join('; ')}; ${stylePolicy}${suffix}`;
+        .filter((value) => value && !/^style-src(?:-elem|-attr)?(?:\s|$)/i.test(value)
+          && !META_CSP_DEFAULT_NAMES.has(value.split(/\s/, 1)[0].toLowerCase()));
+      return `${prefix}${[...directives, ...META_CSP_DEFAULTS, stylePolicy].join('; ')}${suffix}`;
     }).replace(/<head\b[^>]*>/i, (headHtml) =>
       `${headHtml}<meta name="csp-style-hashes" content="${hashes.join(' ')}">`);
   } finally {

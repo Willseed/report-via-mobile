@@ -60,6 +60,43 @@ local HTTP scan server; production HTTPS is checked by `verify-edge-deployment.m
 See the [ZAP SPA guidance](https://www.zaproxy.org/docs/alerts/10109/) and
 [storage guidance](https://www.zaproxy.org/docs/alerts/120000-1/).
 
+### Observatory response policies
+
+The Cloudflare Worker owns the HTML CSP and the cross-origin isolation headers
+for proxied HTML and assets, including `ngsw-worker.js`:
+
+- `default-src 'none'` denies unspecified resource types. Explicit directives
+  permit same-origin scripts, styles, fonts, images, the web manifest and workers;
+  the existing script/style hashes and image `data:` allowance remain. Connections
+  are limited to this origin and the Nominatim API.
+- `Cross-Origin-Embedder-Policy: require-corp` requires permission for cross-origin
+  embedded resources. Nominatim requests still use CORS; no third-party scripts,
+  fonts or images are needed by the app.
+- `Cross-Origin-Opener-Policy: same-origin` isolates the page from cross-origin
+  opener relationships. The app does not depend on popup authentication or
+  cross-window messaging; SMS handoff uses a user-triggered `sms:` navigation.
+
+These changes are deployed by the existing Worker-before-Pages workflow. GitHub
+Pages does not interpret `public/_headers`, and HTML meta tags cannot supply
+COEP/COOP. Keep CSP hashes in the Worker rather than a static Cloudflare response
+header rule, because the hashes must match the HTML release. Existing Cloudflare
+settings continue to supply HTTPS redirection, HSTS and the other security headers.
+Any response-header Transform Rule must not overwrite the Worker's CSP or isolation
+headers. New third-party embeds or popup integrations need a compatibility review.
+
+The build also writes the resource policy into the HTML meta CSP, omitting the
+header-only `frame-ancestors` directive. This changes the HTML's PWA checksum so
+existing installs fetch its new response headers during the normal user-approved
+update, instead of reusing an unchanged cached HTML response with old headers.
+
+The local scan server and production browser suite exercise these policies,
+including geolocation, PWA installation, offline reload and an explicit update.
+The post-deployment checks validate both HTML policies and the Service Worker
+script's embedder policy. See MDN's
+[CSP fallback rules](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/default-src),
+[COEP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cross-Origin-Embedder-Policy)
+and [COOP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cross-Origin-Opener-Policy).
+
 ### Strict style CSP
 
 Production builds must use `npm run build -- --configuration production`.

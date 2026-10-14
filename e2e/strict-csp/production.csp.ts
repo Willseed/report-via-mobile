@@ -31,8 +31,16 @@ async function observeCsp(context: BrowserContext): Promise<CspViolation[]> {
 
 function expectStrictStylePolicy(response: Response | null): void {
   expect(response?.ok()).toBe(true);
+  expect(response?.headers()['cross-origin-opener-policy']).toBe('same-origin');
+  expect(response?.headers()['cross-origin-embedder-policy']).toBe('require-corp');
   const policy = response?.headers()['content-security-policy'] ?? '';
   const directives = policy.split(';').map((directive) => directive.trim().split(/\s+/));
+  expect(directives.filter(([name]) => name === 'default-src')).toEqual([
+    ['default-src', "'none'"],
+  ]);
+  for (const directive of ['font-src', 'manifest-src', 'worker-src']) {
+    expect(directives.filter(([name]) => name === directive)).toEqual([[directive, "'self'"]]);
+  }
   const styleSources = directives.filter(([name]) => name === 'style-src');
   expect(styleSources).toHaveLength(1);
   expect(styleSources[0].some((source) => source.startsWith("'sha256-"))).toBe(true);
@@ -47,6 +55,7 @@ function expectStrictStylePolicy(response: Response | null): void {
 
 async function openProductionPage(page: Page): Promise<void> {
   expectStrictStylePolicy(await page.goto('/'));
+  expect(await page.evaluate(() => globalThis.crossOriginIsolated)).toBe(true);
   await expect(page.getByLabel('事發地址')).toBeVisible();
   await expect(page.locator('app-sms-form')).toHaveCSS('display', 'flex');
 }
@@ -108,6 +117,53 @@ test('production CSP permits actual controls, lazy dialog, and theme changes', a
   await page.locator('footer').scrollIntoViewIfNeeded();
   await expect(page.locator('details.disclaimer')).toBeVisible();
   expect(violations).toEqual([]);
+});
+
+test.describe('production geolocation with cross-origin isolation', () => {
+  // This case validates the page's external CORS request. The separate PWA cases
+  // exercise real Service Workers; blocking them here keeps interception portable.
+  test.use({ serviceWorkers: 'block' });
+
+  test('keeps GPS reverse geocoding usable with a CORS-only response', async ({ context, page }) => {
+    const violations = await observeCsp(context);
+    const requestedCoordinates: string[][] = [];
+    await context.grantPermissions(['geolocation']);
+    await context.setGeolocation({ latitude: 25.033, longitude: 121.5654 });
+    await context.route('https://nominatim.openstreetmap.org/reverse?*', async (route) => {
+      const request = route.request();
+      const headers = {
+        'Access-Control-Allow-Origin': 'http://127.0.0.1:4300',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'User-Agent',
+      };
+      if (request.method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers });
+        return;
+      }
+      const params = new URL(request.url()).searchParams;
+      requestedCoordinates.push([params.get('lat') ?? '', params.get('lon') ?? '']);
+      await route.fulfill({
+        status: 200,
+        headers,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          display_name: '臺北市中正區重慶南路一段122號',
+          address: {
+            city: '臺北市',
+            suburb: '中正區',
+            road: '重慶南路一段',
+            house_number: '122號',
+          },
+        }),
+      });
+    });
+    await openProductionPage(page);
+    await page.getByRole('button', { name: '使用目前位置' }).click();
+    await expect(page.getByLabel('事發地址')).toHaveValue(/臺北市中正區/);
+    await expect(page.locator('mat-select-trigger')).toHaveText('臺北市');
+    expect(requestedCoordinates).toEqual([['25.033', '121.5654']]);
+    expect(violations).toEqual([]);
+  });
 });
 
 test('production CSP blocks unapproved style elements and style attributes', async ({
@@ -181,6 +237,7 @@ test('real Service Worker preserves build integrity and renders the app after of
   const response = await page.reload();
   expect(response?.fromServiceWorker()).toBe(true);
   expectStrictStylePolicy(response);
+  expect(await page.evaluate(() => globalThis.crossOriginIsolated)).toBe(true);
   await expect(page.getByLabel('事發地址')).toBeVisible();
   await expect(page.getByText('目前為離線狀態，無法使用定位功能。')).toBeVisible();
   await expect(page.getByRole('button', { name: '使用目前位置' })).toBeDisabled();
@@ -262,6 +319,7 @@ test('a real hash-valid PWA update waits for the update action and keeps working
   const response = await page.reload();
   expect(response?.fromServiceWorker()).toBe(true);
   expectStrictStylePolicy(response);
+  expect(await page.evaluate(() => globalThis.crossOriginIsolated)).toBe(true);
   await expect(page.getByLabel('事發地址')).toBeVisible();
   await fillDraftAndOpenDialog(page);
   expect(violations).toEqual([]);

@@ -78,6 +78,36 @@ test('uses sanitized origin requests for static assets', async (t) => {
   assert.equal(await response.text(), 'home');
 });
 
+for (const [path, contentType, status] of [
+  ['/', 'text/html', 200],
+  ['/index.html', 'text/html', 200],
+  ['/404.html', 'text/html', 200],
+  ['/missing-page', 'text/html', 404],
+  ['/ngsw-worker.js', 'text/javascript', 200],
+]) {
+  test(`enforces cross-origin isolation at ${path} without changing bytes or status`, async (t) => {
+    const originResponse = new Response(
+      contentType === 'text/html' ? cspFixtureBytes : 'self.reportAppReady = true;',
+      {
+        status,
+        headers: {
+          'Content-Type': contentType,
+          'Cross-Origin-Embedder-Policy': 'unsafe-none',
+          'Cross-Origin-Opener-Policy': 'unsafe-none',
+        },
+      },
+    );
+    mockFetch(t, async () => originResponse.clone());
+
+    const response = await worker.fetch(new Request(`https://tools.pylot.dev${path}`));
+
+    assert.equal(response.status, status);
+    assert.equal(response.headers.get('Cross-Origin-Embedder-Policy'), 'require-corp');
+    assert.equal(response.headers.get('Cross-Origin-Opener-Policy'), 'same-origin');
+    await assertHtmlBodyUnchanged(response, originResponse);
+  });
+}
+
 test('replaces unsafe inline script rules with built script hashes and preserves HTML bytes', async (t) => {
   const inlineScript = 'window.reportAppReady = true;';
   const hash = createHash('sha256').update(inlineScript).digest('base64');
@@ -102,7 +132,12 @@ test('replaces unsafe inline script rules with built script hashes and preserves
   const policy = response.headers.get('Content-Security-Policy') ?? '';
 
   await assertHtmlBodyUnchanged(response, originResponse);
-  assert.match(policy, /default-src 'self'/);
+  assert.match(policy, /default-src 'none'/);
+  assert.doesNotMatch(policy, /default-src 'self'/);
+  assert.equal(
+    policy.split(';').filter((entry) => entry.trim().startsWith('default-src ')).length,
+    1,
+  );
   assert.match(policy, /frame-ancestors 'none'/);
   assert.match(policy, /style-src 'self' 'sha256-/);
   assert.match(policy, /style-src-attr 'none'/);
@@ -130,7 +165,10 @@ test('supplies a complete HTML policy when the origin has no security headers', 
   const policy = response.headers.get('Content-Security-Policy') ?? '';
 
   await assertHtmlBodyUnchanged(response, originResponse);
-  assert.match(policy, /default-src 'self'/);
+  assert.match(policy, /default-src 'none'/);
+  assert.match(policy, /font-src 'self'/);
+  assert.match(policy, /manifest-src 'self'/);
+  assert.match(policy, /worker-src 'self'/);
   assert.match(policy, /style-src 'self' 'sha256-/);
   assert.match(policy, /style-src-attr 'none'/);
   assert.match(policy, /img-src 'self' data:/);

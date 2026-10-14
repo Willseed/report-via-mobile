@@ -46,10 +46,14 @@ const SCRIPT_HASH_PATTERN = /'sha256-[A-Za-z0-9+/]+=*'/g;
 const AUTO_CSP_META_PATTERN = /<meta\b[^>]*\bhttp-equiv="Content-Security-Policy"[^>]*\bcontent="([^"]+)"/i;
 const STYLE_CSP_META_PATTERN = /<meta\b[^>]*\bname="csp-style-hashes"[^>]*\bcontent="([^"]*)"/i;
 const STYLE_HASH_LIST_PATTERN = /^'sha256-[A-Za-z0-9+/]{43}='(?: 'sha256-[A-Za-z0-9+/]{43}=')*$/;
-const REPLACED_CSP_DIRECTIVE_PATTERN = /^(?:script-src(?:-elem|-attr)?|object-src|base-uri)(?:\s|$)/i;
+const REPLACED_CSP_DIRECTIVE_PATTERN =
+  /^(?:default-src|script-src(?:-elem|-attr)?|object-src|base-uri)(?:\s|$)/i;
 const STYLE_CSP_DIRECTIVE_PATTERN = /^style-src(?:-elem|-attr)?(?:\s|$)/i;
-const DEFAULT_CSP_DIRECTIVES = [
-  "default-src 'self'",
+export const DEFAULT_CSP_DIRECTIVES = [
+  "default-src 'none'",
+  "font-src 'self'",
+  "manifest-src 'self'",
+  "worker-src 'self'",
   "img-src 'self' data:",
   "connect-src 'self' https://nominatim.openstreetmap.org",
   "form-action 'self'",
@@ -341,6 +345,9 @@ async function fetchMarkdownHomepage(method) {
 }
 
 function cloneResponse(response, headers) {
+  // Include the worker script: an isolated page must retain Service Worker support.
+  headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+  headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
