@@ -42,12 +42,12 @@ def build_content_security_policy(directory):
     """Read build hashes through the actual Worker policy builder without altering HTML."""
     script = Path(__file__).with_name("scan-csp-header.mjs")
     result = subprocess.run(
-        ["node", str(script), str(Path(directory) / "index.html")],
+        ["node", str(script)],
+        input=(Path(directory) / "index.html").read_bytes(),
         check=True,
         capture_output=True,
-        text=True,
     )
-    return result.stdout.strip()
+    return result.stdout.decode("utf8").strip()
 
 
 def main():

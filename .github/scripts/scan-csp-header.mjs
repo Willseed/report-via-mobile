@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 
-import { readFile } from 'node:fs/promises';
+import { text } from 'node:stream/consumers';
 import { createHtmlContentSecurityPolicy } from '../../worker/link-headers.mjs';
 
-const [htmlPath] = process.argv.slice(2);
-if (!htmlPath || process.argv.length !== 3) {
-  throw new Error('Pass the production index.html path.');
+if (process.argv.length !== 2) {
+  throw new Error('Pipe the production HTML to standard input; no arguments are accepted.');
 }
 
 // This is trusted build output; only its CSP hashes are emitted, never its HTML bytes.
-const html = await readFile(htmlPath, 'utf8');
+const html = await text(process.stdin);
 const policy = createHtmlContentSecurityPolicy(html);
 if (!policy) throw new Error('The production HTML has no Angular autoCsp script hashes.');
 process.stdout.write(policy);

@@ -237,20 +237,22 @@ function convertZapToSarif(
 ): SarifDocument {
   const ruleMap = new Map<string, SarifRule>();
   const results: SarifResult[] = [];
+  const alerts = (report.site ?? []).flatMap((site) => site.alerts ?? []);
 
-  for (const site of report.site ?? []) {
-    for (const alert of site.alerts ?? []) {
-      const alertId = alertReference(alert);
-      if (ignoredPluginIds.has(alert.pluginid) || ignoredPluginIds.has(alertId)) continue;
-      const ruleId = `ZAP-${alertId}`;
+  for (const alert of alerts) {
+    const alertId = alertReference(alert);
+    if (ignoredPluginIds.has(alert.pluginid) || ignoredPluginIds.has(alertId)) continue;
+    const instances = (alert.instances ?? []).filter(
+      (instance) => !isReviewedInformationalInstance(alert, instance),
+    );
+    if (instances.length === 0) continue;
 
-      for (const instance of alert.instances ?? []) {
-        if (isReviewedInformationalInstance(alert, instance)) continue;
-        if (!ruleMap.has(ruleId)) {
-          ruleMap.set(ruleId, toSarifRule(alert, ruleId));
-        }
-        results.push(toSarifResult(alert, instance, ruleId));
-      }
+    const ruleId = `ZAP-${alertId}`;
+    if (!ruleMap.has(ruleId)) {
+      ruleMap.set(ruleId, toSarifRule(alert, ruleId));
+    }
+    for (const instance of instances) {
+      results.push(toSarifResult(alert, instance, ruleId));
     }
   }
 

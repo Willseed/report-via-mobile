@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 from threading import Thread
 import unittest
+from unittest.mock import patch
 from urllib.request import urlopen
 
 
@@ -22,6 +23,19 @@ SPEC.loader.exec_module(scan_server)
 
 
 class ScanServerTest(unittest.TestCase):
+    def test_passes_html_as_input_without_a_directory_command_argument(self):
+        with tempfile.TemporaryDirectory(prefix="scan build -- ") as directory:
+            homepage = Path(directory) / "index.html"
+            shutil.copyfile(ROOT / "worker/fixtures/auto-csp.html", homepage)
+            with patch.object(scan_server.subprocess, "run", wraps=subprocess.run) as run:
+                policy = scan_server.build_content_security_policy(directory)
+            self.assertEqual(
+                run.call_args.args[0],
+                ["node", str(SCRIPT_DIRECTORY / "scan-csp-header.mjs")],
+            )
+            self.assertEqual(run.call_args.kwargs["input"], homepage.read_bytes())
+            self.assertIn("script-src 'sha256-", policy)
+
     def test_serves_worker_csp_without_changing_html(self):
         with tempfile.TemporaryDirectory() as directory:
             homepage = Path(directory) / "index.html"
