@@ -5,7 +5,9 @@ version: 2
 updates:
   # 維護 npm 相依性
   - package-ecosystem: "npm"
-    directory: "/"
+    directories:
+      - "/"
+      - "/.github/npm"
     schedule:
       interval: "weekly"
       day: "monday"

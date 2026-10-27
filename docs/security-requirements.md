@@ -41,6 +41,37 @@ This document describes the security properties the project is trying to preserv
 
 ## Code scanning interpretation
 
+### Build dependency integrity
+
+GitHub Actions references use full commit SHAs. The npm CLI's runtime dependencies
+are installed with `npm ci --prefix .github/npm --ignore-scripts` using the
+committed lockfile's integrity hashes. The official CLI archive is separately
+verified against the SHA-512 hash in `.github/npm/package.json` before extraction.
+The installer excludes bundled `node_modules` and uses the separately locked
+runtime, without modifying the official CLI source.
+
+The original npm 11.21.1 bundle contains vulnerable `ip-address@10.7.2` and
+`undici@6.29.0`; the runtime lock instead supplies `ip-address@10.7.5` and
+`undici@6.29.1` to address
+[GHSA-rxp7-6hxx-x8q5](https://github.com/advisories/GHSA-rxp7-6hxx-x8q5),
+[GHSA-4qv8-2p9j-2685](https://github.com/advisories/GHSA-4qv8-2p9j-2685), and
+[GHSA-xjj6-f33q-929c](https://github.com/advisories/GHSA-xjj6-f33q-929c).
+Both the application and CLI runtime audits are clean. Tests verify that stale
+bundled modules are not extracted and that the CLI resolves its locked runtime.
+
+The bootstrap checks the archive identity, its runtime dependency declarations,
+and the running CLI version against the root `packageManager` before adding npm
+to `GITHUB_PATH`. Update the root `packageManager`, `.github/npm/package.json`
+(including the official archive version, URL, hash and dependency declarations),
+and its lockfile together when upgrading npm. Dependabot monitors both npm
+dependency manifests. Keep dependency declarations aligned with the verified CLI
+source; security overrides and lockfile updates must also pass the runtime tests.
+
+CodeQL runs the `security-and-quality` suite on pull requests and pushes to
+`main`, so merged fixes also refresh the default-branch code scanning results.
+
+### ZAP findings
+
 The local ZAP server uses the production Worker's CSP builder and the built
 HTML's script and style hashes. It rejects builds without the strict style
 policy and must preserve the HTML bytes used by the PWA manifest.

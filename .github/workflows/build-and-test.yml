@@ -29,7 +29,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Setup npm
-        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+        run: bash .github/scripts/setup-npm.sh
 
       - name: Restore Angular CLI artifacts
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -59,6 +59,7 @@ jobs:
 
       - name: Validate security scan tooling
         run: |
+          node --test .github/scripts/setup-npm.test.mjs
           node --test scripts/collect-style-hashes.test.mjs scripts/write-style-csp.test.mjs
           node --test .github/scripts/zap-to-sarif.test.mjs
           python3 -B .github/scripts/serve-static-no-server-header.test.py
