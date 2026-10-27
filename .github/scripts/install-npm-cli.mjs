@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rename, rm, symlink } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
 
 const repository = fileURLToPath(new URL('../../', import.meta.url));
@@ -29,29 +31,29 @@ async function install() {
   const tar = require('tar');
   const staging = await mkdtemp(join(toolchain, '.cli-staging-'));
   try {
-    const archivePath = join(staging, 'npm.tgz');
-    await writeFile(archivePath, archive);
-    await tar.x({
-      file: archivePath,
-      cwd: staging,
-      strict: true,
-      filter(path, entry) {
-        const parts = path.split('/');
-        if (parts.at(-1) === '') parts.pop();
-        if (
-          path.includes('\\') ||
-          parts[0] !== 'package' ||
-          parts.some(part => part === '..' || part === '.' || part === '')
-        ) {
-          throw new Error(`Unsafe npm CLI archive path: ${path}`);
-        }
-        if (parts[1] === 'node_modules') return false;
-        if (entry.type === 'SymbolicLink' || entry.type === 'Link') {
-          throw new Error(`Unsupported npm CLI archive link: ${path}`);
-        }
-        return true;
-      },
-    });
+    await pipeline(
+      Readable.from([archive]),
+      tar.x({
+        cwd: staging,
+        strict: true,
+        filter(path, entry) {
+          const parts = path.split('/');
+          if (parts.at(-1) === '') parts.pop();
+          if (
+            path.includes('\\') ||
+            parts[0] !== 'package' ||
+            parts.some(part => part === '..' || part === '.' || part === '')
+          ) {
+            throw new Error(`Unsafe npm CLI archive path: ${path}`);
+          }
+          if (parts[1] === 'node_modules') return false;
+          if (entry.type === 'SymbolicLink' || entry.type === 'Link') {
+            throw new Error(`Unsupported npm CLI archive link: ${path}`);
+          }
+          return true;
+        },
+      }),
+    );
 
     const source = join(staging, 'package');
     const cli = JSON.parse(await readFile(join(source, 'package.json'), 'utf8'));
@@ -71,11 +73,13 @@ async function install() {
     await rename(source, cliDirectory);
     const binDirectory = join(toolchain, 'node_modules/.bin');
     await mkdir(binDirectory, { recursive: true });
-    for (const command of ['npm', 'npx']) {
-      const link = join(binDirectory, command);
-      await rm(link, { force: true });
-      await symlink(`../../cli/bin/${command}-cli.js`, link);
-    }
+    await Promise.all(
+      ['npm', 'npx'].map(async command => {
+        const link = join(binDirectory, command);
+        await rm(link, { force: true });
+        await symlink(`../../cli/bin/${command}-cli.js`, link);
+      }),
+    );
 
     // A real CLI invocation also proves that its separately locked runtime resolves.
     const result = spawnSync(process.execPath, [join(cliDirectory, 'bin/npm-cli.js'), '--version'], {
