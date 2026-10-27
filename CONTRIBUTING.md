@@ -22,10 +22,14 @@ We welcome focused contributions such as:
 
 ## Development setup
 
-CI currently runs on Node.js 24 and npm 11. Matching that locally is recommended.
+CI uses Node.js 24.22.1 LTS from `.nvmrc` and npm 11.21.1 from `package.json`.
+Use the same versions locally.
 
 ```bash
-npm install
+nvm install
+nvm use
+npm install --global npm@11.21.1
+npm ci
 npm start
 npm test
 npm run lint

@@ -69,7 +69,7 @@ Mobile-first Angular 21 application for reporting traffic violations via SMS. Us
 - Production bundle budgets: 750kB warning, 1MB error (component style: 4kB warning, 8kB error)
 - All user-facing UI text must be in Traditional Chinese (zh_TW) — add strings to `src/app/i18n/zh-TW.ts`
 - Commit messages in Traditional Chinese following Conventional Commits format (feat, fix, refactor, test, ci, docs)
-- Package manager: `npm` (npm@11.x, Node 24)
+- Package manager: `npm` (Node.js LTS from `.nvmrc`, npm version from `package.json`)
 
 ## PWA Architecture
 

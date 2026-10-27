@@ -100,7 +100,7 @@ App (app.ts)
 - **Component style error:** 8kB
 
 ### Package Manager
-- **Use `npm`** (npm@11.x, Node 24); do not use yarn or pnpm
+- **Use `npm`** (Node.js LTS from `.nvmrc`, npm version from `package.json`); do not use yarn or pnpm
 
 ## Testing with Vitest
 
