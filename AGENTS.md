@@ -50,7 +50,7 @@ This file provides Codex-specific working guidance for this repository. It is di
 - 2-space indentation
 - SCSS with component-scoped styles
 - Bundle budgets: 750kB warning / 1MB error; component styles 4kB / 8kB
-- Package manager: **npm only** (Node 24 / npm@11)
+- Package manager: **npm only** (Node.js LTS from `.nvmrc` / npm version from `package.json`)
 - **UI text must be Traditional Chinese** (zh-TW); add strings to `src/app/i18n/zh-TW.ts`
 
 ## Testing Standards

@@ -71,11 +71,13 @@ Nominatim 仍可能依各自政策處理網路請求資料；如需清除本站�
 
 ### 本機開發
 
-需要 Node.js 24.x（與 CI 相同）及 npm 11.x。Angular 22 最低支援的 Node.js 版本為
-20.19。
+使用 Node.js 24.22.1 LTS（版本集中於 `.nvmrc`）及 npm 11.21.1，與 CI 一致。
 
 ```bash
-npm install
+nvm install
+nvm use
+npm install --global npm@11.21.1
+npm ci
 npm start
 ```
 
