@@ -10,6 +10,7 @@ app/**/*.js.map
 
 # Dependencies
 /node_modules
+/.github/npm/node_modules
 bower_components/
 
 # Node logs

@@ -41,6 +41,32 @@ This document describes the security properties the project is trying to preserv
 
 ## Code scanning interpretation
 
+### Build dependency integrity
+
+GitHub Actions references use full commit SHAs. The npm CLI is installed with
+`npm ci --prefix .github/npm --ignore-scripts` from its own committed lockfile,
+which verifies the package's SHA-512 integrity before the CLI is executed.
+The bootstrap checks its version against the root `packageManager` and adds the
+local npm binary to `GITHUB_PATH`; it never installs a mutable global package.
+Update the root `packageManager`, `.github/npm/package.json`, and its lockfile
+together when upgrading npm. Dependabot monitors both npm dependency manifests.
+
+As of 2026-10-27, the official npm 11.21.1 distribution bundles
+`ip-address@10.7.2` and `undici@6.29.0`, affected by
+[GHSA-rxp7-6hxx-x8q5](https://github.com/advisories/GHSA-rxp7-6hxx-x8q5),
+[GHSA-4qv8-2p9j-2685](https://github.com/advisories/GHSA-4qv8-2p9j-2685), and
+[GHSA-xjj6-f33q-929c](https://github.com/advisories/GHSA-xjj6-f33q-929c).
+`npm audit --prefix .github/npm` reports two affected CLI dependencies even
+though the application lockfile audit is clean. npm overrides and `npm audit fix`
+do not replace these bundled modules. Keep these upstream findings visible and
+upgrade the official npm distribution when a patched release is available;
+changing only the lockfile must not be treated as a runtime fix.
+
+CodeQL runs the `security-and-quality` suite on pull requests and pushes to
+`main`, so merged fixes also refresh the default-branch code scanning results.
+
+### ZAP findings
+
 The local ZAP server uses the production Worker's CSP builder and the built
 HTML's script and style hashes. It rejects builds without the strict style
 policy and must preserve the HTML bytes used by the PWA manifest.
