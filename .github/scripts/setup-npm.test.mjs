@@ -7,6 +7,8 @@ import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
+import { expectedManifestDependency } from './install-npm-cli.mjs';
+
 const setupScript = fileURLToPath(new URL('./setup-npm.sh', import.meta.url));
 const installScript = fileURLToPath(new URL('./install-npm-cli.mjs', import.meta.url));
 const tarDirectory = fileURLToPath(new URL('../npm/node_modules/tar/', import.meta.url));
@@ -226,6 +228,16 @@ test('rejects changed runtime archives before attempting to install the CLI sour
   assert.match(`${result.stderr}\n${result.stdout}`, /EINTEGRITY|integrity checksum failed/);
   await assert.rejects(access(data.githubPath), { code: 'ENOENT' });
   await assert.rejects(access(data.fetchMarker), { code: 'ENOENT' });
+});
+
+test('pins the patched glob and minimatch ranges for the reviewed npm CLI', () => {
+  assert.equal(expectedManifestDependency('glob', '^13.0.6'), '^14.0.4');
+  assert.equal(expectedManifestDependency('minimatch', '^10.2.5'), '^11.0.5');
+  assert.equal(expectedManifestDependency('tar', '^7.5.22'), '^7.5.22');
+  assert.throws(
+    () => expectedManifestDependency('glob', '^14.0.0'),
+    /not the reviewed \^13\.0\.6/,
+  );
 });
 
 test('requires GITHUB_PATH before attempting any installation', async (t) => {

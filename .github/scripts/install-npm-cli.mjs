@@ -2,10 +2,29 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rename, rm, symlink } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
+
+// npm 11.21.1 still declares the vulnerable ranges. npm rejects an override whose
+// spec differs from a direct dependency, so the manifest pins the patched ranges
+// and the check below keeps every other dependency identical to the CLI archive.
+const patchedRuntimeDependencies = {
+  glob: { upstream: '^13.0.6', patched: '^14.0.4' },
+  minimatch: { upstream: '^10.2.5', patched: '^11.0.5' },
+};
+
+export function expectedManifestDependency(name, upstreamRange) {
+  const patch = patchedRuntimeDependencies[name];
+  if (!patch) return upstreamRange;
+  if (upstreamRange !== patch.upstream) {
+    throw new Error(
+      `npm CLI ${name} range is ${upstreamRange}, not the reviewed ${patch.upstream}; update the security pin`,
+    );
+  }
+  return patch.patched;
+}
 
 const repository = fileURLToPath(new URL('../../', import.meta.url));
 const toolchain = join(repository, '.github/npm');
@@ -61,10 +80,10 @@ async function install() {
       throw new Error('npm CLI source identity does not match the pinned version');
     }
     const dependencies = Object.entries(cli.dependencies);
-    if (
-      dependencies.length !== Object.keys(manifest.dependencies).length ||
-      dependencies.some(([name, range]) => manifest.dependencies[name] !== range)
-    ) {
+    const dependenciesMatch = dependencies.every(
+      ([name, range]) => manifest.dependencies[name] === expectedManifestDependency(name, range),
+    );
+    if (dependencies.length !== Object.keys(manifest.dependencies).length || !dependenciesMatch) {
       throw new Error('npm CLI runtime dependencies do not match the locked manifest');
     }
 
@@ -94,9 +113,11 @@ async function install() {
   }
 }
 
-try {
-  await install();
-} catch (error) {
-  process.stderr.write(`${error.message}\n`);
-  process.exitCode = 1;
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    await install();
+  } catch (error) {
+    process.stderr.write(`${error.message}\n`);
+    process.exitCode = 1;
+  }
 }
