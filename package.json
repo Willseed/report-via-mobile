@@ -74,7 +74,7 @@
     "stylelint": "^17.15.0",
     "stylelint-config-standard-scss": "^17.0.0",
     "typescript": "~6.0.0",
-    "typescript-eslint": "^8.72.1",
+    "typescript-eslint": "^8.72.2",
     "vitest": "^5.1.0",
     "wrangler": "4.158.0"
   },
