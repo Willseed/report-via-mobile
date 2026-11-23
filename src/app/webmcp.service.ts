@@ -75,22 +75,9 @@ export interface WebMcpToolDefinition {
   readonly execute: (input?: unknown) => WebMcpToolResult | Promise<WebMcpToolResult>;
 }
 
-interface RegisterToolOptions {
-  readonly signal?: AbortSignal;
-}
-
-interface ModelContext {
-  provideContext?(context: { tools: WebMcpToolDefinition[] }): void;
-  registerTool?(tool: WebMcpToolDefinition, options?: RegisterToolOptions): void;
-}
-
 declare global {
-  interface Document {
-    modelContext?: ModelContext;
-  }
-
   interface Navigator {
-    modelContext?: ModelContext;
+    modelContext?: RuntimeModelContext;
   }
 }
 
@@ -179,6 +166,14 @@ interface Coordinates {
   readonly lng: number;
 }
 
+/**
+ * Angular 22.3 內建 WebMCP 規格的全域型別（Document.modelContext），此處沿用其
+ * `WebMCP.ModelContext` 並補上未涵蓋的 provideContext 與 Navigator.modelContext。
+ */
+type RuntimeModelContext = WebMCP.ModelContext & {
+  provideContext?(context: { tools: WebMcpToolDefinition[] }): void;
+};
+
 function isInputRecord(input: unknown): input is Record<string, unknown> {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
     return false;
@@ -188,12 +183,12 @@ function isInputRecord(input: unknown): input is Record<string, unknown> {
   return prototype === Object.prototype || prototype === null;
 }
 
-function isModelContext(input: unknown): input is ModelContext {
+function isModelContext(input: unknown): input is RuntimeModelContext {
   if (typeof input !== 'object' || input === null) {
     return false;
   }
 
-  const modelContext = input as ModelContext;
+  const modelContext = input as RuntimeModelContext;
   return (
     typeof modelContext.registerTool === 'function' ||
     typeof modelContext.provideContext === 'function'
@@ -671,7 +666,7 @@ export class WebMcpService implements OnDestroy {
     };
   }
 
-  private modelContext(): ModelContext | null {
+  private modelContext(): RuntimeModelContext | null {
     const documentModelContext = globalThis.document?.modelContext;
     if (isModelContext(documentModelContext)) return documentModelContext;
 
