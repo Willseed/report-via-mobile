@@ -75,10 +75,6 @@ export interface WebMcpToolDefinition {
   readonly execute: (input?: unknown) => WebMcpToolResult | Promise<WebMcpToolResult>;
 }
 
-interface RegisterToolOptions {
-  readonly signal?: AbortSignal;
-}
-
 declare global {
   interface Navigator {
     modelContext?: RuntimeModelContext;
